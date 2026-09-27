@@ -7,7 +7,15 @@ from werkzeug.utils import secure_filename
 import io
 import csv
 import urllib.parse
+import cloudinary
+import cloudinary.uploader
 
+cloudinary.config(
+    cloud_name="1aumqyvh",
+    api_key="175883619494279",
+    api_secret="_jbaV2_LRKIHtoyFEfNyHHHIsz4",
+    secure=True
+)
 app = Flask(__name__)
 app.secret_key = "shreeguru_complete_bulletproof_v43_5parts"
 DB_NAME = "shreeguru_master_v43.db"
@@ -1921,8 +1929,10 @@ def save_kitchen_att_dynamic():
 @app.route('/add_student', methods=['POST'])
 def add_student():
     photo = request.files.get('photo')
-    photo_filename = secure_filename(f"{date.today()}_{photo.filename}") if photo and photo.filename != "" else ""
-    if photo_filename: photo.save(os.path.join(app.config['UPLOAD_FOLDER'], photo_filename))
+    photo_filename = ''
+    if photo and photo.filename:
+        upload_result = cloudinary.uploader.upload(photo)
+        photo_filename = upload_result['secure_url']    
     with get_db() as conn:
         conn.execute("INSERT INTO students (name, course, phone, parent_phone, total_fees, paid_fees, photo_filename, admission_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                      (request.form.get('name'), request.form.get('course'), request.form.get('phone'), request.form.get('parent_phone'), safe_float(request.form.get('total_fees')), safe_float(request.form.get('paid_fees')), photo_filename, request.form.get('admission_date')))
