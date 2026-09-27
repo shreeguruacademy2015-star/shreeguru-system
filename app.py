@@ -2,20 +2,12 @@ import os
 import sqlite3
 import shutil
 from datetime import date, datetime
-from flask import Flask, redirect, render_template_string, request, send_file, send_from_directory
+from flask import Flask, redirect, render_template_string, request, send_file, send_from_directory, url_for, session, Response
 from werkzeug.utils import secure_filename
 import io
 import csv
 import urllib.parse
-import cloudinary
-import cloudinary.uploader
 
-cloudinary.config(
-    cloud_name="laumqyvh",
-    api_key="175883619494279",
-    api_secret="_jbaVZ_LRKIhtoyfEfNyHHHIsz4",
-    secure=True
-)
 app = Flask(__name__)
 app.secret_key = "shreeguru_complete_bulletproof_v43_5parts"
 DB_NAME = "shreeguru_master_v43.db"
@@ -935,12 +927,12 @@ CLERK_LAYOUT = '''<!DOCTYPE html>
             <tbody>
                 {% for s in students %}
                 <tr>
-                <td>{% if s.photo_filename %}<img src="{{ s.photo_filename }}" width="50" style="border-radius:4px;">{% else %}-{% endif %}</td>
-                <td>REG-{{ s.id }}</td><td><b>{{ s.name }}</b></td><td>{{ s.course }}</td><td>{{ s.phone }}</td>
-                <td style="color:red; font-weight:bold;">₹{{ (s.total_fees or 0) - (s.paid_fees or 0) }}</td>
-                <td><a href="/receipt/{{ s.id }}" target="_blank" class="btn-act" style="background:#0284c7;">पावती</a></td>
-            </tr>
-            {% endfor %}
+                    <td>{% if s.photo_filename %}<img src="/uploads/{{ s.photo_filename }}" width="35" height="40">{% else %}-{% endif %}</td>
+                    <td>REG-{{ s.id }}</td><td><b>{{ s.name }}</b></td><td>{{ s.course }}</td><td>{{ s.phone }}</td>
+                    <td style="color:red; font-weight:bold;">₹{{ (s.total_fees or 0) - (s.paid_fees or 0) }}</td>
+                    <td><a href="/receipt/{{ s.id }}" target="_blank" class="btn-act" style="background:#10b981;">🧾 पावती प्रिंट</a></td>
+                </tr>
+                {% endfor %}
             </tbody>
         </table>
     </div>
@@ -1201,7 +1193,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
             <tbody>
                 {% for s in students %}
                 <tr>
-                    <td>{% if s.photo_filename %}<img src="{{ s.photo_filename }}" width="35" height="40">{% else %}-{% endif %}</td>
+                    <td>{% if s.photo_filename %}<img src="/uploads/{{ s.photo_filename }}" width="35" height="40">{% else %}-{% endif %}</td>
                     <td>REG-{{ s.id }}</td><td><b>{{ s.name }}</b></td><td>{{ s.course }}</td><td>{{ s.phone }}</td>
                     <td style="color:red; font-weight:bold;">₹{{ (s.total_fees or 0) - (s.paid_fees or 0) }}</td>
                     <td>
@@ -1929,10 +1921,8 @@ def save_kitchen_att_dynamic():
 @app.route('/add_student', methods=['POST'])
 def add_student():
     photo = request.files.get('photo')
-    photo_filename = ''
-    if photo and photo.filename:
-        upload_result = cloudinary.uploader.upload(photo)
-        photo_filename = upload_result['secure_url']    
+    photo_filename = secure_filename(f"{date.today()}_{photo.filename}") if photo and photo.filename != "" else ""
+    if photo_filename: photo.save(os.path.join(app.config['UPLOAD_FOLDER'], photo_filename))
     with get_db() as conn:
         conn.execute("INSERT INTO students (name, course, phone, parent_phone, total_fees, paid_fees, photo_filename, admission_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                      (request.form.get('name'), request.form.get('course'), request.form.get('phone'), request.form.get('parent_phone'), safe_float(request.form.get('total_fees')), safe_float(request.form.get('paid_fees')), photo_filename, request.form.get('admission_date')))
@@ -2148,7 +2138,7 @@ def add_care_log():
 @app.route('/download_backup')
 def download_backup(): return send_file(DB_NAME, as_attachment=True)
 
-@app.route('<filename>')
+@app.route('/uploads/<filename>')
 def uploaded_file(filename): return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 @app.route('/export_students_csv')
