@@ -2,7 +2,7 @@ import os
 import sqlite3
 import shutil
 from datetime import date, datetime
-from flask import Flask, redirect, render_template_string, request, send_file, send_from_directory, url_for, session, Response
+from flask import Flask, redirect, render_template_string, request, send_file, send_from_directory
 from werkzeug.utils import secure_filename
 import io
 import csv
@@ -13,7 +13,7 @@ import cloudinary.uploader
 cloudinary.config(
     cloud_name="laumqyvh",
     api_key="175883619494279",
-    api_secret="_jbaV2_LRKIHtoyFEfNyHHHIsz4",
+    api_secret="_jbaVZ_LRKIhtoyfEfNyHHHIsz4",
     secure=True
 )
 app = Flask(__name__)
@@ -939,7 +939,8 @@ CLERK_LAYOUT = '''<!DOCTYPE html>
                 <td>REG-{{ s.id }}</td><td><b>{{ s.name }}</b></td><td>{{ s.course }}</td><td>{{ s.phone }}</td>
                 <td style="color:red; font-weight:bold;">₹{{ (s.total_fees or 0) - (s.paid_fees or 0) }}</td>
                 <td><a href="/receipt/{{ s.id }}" target="_blank" class="btn-act" style="background:#0284c7;">पावती</a></td>
-            </tr>                {% endfor %}
+            </tr>
+            {% endfor %}
             </tbody>
         </table>
     </div>
