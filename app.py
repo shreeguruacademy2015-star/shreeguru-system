@@ -11,7 +11,7 @@ import cloudinary
 import cloudinary.uploader
 
 cloudinary.config(
-    cloud_name="1aumqyvh",
+    cloud_name="laumqyvh",
     api_key="175883619494279",
     api_secret="_jbaV2_LRKIHtoyFEfNyHHHIsz4",
     secure=True
