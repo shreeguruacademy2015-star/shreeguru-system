@@ -935,11 +935,11 @@ CLERK_LAYOUT = '''<!DOCTYPE html>
             <tbody>
                 {% for s in students %}
                 <tr>
-                   <td>{% if s.photo_filename %}<img src="{{ s.photo_filename }}" width="50" style="border-radius:4px;">{% else %}-{% endif %}</td>
+                <td>{% if s.photo_filename %}<img src="{{ s.photo_filename }}" width="50" style="border-radius:4px;">{% else %}-{% endif %}</td>
                 <td>REG-{{ s.id }}</td><td><b>{{ s.name }}</b></td><td>{{ s.course }}</td><td>{{ s.phone }}</td>
                 <td style="color:red; font-weight:bold;">₹{{ (s.total_fees or 0) - (s.paid_fees or 0) }}</td>
-                <td><a href="/receipt/{{ s.id }}" target="_blank" class="btn-act" style="background:#0284c7;">पावती</a></td>                </tr>
-                {% endfor %}
+                <td><a href="/receipt/{{ s.id }}" target="_blank" class="btn-act" style="background:#0284c7;">पावती</a></td>
+            </tr>                {% endfor %}
             </tbody>
         </table>
     </div>
