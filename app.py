@@ -465,6 +465,67 @@ MANAGER_LAYOUT = '''<!DOCTYPE html>
                     <label class="g-label"><input type="checkbox" name="items" value="शेंगदाणे"> शेंगदाणे: <input type="text" name="qty_शेंगदाणे" placeholder="५ kg" style="width:75px;"></label>
                     <label class="g-label"><input type="checkbox" name="items" value="गॅस सिलिंडर"> LPG सिलिंडर: <input type="text" name="qty_गॅस सिलिंडर" placeholder="१ नग" style="width:75px;"></label>
                     <label class="g-label"><input type="checkbox" name="items" value="भांडी साबण"> भांडी साबण बार: <input type="text" name="qty_भांडी साबण" placeholder="४ बार" style="width:75px;"></label>
+                    <br><br><b style="color:#0284c7;">भाजीपाला व ताजी फळे:</b><br><br>
+<label class="g-label"><input type="checkbox" name="items" value="आले"> आले: <input type="text" name="qty_आले" value="200 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="कोथिंबीर"> कोथिंबीर: <input type="text" name="qty_कोथिंबीर" value="५ पेंढ्या"></label>
+<label class="g-label"><input type="checkbox" name="items" value="पुदीना"> पुदीना: <input type="text" name="qty_पुदीना" value="३ पेंढ्या"></label>
+<label class="g-label"><input type="checkbox" name="items" value="कडीपत्ता"> कडीपत्ता: <input type="text" name="qty_कडीपत्ता" value="५ पेंढ्या"></label>
+<label class="g-label"><input type="checkbox" name="items" value="शेवगा शेंग"> शेवगा शेंग: <input type="text" name="qty_शेवगा शेंग" value="1 kg"></label>
+<label class="g-label"><input type="checkbox" name="items" value="टोमॅटो"> टोमॅटो: <input type="text" name="qty_टोमॅटो" value="2 kg"></label>
+<label class="g-label"><input type="checkbox" name="items" value="मोठा कांदा"> मोठा कांदा: <input type="text" name="qty_मोठा कांदा" value="6 kg"></label>
+<label class="g-label"><input type="checkbox" name="items" value="हिरवी मिरची"> हिरवी मिरची: <input type="text" name="qty_हिरवी मिरची" value="250 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="बटाटा"> बटाटा: <input type="text" name="qty_बटाटा" value="5 kg"></label>
+<label class="g-label"><input type="checkbox" name="items" value="फ्लॉवर"> फ्लॉवर: <input type="text" name="qty_फ्लॉवर" value="2 नग"></label>
+<label class="g-label"><input type="checkbox" name="items" value="शिमला मिरची"> शिमला मिरची: <input type="text" name="qty_शिमला मिरची" value="1 kg"></label>
+<label class="g-label"><input type="checkbox" name="items" value="गाजर"> गाजर: <input type="text" name="qty_गाजर" value="1 kg"></label>
+<label class="g-label"><input type="checkbox" name="items" value="लिंबू"> लिंबू: <input type="text" name="qty_लिंबू" value="10 नग"></label>
+<label class="g-label"><input type="checkbox" name="items" value="पालक"> पालक: <input type="text" name="qty_पालक" value="2 पेंढ्या"></label>
+<label class="g-label"><input type="checkbox" name="items" value="काकडी"> काकडी: <input type="text" name="qty_काकडी" value="2 kg"></label>
+<label class="g-label"><input type="checkbox" name="items" value="कोबी"> कोबी: <input type="text" name="qty_कोबी" value="1 kg"></label>
+<label class="g-label"><input type="checkbox" name="items" value="बीट"> बीट: <input type="text" name="qty_बीट" value="1 kg"></label>
+<label class="g-label"><input type="checkbox" name="items" value="दुधी भोपळा"> दुधी भोपळा: <input type="text" name="qty_दुधी भोपळा" value="1 नग"></label>
+<label class="g-label"><input type="checkbox" name="items" value="सफरचंद"> सफरचंद: <input type="text" name="qty_सफरचंद" value="1 kg"></label>
+
+<br><br><b style="color:#0284c7;">बेकरी व दुग्धजन्य:</b><br><br>
+<label class="g-label"><input type="checkbox" name="items" value="खवा"> खवा: <input type="text" name="qty_खवा" value="100 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="तूप"> तूप: <input type="text" name="qty_तूप" value="500 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="पनीर"> पनीर: <input type="text" name="qty_पनीर" value="1 kg"></label>
+<label class="g-label"><input type="checkbox" name="items" value="बटर"> बटर: <input type="text" name="qty_बटर" value="100 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="मलाई दही"> मलाई दही: <input type="text" name="qty_मलाई दही" value="10 kg"></label>
+<label class="g-label"><input type="checkbox" name="items" value="फ्रेश क्रीम"> फ्रेश क्रीम: <input type="text" name="qty_फ्रेश क्रीम" value="1 पॅकेट"></label>
+
+<br><br><b style="color:#0284c7;">खडे मसाले, डाळी व किराणा:</b><br><br>
+<label class="g-label"><input type="checkbox" name="items" value="काजू पाकळी"> काजू पाकळी: <input type="text" name="qty_काजू पाकळी" value="500 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="लसूण पाकळी"> लसूण पाकळी: <input type="text" name="qty_लसूण पाकळी" value="250 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="खोबरे कीस"> खोबरे कीस: <input type="text" name="qty_खोबरे कीस" value="500 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="हिंग डबी"> हिंग डबी: <input type="text" name="qty_हिंग डबी" value="1 डबी"></label>
+<label class="g-label"><input type="checkbox" name="items" value="लवंग"> लवंग: <input type="text" name="qty_लवंग" value="25 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="दालचिनी"> दालचिनी: <input type="text" name="qty_दालचिनी" value="25 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="हिरवे वेलदोडे"> हिरवे वेलदोडे: <input type="text" name="qty_हिरवे वेलदोडे" value="25 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="तमालपत्री"> तमालपत्री: <input type="text" name="qty_तमालपत्री" value="10 ड"></label>
+<label class="g-label"><input type="checkbox" name="items" value="शहाजिरे"> शहाजिरे: <input type="text" name="qty_शहाजिरे" value="50 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="दगड फूल"> दगड फूल: <input type="text" name="qty_दगड फूल" value="10 ड"></label>
+<label class="g-label"><input type="checkbox" name="items" value="काळी मिरी"> काळी मिरी: <input type="text" name="qty_काळी मिरी" value="10 ड"></label>
+<label class="g-label"><input type="checkbox" name="items" value="बडीशेप"> बडीशेप: <input type="text" name="qty_बडीशेप" value="10 ड"></label>
+<label class="g-label"><input type="checkbox" name="items" value="कस्तुरी मेथी"> कस्तुरी मेथी: <input type="text" name="qty_कस्तुरी मेथी" value="50 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="बिर्याणी मसाला"> बिर्याणी मसाला: <input type="text" name="qty_बिर्याणी मसाला" value="50 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="मूगडाळ"> मूगडाळ: <input type="text" name="qty_मूगडाळ" value="1 kg"></label>
+<label class="g-label"><input type="checkbox" name="items" value="धने पावडर"> धने पावडर: <input type="text" name="qty_धने पावडर" value="100 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="जिरे पावडर"> जिरे पावडर: <input type="text" name="qty_जिरे पावडर" value="100 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="शेवया भाजक्या"> शेवया भाजक्या: <input type="text" name="qty_शेवया भाजक्या" value="500 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="चना डाळीचे पीठ"> चना डाळीचे पीठ: <input type="text" name="qty_चना डाळीचे पीठ" value="2 kg"></label>
+<label class="g-label"><input type="checkbox" name="items" value="मैदा"> मैदा: <input type="text" name="qty_मैदा" value="1 kg"></label>
+<label class="g-label"><input type="checkbox" name="items" value="बेदाणे"> बेदाणे: <input type="text" name="qty_बेदाणे" value="200 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="बदाम"> बदाम: <input type="text" name="qty_बदाम" value="200 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="पिस्ता"> पिस्ता: <input type="text" name="qty_पिस्ता" value="50 gm"></label>
+
+<br><br><b style="color:#0284c7;">युटिलिटी व भांडी:</b><br><br>
+<label class="g-label"><input type="checkbox" name="items" value="पत्रावळी"> पत्रावळी: <input type="text" name="qty_पत्रावळी" value="100 नग"></label>
+<label class="g-label"><input type="checkbox" name="items" value="द्रोण"> द्रोण: <input type="text" name="qty_द्रोण" value="100 नग"></label>
+<label class="g-label"><input type="checkbox" name="items" value="ग्लास"> ग्लास: <input type="text" name="qty_ग्लास" value="100 नग"></label>
+<label class="g-label"><input type="checkbox" name="items" value="चमचे"> चमचे: <input type="text" name="qty_चमचे" value="100 नग"></label>
+<label class="g-label"><input type="checkbox" name="items" value="पेपर रोल"> पेपर रोल: <input type="text" name="qty_पेपर रोल" value="1 नग"></label>
+<label class="g-label"><input type="checkbox" name="items" value="कापड / टॉवेल"> कापड / टॉवेल: <input type="text" name="qty_कापड / टॉवेल" value="2 नग"></label>
                 </div>
             </div>
         </form>
