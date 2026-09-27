@@ -935,7 +935,7 @@ CLERK_LAYOUT = '''<!DOCTYPE html>
             <tbody>
                 {% for s in students %}
                 <tr>
-                    <td>{% if s.photo_filename %}<img src="/uploads/{{ s.photo_filename }}" width="35" height="40">{% else %}-{% endif %}</td>
+                    <td>{% if s.photo_filename %}<img src="{{ s.photo_filename }}" width="35" height="40">{% else %}-{% endif %}</td>
                     <td>REG-{{ s.id }}</td><td><b>{{ s.name }}</b></td><td>{{ s.course }}</td><td>{{ s.phone }}</td>
                     <td style="color:red; font-weight:bold;">₹{{ (s.total_fees or 0) - (s.paid_fees or 0) }}</td>
                     <td><a href="/receipt/{{ s.id }}" target="_blank" class="btn-act" style="background:#10b981;">🧾 पावती प्रिंट</a></td>
@@ -1201,7 +1201,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
             <tbody>
                 {% for s in students %}
                 <tr>
-                    <td>{% if s.photo_filename %}<img src="/uploads/{{ s.photo_filename }}" width="35" height="40">{% else %}-{% endif %}</td>
+                    <td>{% if s.photo_filename %}<img src="{{ s.photo_filename }}" width="35" height="40">{% else %}-{% endif %}</td>
                     <td>REG-{{ s.id }}</td><td><b>{{ s.name }}</b></td><td>{{ s.course }}</td><td>{{ s.phone }}</td>
                     <td style="color:red; font-weight:bold;">₹{{ (s.total_fees or 0) - (s.paid_fees or 0) }}</td>
                     <td>
@@ -2148,7 +2148,7 @@ def add_care_log():
 @app.route('/download_backup')
 def download_backup(): return send_file(DB_NAME, as_attachment=True)
 
-@app.route('/uploads/<filename>')
+@app.route('<filename>')
 def uploaded_file(filename): return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 @app.route('/export_students_csv')
