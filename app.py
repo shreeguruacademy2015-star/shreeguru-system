@@ -2181,182 +2181,67 @@ def print_receipt(id):
         <script>window.print();</script>
     </body></html>'''
     return render_template_string(html)
-# ================= STUDENT FULL REPORT ROUTE =================
+ # ----- STUDENT FULL REPORT ROUTE -----
 @app.route('/student_report/<int:student_id>', methods=['GET', 'POST'])
 def student_report(student_id):
-    try:
-        with get_db() as conn:
-            try:
-                conn.execute("ALTER TABLE students ADD COLUMN diet_plan TEXT")
-            except Exception:
-                pass
-            try:
-                conn.execute("ALTER TABLE students ADD COLUMN admin_remark TEXT")
-            except Exception:
-                pass
+    if 'role' not in session:
+        return redirect(url_for('login'))
 
-            student = conn.execute("SELECT * FROM students WHERE id = ?", (student_id,)).fetchone()
-            if not student:
-                return "विद्यार्थी सापडला नाही!", 404
+    with get_db() as conn:
+        try:
+            conn.execute("ALTER TABLE students ADD COLUMN diet_plan TEXT")
+        except:
+            pass
+        try:
+            conn.execute("ALTER TABLE students ADD COLUMN admin_remark TEXT")
+        except:
+            pass
 
-            if request.method == 'POST':
-                diet_plan = request.form.get('diet_plan', '')
-                admin_remark = request.form.get('admin_remark', '')
-                try:
-                    conn.execute("UPDATE students SET diet_plan = ?, admin_remark = ? WHERE id = ?", 
-                                 (diet_plan, admin_remark, student_id))
-                    conn.commit()
-                except Exception:
-                    pass
-                return redirect(url_for('student_report', student_id=student_id))
+        student = conn.execute("SELECT * FROM students WHERE id = ?", (student_id,)).fetchone()
+        if not student:
+            return "विद्यार्थी सापडला नाही!", 404
 
-            try:
-                s_name = student['name']
-            except Exception:
-                s_name = str(student[1]) if len(student) > 1 else 'विद्यार्थी'
+        if request.method == 'POST':
+            diet_plan = request.form.get('diet_plan')
+            admin_remark = request.form.get('admin_remark')
+            conn.execute("UPDATE students SET diet_plan = ?, admin_remark = ? WHERE id = ?", (diet_plan, admin_remark, student_id))
+            conn.commit()
+            return redirect(url_for('student_report', student_id=student_id))
 
-            try:
-                s_course = str(student['course'])
-            except Exception:
-                s_course = str(student[2]) if len(student) > 2 else ''
+        try:
+            staff_logs = conn.execute("""
+                SELECT id, activity_date, staff_name, role, action_text, remark 
+                FROM staff_activities 
+                WHERE student_id = ? 
+                ORDER BY id DESC
+            """, (student_id,)).fetchall()
+        except:
+            staff_logs = []
 
-            try:
-                s_phone = str(student['phone'])
-            except Exception:
-                s_phone = str(student[3]) if len(student) > 3 else ''
+        try:
+            attendance_records = conn.execute("""
+                SELECT date, status, marked_by 
+                FROM attendance 
+                WHERE student_id = ? 
+                ORDER BY date DESC
+            """, (student_id,)).fetchall()
+        except:
+            attendance_records = []
 
-            try:
-                s_diet = str(student['diet_plan'] or '')
-            except Exception:
-                s_diet = ''
+        try:
+            ground_records = conn.execute("""
+                SELECT * FROM ground_records 
+                WHERE student_id = ? 
+                ORDER BY test_date DESC
+            """, (student_id,)).fetchall()
+        except:
+            ground_records = []
 
-            try:
-                s_remark = str(student['admin_remark'] or '')
-            except Exception:
-                s_remark = ''
-
-            def get_data(tbl):
-                try:
-                    return conn.execute(f"SELECT * FROM {tbl} WHERE student_id = ? ORDER BY id DESC", (student_id,)).fetchall()
-                except Exception:
-                    return []
-
-            w_tests = get_data("written_tests")
-            p_tests = get_data("physical_tests")
-            att = get_data("attendance")
-            logs = get_data("staff_logs")
-
-    except Exception as e:
-        return f"माहिती लोड करताना अडचण आली: {str(e)}", 200
-
-    diet_disp = s_diet if s_diet else 'डाएट प्लॅन अजून जोडलेला नाही.'
-    remark_disp = s_remark if s_remark else 'कोणतीही विशेष नोंद नाही.'
-
-    written_rows = "".join([f"<tr><td>{w[2] if len(w)>2 else '-'}</td><td>{w[3] if len(w)>3 else '-'}</td><td><b>{w[4] if len(w)>4 else '-'}</b></td><td>{w[5] if len(w)>5 else '-'}</td></tr>" for w in w_tests]) or "<tr><td colspan='4' style='text-align:center;'>नोंद उपलब्ध नाही</td></tr>"
-    physical_rows = "".join([f"<tr><td>{p[2] if len(p)>2 else '-'}</td><td>{p[3] if len(p)>3 else '-'}</td><td><b>{p[4] if len(p)>4 else '-'}</b></td><td>{p[5] if len(p)>5 else '-'}</td></tr>" for p in p_tests]) or "<tr><td colspan='4' style='text-align:center;'>नोंद उपलब्ध नाही</td></tr>"
-    att_rows = "".join([f"<tr><td>{a[2] if len(a)>2 else '-'}</td><td><span style='color:green; font-weight:bold;'>{a[3] if len(a)>3 else '-'}</span></td></tr>" for a in att[:10]]) or "<tr><td colspan='2' style='text-align:center;'>नोंद उपलब्ध नाही</td></tr>"
-    log_rows = "".join([f"<tr><td>{l[1] if len(l)>1 else '-'}</td><td>{l[2] if len(l)>2 else '-'}</td><td>{l[3] if len(l)>3 else '-'}</td></tr>" for l in logs[:10]]) or "<tr><td colspan='3' style='text-align:center;'>नोंद उपलब्ध नाही</td></tr>"
-
-    html = f"""<!DOCTYPE html>
-<html lang="mr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>स्टुडन्ट रिपोर्ट - {s_name}</title>
-<style>
-  body {{ font-family: 'Segoe UI', Tahoma, sans-serif; background: #f1f5f9; padding: 20px; color: #1e293b; margin: 0; }}
-  .box {{ max-width: 900px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }}
-  .head {{ text-align: center; border-bottom: 2px solid #065f46; padding-bottom: 12px; margin-bottom: 20px; }}
-  .head h2 {{ margin: 0; color: #065f46; font-size: 24px; }}
-  .info-bar {{ display: flex; flex-wrap: wrap; justify-content: space-between; background: #e6f4ea; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 15px; border-left: 5px solid #065f46; }}
-  .grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }}
-  @media(max-width: 768px) {{ .grid {{ grid-template-columns: 1fr; }} }}
-  .sec {{ border: 1px solid #cbd5e1; border-radius: 8px; padding: 15px; background: #ffffff; }}
-  .sec-title {{ background: #f8fafc; font-weight: bold; padding: 6px 10px; border-left: 4px solid #065f46; margin-top: 0; margin-bottom: 10px; font-size: 15px; }}
-  table {{ width: 100%; border-collapse: collapse; font-size: 13px; }}
-  th, td {{ border: 1px solid #e2e8f0; padding: 8px; text-align: left; }}
-  th {{ background: #f8fafc; color: #475569; }}
-  .diet-box {{ background: #ecfdf5; border-left: 4px solid #10b981; padding: 12px; border-radius: 6px; margin-bottom: 12px; font-size: 14px; }}
-  .btn {{ padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; text-decoration: none; display: inline-block; }}
-  .btn-print {{ background: #065f46; color: white; }}
-  .btn-save {{ background: #10b981; color: white; margin-top: 8px; }}
-  textarea {{ width: 100%; height: 60px; border: 1px solid #cbd5e1; border-radius: 4px; padding: 6px; box-sizing: border-box; }}
-</style>
-</head>
-<body>
-<div class="box">
-  <div class="head">
-    <h2>श्रीगुरु करिअर अकॅडमी</h2>
-    <p style="margin: 4px 0; color: #64748b; font-size: 14px;">आडूर, ता. करवीर, जि. कोल्हापूर</p>
-    <h3 style="margin: 6px 0 0 0; color: #334155;">विद्यार्थी प्रगती व ॲक्टिव्हिटी अहवाल</h3>
-  </div>
-
-  <div class="info-bar">
-    <div><b>नाव:</b> {s_name}</div>
-    <div><b>कोर्स:</b> {s_course}</div>
-    <div><b>मोबाईल:</b> {s_phone}</div>
-    <div><b>विद्यार्थी क्रमांक:</b> REG-{student_id}</div>
-  </div>
-
-  <div class="grid">
-    <div class="sec">
-      <h4 class="sec-title">📝 लेखी परीक्षा गुण</h4>
-      <table>
-        <tr><th>तारीख</th><th>विषय</th><th>मिळालेले गुण</th><th>एकूण</th></tr>
-        {written_rows}
-      </table>
-    </div>
-
-    <div class="sec">
-      <h4 class="sec-title">🏃 मैदानी चाचणी गुण</h4>
-      <table>
-        <tr><th>तारीख</th><th>इव्हेंट</th><th>कामगिरी</th><th>गुण</th></tr>
-        {physical_rows}
-      </table>
-    </div>
-  </div>
-
-  <div class="grid">
-    <div class="sec">
-      <h4 class="sec-title">📅 हजेरी (शेवटचे दिवस)</h4>
-      <table>
-        <tr><th>तारीख</th><th>स्थिती</th></tr>
-        {att_rows}
-      </table>
-    </div>
-
-    <div class="sec">
-      <h4 class="sec-title">📌 कर्मचाऱ्यांच्या दैनंदिन नोंदी</h4>
-      <table>
-        <tr><th>तारीख</th><th>कर्मचारी</th><th>शेरा</th></tr>
-        {log_rows}
-      </table>
-    </div>
-  </div>
-
-  <div class="sec" style="margin-bottom: 20px;">
-    <h4 class="sec-title">🥗 डाएट प्लॅन व विशेष सूचना</h4>
-    <div class="diet-box"><b>सध्याचा डाएट प्लॅन:</b><br>{diet_disp}</div>
-    <div class="diet-box" style="background: #fffbeb; border-color: #f59e0b;"><b>संचालकांचा शेरा:</b><br>{remark_disp}</div>
-
-    <form method="POST" style="margin-top: 15px; border-top: 1px dashed #cbd5e1; padding-top: 10px;">
-      <label style="font-size: 13px; font-weight: bold;">डाएट प्लॅन अपडेट करा:</label>
-      <textarea name="diet_plan" placeholder="डाएट प्लॅन लिहा...">{s_diet}</textarea>
-      
-      <label style="font-size: 13px; font-weight: bold; margin-top: 8px; display: block;">नवीन शेरा नोंदवा:</label>
-      <textarea name="admin_remark" placeholder="शेरा लिहा...">{s_remark}</textarea>
-      
-      <button type="submit" class="btn btn-save">💾 डाएट व शेरा सेव्ह करा</button>
-    </form>
-  </div>
-
-  <div style="text-align: center; margin-top: 20px;">
-    <button onclick="window.print()" class="btn btn-print">🖨️ अहवाल प्रिंट करा</button>
-  </div>
-</div>
-</body>
-</html>"""
-    return render_template_string(html)
+    return render_template('student_report.html', 
+                           student=student, 
+                           logs=staff_logs, 
+                           attendance=attendance_records, 
+                           ground_records=ground_records)
 # ================= PHYSICAL / GROUND FITNESS TRACKER =================
 from datetime import datetime
 
