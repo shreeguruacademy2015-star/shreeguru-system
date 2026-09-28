@@ -2357,5 +2357,250 @@ def student_report(student_id):
 </body>
 </html>"""
     return render_template_string(html)
+    # ================= PHYSICAL / GROUND FITNESS TRACKER =================
+def calculate_ground_marks(gender, event_name, val):
+    try:
+        val = float(val)
+    except (ValueError, TypeError):
+        return 0
+
+    gender = (gender or 'पुरुष').strip()
+
+    # --- पुरुष (BOYS) SCORING ---
+    if 'पुरुष' in gender or 'Boy' in gender or 'Male' in gender:
+        if event_name == '1600m':
+            # val = एकूण सेकंद (उदा. 5 मि. 10 से. = 310 सेकंद)
+            if val <= 310: return 20
+            elif val <= 330: return 18
+            elif val <= 350: return 15
+            elif val <= 370: return 12
+            elif val <= 390: return 9
+            elif val <= 410: return 5
+            else: return 0
+
+        elif event_name == '100m':
+            # val = सेकंद
+            if val <= 11.50: return 15
+            elif val <= 12.50: return 12
+            elif val <= 13.50: return 9
+            elif val <= 14.50: return 6
+            elif val <= 15.50: return 3
+            else: return 0
+
+        elif event_name == 'shot_put':
+            # val = मीटर
+            if val >= 8.50: return 15
+            elif val >= 7.90: return 12
+            elif val >= 7.30: return 9
+            elif val >= 6.70: return 6
+            elif val >= 6.10: return 3
+            else: return 0
+
+    # --- महिला (GIRLS) SCORING ---
+    else:
+        if event_name == '800m':
+            # val = एकूण सेकंद (उदा. 2 मि. 50 से. = 170 सेकंद)
+            if val <= 170: return 20
+            elif val <= 190: return 18
+            elif val <= 210: return 15
+            elif val <= 230: return 12
+            elif val <= 250: return 9
+            elif val <= 270: return 5
+            else: return 0
+
+        elif event_name == '100m':
+            # val = सेकंद
+            if val <= 14.00: return 15
+            elif val <= 15.00: return 12
+            elif val <= 16.00: return 9
+            elif val <= 17.00: return 6
+            elif val <= 18.00: return 3
+            else: return 0
+
+        elif event_name == 'shot_put':
+            # val = मीटर
+            if val >= 6.00: return 15
+            elif val >= 5.50: return 12
+            elif val >= 5.00: return 9
+            elif val >= 4.50: return 6
+            elif val >= 4.00: return 3
+            else: return 0
+
+    return 0
+
+@app.route('/ground_tracker', methods=['GET', 'POST'])
+def ground_tracker():
+    user_role = session.get('role', '')
+    if user_role not in ['admin', 'clerk', 'trainer', 'staff']:
+        flash("या पानासाठी परवानगी नाही.", "danger")
+        return redirect(url_for('login'))
+
+    user_name = session.get('name', user_role)
+
+    with get_db() as conn:
+        # १. फिजिकल रेकॉर्डसाठी आवश्यक टेबल तयार करणे
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS ground_records (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                student_id INTEGER NOT NULL,
+                test_date TEXT NOT NULL,
+                event_name TEXT NOT NULL,
+                raw_value REAL NOT NULL,
+                marks INTEGER NOT NULL,
+                trainer_name TEXT,
+                remark TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        conn.commit()
+
+        # २. डेटा सबमिट केल्यास सेव्ह करणे
+        msg = None
+        if request.method == 'POST':
+            student_id = request.form.get('student_id')
+            test_date = request.form.get('test_date')
+            event_name = request.form.get('event_name')
+            raw_value = request.form.get('raw_value', 0)
+            remark = request.form.get('remark', '')
+
+            student = conn.execute("SELECT * FROM students WHERE id = ?", (student_id,)).fetchone()
+            if student:
+                # लिंग ठरवणे (डिफॉल्ट पुरुष)
+                gender = 'पुरुष'
+                try:
+                    if 'gender' in student.keys():
+                        gender = student['gender'] or 'पुरुष'
+                except Exception:
+                    pass
+
+                marks = calculate_ground_marks(gender, event_name, raw_value)
+                conn.execute("""
+                    INSERT INTO ground_records (student_id, test_date, event_name, raw_value, marks, trainer_name, remark)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (student_id, test_date, event_name, raw_value, marks, user_name, remark))
+                conn.commit()
+                msg = f"चाचणी यशस्वीरित्या नोंदवली गेली! मिळालेले गुण: {marks}"
+
+        # ३. विद्यार्थी आणि अलीकडील नोंदी आणणे
+        students = conn.execute("SELECT id, name, course FROM students ORDER BY name ASC").fetchall()
+        recent_records = conn.execute("""
+            SELECT g.*, s.name, s.course 
+            FROM ground_records g
+            JOIN students s ON g.student_id = s.id
+            ORDER BY g.id DESC LIMIT 20
+        """).fetchall()
+
+    student_options = "".join([f"<option value='{s['id']}'>{s['name']} (REG-{s['id']} | {s['course']})</option>" for s in students])
+    
+    table_rows = ""
+    for r in recent_records:
+        table_rows += f"""<tr>
+            <td>{r['test_date']}</td>
+            <td><b>{r['name']}</b><br><small style='color:#64748b;'>REG-{r['student_id']}</small></td>
+            <td>{r['event_name']}</td>
+            <td>{r['raw_value']}</td>
+            <td><b style='color:#065f46; font-size:15px;'>{r['marks']}</b></td>
+            <td>{r['trainer_name'] or '-'}<br><small style='color:#64748b;'>{r['remark'] or ''}</small></td>
+        </tr>"""
+    if not table_rows:
+        table_rows = "<tr><td colspan='6' style='text-align:center;'>अजून कोणतीही मैदानी चाचणी नोंदवलेली नाही.</td></tr>"
+
+    html = f"""<!DOCTYPE html>
+<html lang="mr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>मैदानी चाचणी ट्रॅकर (Ground Fitness Tracker)</title>
+<style>
+  body {{ font-family: 'Segoe UI', Tahoma, sans-serif; background: #f8fafc; margin: 0; padding: 15px; color: #1e293b; }}
+  .container {{ max-width: 950px; margin: auto; background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); padding: 20px; }}
+  .header {{ display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #065f46; padding-bottom: 10px; margin-bottom: 20px; }}
+  .card {{ background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 15px; margin-bottom: 25px; }}
+  .form-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }}
+  label {{ font-size: 13px; font-weight: bold; margin-bottom: 4px; display: block; }}
+  input, select, textarea {{ width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; }}
+  .btn {{ background: #065f46; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; }}
+  .alert {{ background: #dcfce7; border: 1px solid #86efac; color: #166534; padding: 10px; border-radius: 6px; margin-bottom: 15px; }}
+  table {{ width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }}
+  th, td {{ border: 1px solid #e2e8f0; padding: 10px; text-align: left; }}
+  th {{ background: #f1f5f9; color: #334155; }}
+  .badge {{ background: #e2e8f0; padding: 3px 8px; border-radius: 4px; font-size: 11px; }}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div>
+      <h2 style="margin:0; color:#065f46;">🏃 मैदानी चाचणी ट्रॅकर (Ground Tracker)</h2>
+      <small>शारीरिक क्षमता व प्रगती नोंदवही</small>
+    </div>
+    <div>
+      <span class="badge">लॉगिन: {user_name} ({user_role})</span>
+      <a href="/" style="margin-left: 10px; color: #065f46; text-decoration: none; font-weight: bold;">मुख्य मेनू</a>
+    </div>
+  </div>
+
+  {"<div class='alert'>✅ " + msg + "</div>" if msg else ""}
+
+  <div class="card">
+    <h3 style="margin-top:0; color:#166534; font-size:16px;">➕ नवीन चाचणी नोंदवा</h3>
+    <form method="POST">
+      <div class="form-grid">
+        <div>
+          <label>विद्यार्थी निवडा:</label>
+          <select name="student_id" required>
+            <option value="">-- विद्यार्थी निवडा --</option>
+            {student_options}
+          </select>
+        </div>
+        <div>
+          <label>तारीख:</label>
+          <input type="date" name="test_date" required value="{datetime.now().strftime('%Y-%m-%d')}">
+        </div>
+        <div>
+          <label>इव्हेंट निवडा:</label>
+          <select name="event_name" required>
+            <option value="1600m">१६०० मी. धावणे (मुले)</option>
+            <option value="800m">८०० मी. धावणे (मुली)</option>
+            <option value="100m">१०० मी. स्प्रिंट (मुले/मुली)</option>
+            <option value="shot_put">गोळाफेक (Shot Put)</option>
+          </select>
+        </div>
+        <div>
+          <label>कामगिरी (वेळ किंवा अंतर):</label>
+          <input type="number" step="0.01" name="raw_value" placeholder="उदा. धावणे: एकूण सेकंद, गोळा: मीटर" required>
+          <small style="color:#64748b; font-size:11px;">धावण्यासाठी एकूण सेकंद (उदा. 5 मि. 10 से. = 310) व गोळ्यासाठी मीटर टाका.</small>
+        </div>
+      </div>
+      <div style="margin-top: 12px;">
+        <label>शेरा / फिटनेस टीप (पर्यायी):</label>
+        <input type="text" name="remark" placeholder="उदा. स्टॅमिना चांगला, लॅप टाइम सुधारला">
+      </div>
+      <div style="margin-top: 15px;">
+        <button type="submit" class="btn">💾 चाचणी व गुण सेव्ह करा</button>
+      </div>
+    </form>
+  </div>
+
+  <h3 style="margin-bottom:5px; color:#334155;">📋 अलीकडील मैदानी चाचणी नोंदी (Recent Logs)</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>तारीख</th>
+        <th>विद्यार्थी</th>
+        <th>इव्हेंट</th>
+        <th>नोंदवलेली वेळ/अंतर</th>
+        <th>मिळालेले गुण</th>
+        <th>ट्रेनर / शेरा</th>
+      </tr>
+    </thead>
+    <tbody>
+      {table_rows}
+    </tbody>
+  </table>
+</div>
+</body>
+</html>"""
+    return render_template_string(html)
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
