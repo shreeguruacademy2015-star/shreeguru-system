@@ -130,7 +130,7 @@
         <tr>
             <th>दिनांक व वेळ</th><th>कर्मचारी</th><th>पद</th><th>केलेली नोंद / शेरा</th><th>कृती</th>
         </tr>
-        {% for log in logs %}
+        {% for log in logs %} 
         <tr>
             <td>{{ log.created_at or '-' }}</td><td>{{ log.staff_name or '-' }}</td><td>{{ log.role or '-' }}</td><td>{{ log.log_text or '-' }}</td>
      <td>
