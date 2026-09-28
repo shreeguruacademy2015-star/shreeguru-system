@@ -2215,7 +2215,7 @@ def export_students_csv():
 # ================= STUDENT FULL REPORT ROUTE =================
 @app.route('/student_report/<int:student_id>', methods=['GET', 'POST'])
 def student_report(student_id):
-    if 'user' not in session:
+    if not any(k in session for k in ['user', 'username', 'user_id', 'role', 'logged_in']):
         return redirect(url_for('login'))
     
     with get_db() as conn:
