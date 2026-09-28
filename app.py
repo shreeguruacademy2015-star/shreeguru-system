@@ -7,7 +7,7 @@ from werkzeug.utils import secure_filename
 import io
 import csv
 import urllib.parse
-
+ 
 app = Flask(__name__)
 app.secret_key = "shreeguru_complete_bulletproof_v43_5parts"
 DB_NAME = "shreeguru_master_v43.db"
