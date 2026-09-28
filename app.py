@@ -991,7 +991,7 @@ CLERK_LAYOUT = '''<!DOCTYPE html>
                     <td>{% if s.photo_filename %}<img src="/uploads/{{ s.photo_filename }}" width="35" height="40">{% else %}-{% endif %}</td>
                     <td>REG-{{ s.id }}</td><td><b>{{ s.name }}</b></td><td>{{ s.course }}</td><td>{{ s.phone }}</td>
                     <td style="color:red; font-weight:bold;">₹{{ (s.total_fees or 0) - (s.paid_fees or 0) }}</td>
-                    <td><a href="/receipt/{{ s.id }}" target="_blank" class="btn-act" style="background:#10b981;">🧾 पावती प्रिंट</a></td>
+                    <td><a href="/receipt/{{ s.id }}" target="_blank" class="btn-act" style="background:#10b981;">🧾 पावती प्रिंट</a><a href="/student_report/{{ s.id }}" target="_blank" class="btn-act" style="background:#6366f1; color:white; text-decoration:none; padding:4px 8px; border-radius:4px; font-weight:bold; margin-left:5px;">📋 स्टुडन्ट रिपोर्ट</a></td>
                 </tr>
                 {% endfor %}
             </tbody>
