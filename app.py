@@ -2,7 +2,7 @@ import os
 import sqlite3
 import shutil
 from datetime import date, datetime
-from flask import Flask, redirect, render_template_string, request, send_file, send_from_directory, url_for, session, Response
+from flask import Flask, redirect, render_template, render_template_string, request, send_file, send_from_directory, url_for, session, Response
 from werkzeug.utils import secure_filename
 import io
 import csv
