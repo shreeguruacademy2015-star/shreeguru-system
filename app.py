@@ -1,7 +1,7 @@
 import os
 import sqlite3   
 import shutil
-from datetime import date, datetime
+from datetime import date, datetime 
 from flask import Flask, redirect, render_template, render_template_string, request, send_file, send_from_directory, url_for, session, Response
 from werkzeug.utils import secure_filename
 import io
@@ -2599,5 +2599,158 @@ def ground_tracker():
 </body>
 </html>"""
     return render_template_string(html)  
+
+    # ================= ADMIN: STAFF ACTIVITIES & STUDENT REMARKS (EDIT & DELETE) =================
+
+# ----------------- १. स्टाफ हालचाली (STAFF ACTIVITIES) -----------------
+@app.route('/delete_staff_activity/<int:act_id>', methods=['POST', 'GET'])
+def delete_staff_activity(act_id):
+    if session.get('role') != 'admin':
+        return "अनधिकृत प्रवेश! फक्त ॲडमिन ही नोंद डिलीट करू शकतात.", 403
+
+    with get_db() as conn:
+        conn.execute("DELETE FROM staff_activities WHERE id = ?", (act_id,))
+        conn.commit()
+
+    return redirect(request.referrer or url_for('admin_dashboard'))
+
+
+@app.route('/edit_staff_activity/<int:act_id>', methods=['GET', 'POST'])
+def edit_staff_activity(act_id):
+    if session.get('role') != 'admin':
+        return "अनधिकृत प्रवेश! फक्त ॲडमिन ही नोंद एडिट करू शकतात.", 403
+
+    with get_db() as conn:
+        if request.method == 'POST':
+            new_date = request.form.get('activity_date')
+            new_action = request.form.get('action_text')
+            new_remark = request.form.get('remark', '')
+
+            conn.execute("""
+                UPDATE staff_activities 
+                SET activity_date = ?, action_text = ?, remark = ?
+                WHERE id = ?
+            """, (new_date, new_action, new_remark, act_id))
+            conn.commit()
+            return redirect(url_for('admin_dashboard'))
+
+        record = conn.execute("SELECT * FROM staff_activities WHERE id = ?", (act_id,)).fetchone()
+
+    if not record:
+        return "नोंद सापडली नाही!", 404
+
+    form_html = f"""<!DOCTYPE html>
+    <html lang="mr">
+    <head>
+    <meta charset="UTF-8"><title>स्टाफ नोंद दुरुस्त करा</title>
+    <style>
+      body {{ font-family: sans-serif; background: #f1f5f9; padding: 20px; }}
+      .box {{ max-width: 500px; margin: auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }}
+      input, textarea {{ width: 100%; padding: 10px; margin: 8px 0 16px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }}
+      .btn {{ background: #065f46; color: white; border: none; padding: 10px 18px; border-radius: 5px; cursor: pointer; font-weight: bold; }}
+      .cancel {{ color: #dc2626; text-decoration: none; margin-left: 15px; }}
+    </style>
+    </head>
+    <body>
+    <div class="box">
+      <h3 style="color:#065f46; margin-top:0;">✏️ स्टाफ नोंद दुरुस्त करा</h3>
+      <p><b>कर्मचारी:</b> {record['staff_name']}</p>
+      <form method="POST">
+        <label>तारीख:</label>
+        <input type="text" name="activity_date" value="{record['activity_date']}" required>
+        
+        <label>काम / कृती:</label>
+        <textarea name="action_text" rows="3" required>{record['action_text']}</textarea>
+        
+        <label>शेरा / तपशील:</label>
+        <input type="text" name="remark" value="{record['remark'] if record['remark'] else ''}">
+        
+        <button type="submit" class="btn">बदल सेव्ह करा</button>
+        <a href="javascript:history.back()" class="cancel">रद्द करा</a>
+      </form>
+    </div>
+    </body>
+    </html>"""
+    return render_template_string(form_html)
+
+
+# ----------------- २. विद्यार्थी अहवाल (STUDENT REPORT REMARKS) -----------------
+@app.route('/delete_student_remark/<int:record_id>', methods=['POST', 'GET'])
+def delete_student_remark(record_id):
+    if session.get('role') != 'admin':
+        return "फक्त ॲडमिनला ही नोंद हटवण्याची परवानगी आहे.", 403
+
+    with get_db() as conn:
+        rec = conn.execute("SELECT student_id FROM student_activities WHERE id = ?", (record_id,)).fetchone()
+        student_id = rec['student_id'] if rec else None
+        
+        conn.execute("DELETE FROM student_activities WHERE id = ?", (record_id,))
+        conn.commit()
+
+    if student_id:
+        return redirect(f"/student_report/{student_id}")
+    return redirect(request.referrer or url_for('admin_dashboard'))
+
+
+@app.route('/edit_student_remark/<int:record_id>', methods=['GET', 'POST'])
+def edit_student_remark(record_id):
+    if session.get('role') != 'admin':
+        return "फक्त ॲडमिनला ही नोंद दुरुस्त करण्याची परवानगी आहे.", 403
+
+    with get_db() as conn:
+        if request.method == 'POST':
+            new_date = request.form.get('activity_date')
+            new_remark = request.form.get('remark')
+            new_diet = request.form.get('diet_plan', '')
+            student_id = request.form.get('student_id')
+
+            conn.execute("""
+                UPDATE student_activities 
+                SET activity_date = ?, remark = ?, diet_plan = ?
+                WHERE id = ?
+            """, (new_date, new_remark, new_diet, record_id))
+            conn.commit()
+            return redirect(f"/student_report/{student_id}")
+
+        record = conn.execute("SELECT * FROM student_activities WHERE id = ?", (record_id,)).fetchone()
+
+    if not record:
+        return "नोंद सापडली नाही!", 404
+
+    form_html = f"""<!DOCTYPE html>
+    <html lang="mr">
+    <head>
+    <meta charset="UTF-8"><title>विद्यार्थी अहवाल नोंद दुरुस्त करा</title>
+    <style>
+      body {{ font-family: sans-serif; background: #f1f5f9; padding: 20px; }}
+      .box {{ max-width: 500px; margin: auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }}
+      label {{ font-size: 13px; font-weight: bold; margin-bottom: 5px; display: block; }}
+      input, textarea {{ width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }}
+      .btn {{ background: #065f46; color: white; border: none; padding: 10px 18px; border-radius: 5px; cursor: pointer; font-weight: bold; }}
+      .cancel {{ color: #dc2626; text-decoration: none; margin-left: 15px; }}
+    </style>
+    </head>
+    <body>
+    <div class="box">
+      <h3 style="color:#065f46; margin-top:0;">✏️ अहवाल नोंद दुरुस्त करा (Admin)</h3>
+      <form method="POST">
+        <input type="hidden" name="student_id" value="{record['student_id']}">
+        
+        <label>तारीख:</label>
+        <input type="date" name="activity_date" value="{record['activity_date']}" required>
+        
+        <label>डाएट प्लॅन व विशेष सूचना:</label>
+        <textarea name="diet_plan" rows="3">{record['diet_plan'] if 'diet_plan' in record.keys() and record['diet_plan'] else ''}</textarea>
+        
+        <label>ट्रेनरचा / विशेष शेरा:</label>
+        <textarea name="remark" rows="3" required>{record['remark'] if record['remark'] else ''}</textarea>
+        
+        <button type="submit" class="btn">💾 बदल सेव्ह करा</button>
+        <a href="javascript:history.back()" class="cancel">रद्द करा</a>
+      </form>
+    </div>
+    </body>
+    </html>"""
+    return render_template_string(form_html)
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
