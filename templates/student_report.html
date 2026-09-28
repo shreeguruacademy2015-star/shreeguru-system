@@ -1,1 +1,144 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>स्टुडन्ट रिपोर्ट - {{ student.name }}</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f8fafc; padding: 20px; color: #1e293b; }
+        .report-box { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        .header { text-align: center; border-bottom: 3px double #0284c7; padding-bottom: 12px; margin-bottom: 20px; }
+        .header h2 { margin: 0; color: #0284c7; font-size: 24px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; background: #f1f5f9; padding: 15px; border-radius: 6px; }
+        .section-title { background: #e0f2fe; color: #0369a1; padding: 8px 12px; border-radius: 4px; font-weight: bold; margin-top: 20px; border-left: 4px solid #0284c7; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+        th, td { border: 1px solid #cbd5e1; padding: 8px 10px; text-align: left; }
+        th { background: #f8fafc; color: #334155; }
+        .btn { padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; text-decoration: none; font-weight: bold; display: inline-block; }
+        .btn-print { background: #0284c7; color: white; margin-right: 8px; }
+        .btn-wa { background: #25D366; color: white; }
+        .btn-save { background: #16a34a; color: white; margin-top: 8px; }
+        @media print {
+            .no-print { display: none; }
+            body { background: white; padding: 0; }
+            .report-box { box-shadow: none; border: none; max-width: 100%; padding: 0; }
+        }
+    </style>
+</head>
+<body>
 
+<div class="report-box">
+    <!-- ॲक्शन बटने -->
+    <div class="no-print" style="text-align: right; margin-bottom: 15px;">
+        <button onclick="window.print()" class="btn btn-print">🖨️ PDF / प्रिंट काढा</button>
+        <a href="https://web.whatsapp.com/send?phone=91{{ student.parent_phone or student.phone }}&text=नमस्कार,%20विद्यार्थी%20{{ student.name }}%20याचा%20प्रगती%20अहवाल%20(श्रीगुरु%20करिअर%20अकॅडमी)." target="_blank" class="btn btn-wa">📲 WhatsApp वर पाठवा</a>
+    </div>
+
+    <!-- हेडर -->
+    <div class="header">
+        <h2>श्रीगुरु करिअर अकॅडमी</h2>
+        <p style="margin: 5px 0 0 0; font-weight: 500;">विद्यार्थी ऑल ऍक्टिव्हिटी व प्रगती अहवाल (Student Report)</p>
+    </div>
+
+    <!-- मूलभूत माहिती -->
+    <div class="grid-2">
+        <div>
+            <p><strong>विद्यार्थ्याचे नाव:</strong> {{ student.name }}</p>
+            <p><strong>नोंदणी क्रमांक:</strong> REG-{{ student.id }}</p>
+            <p><strong>कोर्स:</strong> {{ student.course or '-' }}</p>
+            <p><strong>मोबाईल नंबर:</strong> {{ student.phone }} (विद्यार्थी)</p>
+            <p><strong>पालक मोबाईल:</strong> {{ student.parent_phone or '-' }}</p>
+        </div>
+        <div>
+            <p><strong>प्रवेश दिनांक:</strong> {{ student.created_at or '-' }}</p>
+            <p><strong>एकूण फी:</strong> ₹{{ student.total_fees or 0 }}</p>
+            <p><strong>भरलेली फी:</strong> ₹{{ student.paid_fees or 0 }}</p>
+            <p style="color: #dc2626;"><strong>शिल्लक फी:</strong> ₹{{ (student.total_fees or 0) - (student.paid_fees or 0) }}</p>
+        </div>
+    </div>
+
+    <!-- १. लेखी चाचणी -->
+    <div class="section-title">१. लेखी परीक्षा गुण (Written Tests)</div>
+    <table>
+        <tr>
+            <th>दिनांक</th><th>विषय / पेपर नाव</th><th>प्राप्त गुण</th><th>एकूण गुण</th>
+        </tr>
+        {% for w in written_tests %}
+        <tr>
+            <td>{{ w.test_date or '-' }}</td><td>{{ w.subject or '-' }}</td><td>{{ w.marks_obtained }}</td><td>{{ w.total_marks }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" style="text-align:center; color:#64748b;">कोणतीही नोंद उपलब्ध नाही.</td></tr>
+        {% endfor %}
+    </table>
+
+    <!-- २. फिजिकल टेस्ट -->
+    <div class="section-title">२. मैदानी चाचणी अहवाल (Physical Tests)</div>
+    <table>
+        <tr>
+            <th>दिनांक</th><th>रनिंग (धावणे)</th><th>गोळाफेक</th><th>इतर इव्हेंट</th><th>एकूण गुण</th>
+        </tr>
+        {% for p in physical_tests %}
+        <tr>
+            <td>{{ p.test_date or '-' }}</td><td>{{ p.running_marks or '-' }}</td><td>{{ p.shotput_marks or '-' }}</td><td>{{ p.other_marks or '-' }}</td><td><strong>{{ p.total_physical_marks or '-' }}</strong></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" style="text-align:center; color:#64748b;">कोणतीही नोंद उपलब्ध नाही.</td></tr>
+        {% endfor %}
+    </table>
+
+    <!-- ३. हजेरी -->
+    <div class="section-title">३. हजेरी तपशील (Attendance Report)</div>
+    <table>
+        <tr>
+            <th>दिनांक</th><th>अभ्यासिका / क्लास हजेरी</th><th>ग्राउंड / फिजिकल हजेरी</th><th>शेरा</th>
+        </tr>
+        {% for a in attendance %}
+        <tr>
+            <td>{{ a.date or '-' }}</td>
+            <td>{{ a.class_status or '-' }}</td>
+            <td>{{ a.ground_status or '-' }}</td>
+            <td>{{ a.remark or '-' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" style="text-align:center; color:#64748b;">हजेरी नोंद उपलब्ध नाही.</td></tr>
+        {% endfor %}
+    </table>
+
+    <!-- ४. डाएट व ॲडमिन शेरा (फक्त ॲडमिनला संपादन अधिकार) -->
+    <div class="section-title">४. डायट प्लॅन व कार्यालयीन शेरा (Diet & Instructions)</div>
+    <div style="margin-top: 10px; background: #fff; padding: 10px; border: 1px solid #cbd5e1; border-radius: 4px;">
+        {% if is_admin %}
+        <form method="POST">
+            <label><strong>सांगितलेला डाएट प्लॅन:</strong></label><br>
+            <textarea name="diet_plan" rows="2" style="width: 98%; padding: 6px; margin: 5px 0 10px 0;">{{ student.diet_plan or '' }}</textarea><br>
+            
+            <label><strong>ॲडमिन विशेष शेरा:</strong></label><br>
+            <textarea name="admin_remark" rows="2" style="width: 98%; padding: 6px; margin: 5px 0 10px 0;">{{ student.admin_remark or '' }}</textarea><br>
+            
+            <button type="submit" class="btn btn-save no-print">बदल सेव्ह करा</button>
+        </form>
+        {% else %}
+            <p><strong>डाएट प्लॅन:</strong> {{ student.diet_plan or 'काहीही नोंदवलेले नाही.' }}</p>
+            <p><strong>शेरा:</strong> {{ student.admin_remark or 'काहीही नोंदवलेले नाही.' }}</p>
+        {% endif %}
+    </div>
+
+    <!-- ५. स्टाफ ॲक्टिव्हिटी नोंदी -->
+    <div class="section-title">५. कर्मचारी शेरा व नोंदी (Staff Activity Logs)</div>
+    <table>
+        <tr>
+            <th>दिनांक व वेळ</th><th>कर्मचारी</th><th>पद</th><th>केलेली नोंद / शेरा</th>
+        </tr>
+        {% for log in logs %}
+        <tr>
+            <td>{{ log.created_at or '-' }}</td><td>{{ log.staff_name or '-' }}</td><td>{{ log.role or '-' }}</td><td>{{ log.log_text or '-' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" style="text-align:center; color:#64748b;">कर्मचाऱ्यांची कोणतीही नोंद उपलब्ध नाही.</td></tr>
+        {% endfor %}
+    </table>
+</div>
+
+</body>
+</html>
