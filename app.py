@@ -2208,12 +2208,6 @@ def student_report(student_id):
             conn.commit()
             return redirect(url_for('student_report', student_id=student_id))
 
-        try:
-            st_name = student['name'] if student else ''
-            staff_logs = conn.execute("""
-                SELECT * FROM staff_activities 
-                WHERE student_id = ? OR action_text LIKE ? OR remark LIKE ?
-                ORDER BY id DESC
            try:
             staff_logs = conn.execute("""
                 SELECT * FROM staff_activities 
