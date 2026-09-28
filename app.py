@@ -2184,7 +2184,7 @@ def print_receipt(id):
  # ----- STUDENT FULL REPORT ROUTE -----
 @app.route('/student_report/<int:student_id>', methods=['GET', 'POST'])
 def student_report(student_id):
-    if 'role' not in session:
+    if 'role' not in session and 'user_role' not in session and 'username' not in session:
         return redirect(url_for('login'))
 
     with get_db() as conn:
