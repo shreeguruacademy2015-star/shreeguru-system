@@ -2214,16 +2214,14 @@ def student_report(student_id):
                 SELECT * FROM staff_activities 
                 WHERE student_id = ? OR action_text LIKE ? OR remark LIKE ?
                 ORDER BY id DESC
-            """, (student_id, f"%{st_name}%", f"%{st_name}%")).fetchall()
+           try:
+            staff_logs = conn.execute("""
+                SELECT * FROM staff_activities 
+                WHERE student_id = ? 
+                ORDER BY id DESC
+            """, (student_id,)).fetchall()
         except Exception:
-            try:
-                staff_logs = conn.execute("""
-                    SELECT * FROM staff_activities 
-                    WHERE action_text LIKE ? OR remark LIKE ?
-                    ORDER BY id DESC
-                """, (f"%{st_name}%", f"%{st_name}%")).fetchall()
-            except Exception:
-                staff_logs = []
+            staff_logs = []
         try:
             attendance_records = conn.execute("""
                 SELECT date, status, marked_by 
