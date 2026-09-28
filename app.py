@@ -2212,6 +2212,53 @@ def export_students_csv():
     for s in students:
         writer.writerow([f"REG-{s['id']}", s['name'], s['course'], s['phone'], s['total_fees'], s['paid_fees']])
     return Response(output.getvalue().encode('utf-8-sig'), mimetype="text/csv", headers={"Content-disposition": "attachment; filename=Shreeguru_Students.csv"})
+# ================= STUDENT FULL REPORT ROUTE =================
+@app.route('/student_report/<int:student_id>', methods=['GET', 'POST'])
+def student_report(student_id):
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    
+    with get_db() as conn:
+        student = conn.execute("SELECT * FROM students WHERE id = ?", (student_id,)).fetchone()
+        
+        if not student:
+            return "Vidyarthi sapadla nahi!", 404
 
+        # Fakt admin la diet kiva remark badalnyachi parvangi
+        if request.method == 'POST' and session.get('role') == 'admin':
+            diet_plan = request.form.get('diet_plan')
+            admin_remark = request.form.get('admin_remark')
+            conn.execute("UPDATE students SET diet_plan = ?, admin_remark = ? WHERE id = ?", 
+                         (diet_plan, admin_remark, student_id))
+            conn.commit()
+            return redirect(url_for('student_report', student_id=student_id))
+
+        try:
+            written_tests = conn.execute("SELECT * FROM written_tests WHERE student_id = ? ORDER BY id DESC", (student_id,)).fetchall()
+        except Exception:
+            written_tests = []
+
+        try:
+            physical_tests = conn.execute("SELECT * FROM physical_tests WHERE student_id = ? ORDER BY id DESC", (student_id,)).fetchall()
+        except Exception:
+            physical_tests = []
+
+        try:
+            attendance_records = conn.execute("SELECT * FROM attendance WHERE student_id = ? ORDER BY id DESC", (student_id,)).fetchall()
+        except Exception:
+            attendance_records = []
+
+        try:
+            staff_logs = conn.execute("SELECT * FROM staff_logs WHERE student_id = ? ORDER BY id DESC", (student_id,)).fetchall()
+        except Exception:
+            staff_logs = []
+        
+    return render_template('student_report.html', 
+                           student=student, 
+                           written_tests=written_tests, 
+                           physical_tests=physical_tests, 
+                           attendance=attendance_records, 
+                           logs=staff_logs,
+                           is_admin=(session.get('role') == 'admin'))
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
