@@ -133,7 +133,7 @@
         {% for log in logs %}
         <tr>
             <td>{{ log.created_at or '-' }}</td><td>{{ log.staff_name or '-' }}</td><td>{{ log.role or '-' }}</td><td>{{ log.log_text or '-' }}</td>
-       <td>
+      <td>
   {% if session.get('role') == 'admin' %}
     <a href="/edit_staff_activity/{{ log.id }}" style="background:#0284c7; color:white; padding:3px 7px; border-radius:4px; text-decoration:none; font-size:12px; margin-right:4px;">✏️ दुरुस्त</a>
     <a href="/delete_staff_activity/{{ log.id }}" onclick="return confirm('नोंद कायमची हटवायची का?');" style="background:#dc2626; color:white; padding:3px 7px; border-radius:4px; text-decoration:none; font-size:12px;">🗑️ हटवा</a>
