@@ -2209,15 +2209,21 @@ def student_report(student_id):
             return redirect(url_for('student_report', student_id=student_id))
 
         try:
+            st_name = student['name'] if student else ''
             staff_logs = conn.execute("""
-                SELECT id, activity_date, staff_name, role, action_text, remark 
-                FROM staff_activities 
-                WHERE student_id = ? 
+                SELECT * FROM staff_activities 
+                WHERE student_id = ? OR action_text LIKE ? OR remark LIKE ?
                 ORDER BY id DESC
-            """, (student_id,)).fetchall()
-        except:
-            staff_logs = []
-
+            """, (student_id, f"%{st_name}%", f"%{st_name}%")).fetchall()
+        except Exception:
+            try:
+                staff_logs = conn.execute("""
+                    SELECT * FROM staff_activities 
+                    WHERE action_text LIKE ? OR remark LIKE ?
+                    ORDER BY id DESC
+                """, (f"%{st_name}%", f"%{st_name}%")).fetchall()
+            except Exception:
+                staff_logs = []
         try:
             attendance_records = conn.execute("""
                 SELECT date, status, marked_by 
