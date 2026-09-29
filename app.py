@@ -972,10 +972,6 @@ CLERK_LAYOUT = '''<!DOCTYPE html>
     <a href="/clerk?tab=adm" class="clk-btn {% if curr_tab == 'adm' %}active{% endif %}">📝 {{ 'New Admission' if lang == 'en' else 'नवीन प्रवेश' }}</a>
     <a href="/clerk?tab=fee" class="clk-btn {% if curr_tab == 'fee' %}active{% endif %}">💰 {{ 'Collect Fee' if lang == 'en' else 'फी जमा' }}</a>
    {% elif curr_tab == 'att' %}
-<div class="card" style="padding:15px; background:white; border-radius:6px; margin-top:15px;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-        <h3 style="margin:0; color:#0b3c5d;">📋 विद्यार्थ्यांची हजेरी</h3>
-</div>
     <a href="/clerk?tab=att" class="clk-btn {% if curr_tab == 'att' %}active{% endif %}" style="background:#6366f1; color:white; font-weight:bold;">📋 हजेरी</a>
     <a href="/clerk?tab=hostel" class="clk-btn {% if curr_tab == 'hostel' %}active{% endif %}" style="background:#8e2de2;">🏠 {{ 'Hostel/Mess Fee' if lang == 'en' else 'हॉस्टेल/मेस फी' }}</a>
     <a href="/clerk?tab=physical" class="clk-btn {% if curr_tab == 'physical' %}active{% endif %}" style="background:#0284c7;">🏃‍♂️ {{ 'Physical Test' if lang == 'en' else 'फिजिकल टेस्ट नोंद' }}</a>
