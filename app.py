@@ -2095,6 +2095,20 @@ def delete_staff(id):
         conn.execute("DELETE FROM staff WHERE id=?", (id,))
         conn.commit()
     return redirect('/admin?tab=staff')
+ @app.route('/pay_staff_salary/<int:id>', methods=['POST'])
+def pay_staff_salary(id):
+    from_date = request.form.get('from_date', '')
+    to_date = request.form.get('to_date', '')
+    amount = safe_float(request.form.get('amount'))
+    with get_db() as conn:
+        staff = conn.execute("SELECT name FROM staff WHERE id=?", (id,)).fetchone()
+        staff_name = staff['name'] if staff else f"ID {id}"
+        desc = f"स्टाफ पगार: {staff_name} (कालावधी: {from_date} ते {to_date})"
+        conn.execute("INSERT INTO expenses (title, amount, category, date) VALUES (?, ?, 'Staff Salary', date('now'))", (desc, amount))
+        conn.execute("UPDATE staff SET advance_paid = 0 WHERE id=?", (id,))
+        conn.commit()
+    log_activity("Admin", f"पगार वाटप: {staff_name} - ₹{amount} ({from_date} ते {to_date})")
+    return redirect('/admin?tab=staff')
 
 @app.route('/assign_task', methods=['POST'])
 def assign_task():
