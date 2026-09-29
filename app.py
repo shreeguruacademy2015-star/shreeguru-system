@@ -967,7 +967,7 @@ CLERK_LAYOUT = '''<!DOCTYPE html>
         <a href="/logout" style="background:#ef4444; color:white; padding:4px 10px; border-radius:4px; text-decoration:none; font-size:12px; font-weight:bold;">बाहेर पडा</a>
     </div>
 </div>
-<div class="nav-bar">
+<div class="nav-bar"> 
     <a href="/clerk?tab=stud" class="clk-btn {% if curr_tab == 'stud' %}active{% endif %}">👥 {{ 'Students List' if lang == 'en' else 'विद्यार्थी यादी' }}</a>
     <a href="/clerk?tab=adm" class="clk-btn {% if curr_tab == 'adm' %}active{% endif %}">📝 {{ 'New Admission' if lang == 'en' else 'नवीन प्रवेश' }}</a>
     <a href="/clerk?tab=fee" class="clk-btn {% if curr_tab == 'fee' %}active{% endif %}">💰 {{ 'Collect Fee' if lang == 'en' else 'फी जमा' }}</a>
