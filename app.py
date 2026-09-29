@@ -2080,7 +2080,7 @@ def add_staff_leave(id):
      with get_db() as conn:
         conn.execute("UPDATE staff SET total_leaves = total_leaves + ? WHERE id=?", (safe_int(request.form.get('leave_days'), 1), id))
         conn.commit()
-    return redirect('/admin?tab=staff')
+     return redirect('/admin?tab=staff')
 
 @app.route('/delete_staff/<int:id>')
 def delete_staff(id):
