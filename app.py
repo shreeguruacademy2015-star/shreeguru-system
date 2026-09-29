@@ -1518,7 +1518,10 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
             <thead><tr><th>नाव</th><th>पद</th><th>फोन</th><th>पगार</th><th>उचल</th><th>रजा</th><th>पगार देणे बाकी</th><th>कृती</th></tr></thead>
             <tbody>
                 {% for st in staff_members %}
-                {% set net_pay = (st.salary or 0) - (st.advance_paid or 0) %}
+               {% set per_day = (st.salary or 0) / 30 if (st.salary or 0) > 0 else 0 %}
+{% set leave_cut = per_day * (st.leave_days or 0) %}
+{% set net_pay = (st.salary or 0) - ((st.advance_paid or 0) + leave_cut) %}
+{% if net_pay < 0 %}{% set net_pay = 0 %}{% endif %}
                 <tr>
                     <td><b>{{ st.name }}</b></td><td>{{ st.role }}</td><td>{{ st.phone }}</td><td>₹{{ st.salary }}</td><td style="color:red;">₹{{ st.advance_paid or 0 }}</td><td>{{ st.total_leaves or 0 }} दिवस</td><td style="color:green; font-weight:bold;">₹{{ net_pay }}</td>
                     <td>
@@ -1530,6 +1533,15 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
                             <input type="number" name="leave_days" value="1" style="width:40px;">
                             <button type="submit" class="btn-act" style="background:#6366f1;">+ रजा</button>
                         </form>
+                        <!-- पगार वाटप व कालावधी फॉर्म -->
+<form action="/pay_staff_salary/{{ st.id }}" method="POST" style="display:inline-block; margin-left:5px; background:#f1f5f9; padding:5px; border-radius:4px; border:1px solid #cbd5e1;">
+    <span style="font-size:11px; font-weight:bold; color:#0b3c5d;">कालावधी:</span>
+    <input type="date" name="from_date" required style="padding:2px; font-size:12px;" title="या तारखेपासून">
+    <span style="font-size:11px;">ते</span>
+    <input type="date" name="to_date" required style="padding:2px; font-size:12px;" title="या तारखेपर्यंत">
+    <input type="number" name="amount" value="{{ net_pay|round|int }}" style="width:75px; font-weight:bold; color:green; padding:2px;" title="देणे बाकी पगार">
+    <button type="submit" class="btn-act" style="background:#0b3c5d; color:white; padding:3px 8px;" onclick="return confirm('पगार वाटप नोंद करायची का?')">पगार द्या</button>
+</form>
                         <a href="/delete_staff/{{ st.id }}" onclick="return confirm('हटवायचा?')" style="color:red; margin-left:5px;">🗑️</a>
                     </td>
                 </tr>
@@ -2047,7 +2059,22 @@ def add_staff():
         conn.commit()
     log_staff_activity("Admin", f"स्टाफ जोडला: {request.form.get('name')}")
     return redirect('/admin?tab=staff')
-
+@app.route('/pay_staff_salary/<int:id>', methods=['POST'])
+def pay_staff_salary(id):
+    from_date = request.form.get('from_date', '')
+    to_date = request.form.get('to_date', '')
+    amount = safe_float(request.form.get('amount'))
+    with get_db() as conn:
+        staff = conn.execute("SELECT name FROM staff WHERE id=?", (id,)).fetchone()
+        staff_name = staff['name'] if staff else f"ID {id}"
+        # खर्चाच्या खात्यात पगार नोंद करणे
+        desc = f"स्टाफ पगार: {staff_name} (कालावधी: {from_date} ते {to_date})"
+        conn.execute("INSERT INTO expenses (title, amount, category, date) VALUES (?, ?, 'Staff Salary', date('now'))", (desc, amount))
+        # पगार दिल्यानंतर स्टाफची उचल (advance) पुन्हा ० करणे
+        conn.execute("UPDATE staff SET advance_paid = 0 WHERE id=?", (id,))
+        conn.commit()
+    log_activity("Admin", f"पगार वाटप: {staff_name} - ₹{amount} ({from_date} ते {to_date})")
+    return redirect('/admin?tab=staff')
 @app.route('/update_staff_advance/<int:id>', methods=['POST'])
 def update_staff_advance(id):
     with get_db() as conn:
@@ -2057,7 +2084,7 @@ def update_staff_advance(id):
 
 @app.route('/add_staff_leave/<int:id>', methods=['POST'])
 def add_staff_leave(id):
-    with get_db() as conn:
+     with get_db() as conn:
         conn.execute("UPDATE staff SET total_leaves = total_leaves + ? WHERE id=?", (safe_int(request.form.get('leave_days'), 1), id))
         conn.commit()
     return redirect('/admin?tab=staff')
