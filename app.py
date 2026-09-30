@@ -342,7 +342,6 @@ def init_db():
             )
         """)
 
-        # १. महाराष्ट्र प्रवेश चौकशी टेबल
         conn.execute("""
             CREATE TABLE IF NOT EXISTS admission_inquiries (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -358,7 +357,6 @@ def init_db():
             )
         """)
 
-        # २. ऑनलाइन टेस्ट सोडवणाऱ्या विद्यार्थ्यांचे लीड्स व निकाल टेबल
         conn.execute("""
             CREATE TABLE IF NOT EXISTS mock_test_leads (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -381,7 +379,6 @@ def init_db():
             conn.execute("INSERT OR IGNORE INTO mess_diet (day_name, breakfast, lunch, dinner, special_diet) VALUES (?, 'पोहे / उपमा', 'डाळ, भात, चपाती, उसळ', 'भाकरी, सुकी भाजी, आमटी', 'दूध, केळी, भिजवलेले हरभरे-गूळ')", (d,))
         conn.commit()
 
-# ----------------- LOGIN HTML -----------------
 LOGIN_HTML = '''<!DOCTYPE html>
 <html lang="{{ lang }}">
 <head>
@@ -391,8 +388,7 @@ LOGIN_HTML = '''<!DOCTYPE html>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
         body {
             margin: 0; padding: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
-            background: linear-gradient(135deg, rgba(5, 20, 36, 0.88), rgba(15, 23, 42, 0.92)),
-                        url('https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=1920&q=80') center/cover no-repeat;
+            background: #0f172a;
         }
         .login-box {
             background: rgba(255, 255, 255, 0.97); width: 380px; padding: 35px 30px; border-radius: 12px;
@@ -439,7 +435,8 @@ LOGIN_HTML = '''<!DOCTYPE html>
     </form>
 </div>
 </body>
-# ----------------- MANAGER PORTAL -----------------
+</html>'''
+
 MANAGER_LAYOUT = '''<!DOCTYPE html>
 <html lang="{{ lang }}">
 <head>
@@ -501,7 +498,6 @@ MANAGER_LAYOUT = '''<!DOCTYPE html>
                 </div>
             </div>
             <hr style="margin:12px 0;">
-
             <h4 style="color:#b45309; margin:0 0 8px;">⭐ १. रोज लागणारे महत्त्वाचे साहित्य (Top Priority)</h4>
             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:10px; background:#fffbeb; padding:12px; border-radius:6px; margin-bottom:12px;">
                 <div>
@@ -602,7 +598,7 @@ MANAGER_LAYOUT = '''<!DOCTYPE html>
 
     {% if curr_tab == 'physical' %}
     <div class="card">
-        <h3 style="color:#0284c7; margin-top:0;">🏃‍♂️ {{ 'Physical Test Records' if lang == 'en' else 'सर्व विद्यार्थ्यांचे फिजिकल टेस्ट रेकॉर्ड' }}</h3>
+        <h3 style="color:#0284c7; margin-top:0;">🏃‍♂ {{ 'Physical Test Records' if lang == 'en' else 'सर्व विद्यार्थ्यांचे फिजिकल टेस्ट रेकॉर्ड' }}</h3>
         <table>
             <thead><tr><th>तारीख</th><th>नाव</th><th>कोर्स</th><th>1600/800m</th><th>100m</th><th>गोळाफेक</th><th>पुल-अप्स</th><th>एकूण गुण</th></tr></thead>
             <tbody>
@@ -685,9 +681,8 @@ MANAGER_LAYOUT = '''<!DOCTYPE html>
     {% endif %}
 </div>
 </body>
-</html>'''
+</html>
 
-# ----------------- PHYSICAL TRAINER / COACH PORTAL -----------------
 TRAINER_LAYOUT = '''<!DOCTYPE html>
 <html lang="{{ lang }}">
 <head>
@@ -761,7 +756,7 @@ TRAINER_LAYOUT = '''<!DOCTYPE html>
 
     {% if curr_tab == 'stopwatch' %}
     <div class="card" style="text-align:center;">
-        <h3 style="color:#0284c7; margin-top:0;">⏱️ डिजिटल मैदानी स्टॉपवॉच (लॅप फिचरसह)</h3>
+        <h3 style="color:#0284c7; margin-top:0;">⏱️️ डिजिटल मैदानी स्टॉपवॉच (लॅप फिचरसह)</h3>
         <div id="sw_display" style="font-size:46px; font-weight:bold; color:#0b3c5d; font-family:monospace; margin:15px 0;">00:00.00</div>
         <div style="display:flex; justify-content:center; gap:8px; flex-wrap:wrap;">
             <button onclick="startSW()" class="btn-act" style="background:green; width:95px;">Start ▶️</button>
@@ -939,9 +934,8 @@ TRAINER_LAYOUT = '''<!DOCTYPE html>
     {% endif %}
 </div>
 </body>
-</html>'''
-</html>'''
-                                           # ----------------- CLERK PORTAL -----------------
+</html>
+
 CLERK_LAYOUT = '''<!DOCTYPE html>
 <html lang="{{ lang }}">
 <head>
@@ -1181,9 +1175,8 @@ CLERK_LAYOUT = '''<!DOCTYPE html>
     {% endif %}
 </div>
 </body>
-</html>'''
+</html>
 
-# ----------------- ADMIN DASHBOARD -----------------
 ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
 <html lang="{{ lang }}">
 <head>
@@ -1232,7 +1225,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
     <a href="/admin?tab=att" class="menu-btn {% if curr_tab == 'att' %}active{% endif %}" style="background:#e11d48;">📋 {{ 'Attendance' if lang == 'en' else 'सर्व हजेरी' }}</a>
     <a href="/library" target="_blank" class="menu-btn" style="background: linear-gradient(135deg, #0284c7, #06b6d4); color: white;">📚 स्टडी लॅब / लायब्ररी</a>
     <a href="/admin?tab=diet" class="menu-btn {% if curr_tab == 'diet' %}active{% endif %}" style="background:#6366f1;">🥗 {{ 'Mess Diet' if lang == 'en' else 'मेस डाएट' }}</a>
-    <a href="/admin?tab=disc" class="menu-btn {% if curr_tab == 'disc' %}active{% endif %}" style="background:#6b21a8;">⚠️️ {{ 'Discipline & Gatepass' if lang == 'en' else 'गेटपास/शिस्त' }}</a>
+    <a href="/admin?tab=disc" class="menu-btn {% if curr_tab == 'disc' %}active{% endif %}" style="background:#6b21a8;">⚠ {{ 'Discipline & Gatepass' if lang == 'en' else 'गेटपास/शिस्त' }}</a>
     <a href="/admin?tab=exp" class="menu-btn {% if curr_tab == 'exp' %}active{% endif %}" style="background:#ff416c;">💵 {{ 'Expenses' if lang == 'en' else 'खर्च वही' }}</a>
     <a href="/admin?tab=wa" class="menu-btn {% if curr_tab == 'wa' %}active{% endif %}" style="background:#10b981;">📲 WhatsApp</a>
     <a href="/admin?tab=staff" class="menu-btn {% if curr_tab == 'staff' %}active{% endif %}" style="background:#4f46e5;">👔 {{ 'Staff Salary' if lang == 'en' else 'स्टाफ पगार' }}</a>
@@ -1296,7 +1289,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
 
     {% if curr_tab == 'physical' %}
     <div class="admin-tab">
-        <h3 style="color:#0284c7; margin-top:0;">🏃‍♂️️ विद्यार्थ्यांचे फिजिकल टेस्ट रेकॉर्ड</h3>
+        <h3 style="color:#0284c7; margin-top:0;">🏃‍♂ विद्यार्थ्यांचे फिजिकल टेस्ट रेकॉर्ड</h3>
         <form action="/add_physical_record" method="POST" style="background:#f0f9ff; padding:12px; border-radius:6px; margin-bottom:15px;">
             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:8px;">
                 <div>विद्यार्थी: <select name="student_id" required style="width:100%;"><option value="">-- निवडा --</option>{% for s in students %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}</select></div>
@@ -1652,8 +1645,8 @@ function updateClock() {
 setInterval(updateClock, 1000); updateClock();
 </script>
 </body>
-</html>'''
-# ----------------- FLASK MAIN CONTROLLER ROUTING -----------------
+</html>
+
 @app.route('/toggle_lang')
 def toggle_lang():
     cur = session.get('site_lang', 'mr')
@@ -1771,7 +1764,6 @@ def admin_view():
 
     return render_template_string(ADMIN_DASHBOARD_LAYOUT, curr_tab=curr_tab, students=students, expenses_list=expenses_list, users_list=users_list, diet_list=diet_list, staff_members=staff_members, staff_tasks=staff_tasks, all_requests=all_requests, all_staff_logs=all_staff_logs, discipline_logs=discipline_logs, hostel_logs=hostel_logs, physical_records=physical_records, written_records=written_records, total_paid=total_paid, total_pending=total_pending, total_expenses=total_expenses, today_date=today_date, lang=lang)
 
-# ----------------- SYSTEM FUNCTIONAL HANDLERS -----------------
 @app.route('/download_backup')
 def download_backup():
     if session.get('user_role') != 'Admin': return "Unauthorized", 403
@@ -1820,7 +1812,8 @@ def delete_discipline(id):
         conn.commit()
     log_staff_activity("Admin", f"गेटपास रद्द/हटवला (ID: {id})")
     return redirect('/admin?tab=disc')
-    @app.route('/save_trainer_student_diet', methods=['POST'])
+
+@app.route('/save_trainer_student_diet', methods=['POST'])
 def save_trainer_student_diet():
     sid = safe_int(request.form.get('student_id'))
     d_text = request.form.get('diet_text')
@@ -1907,7 +1900,7 @@ def send_staff_request():
 
 @app.route('/handle_request/<int:id>/<action>')
 def handle_request(id, action):
-    if session.get('user_role'] != 'Admin': return "Unauthorized", 403
+    if session.get('user_role') != 'Admin': return "Unauthorized", 403
     with get_db() as conn:
         conn.execute("UPDATE staff_requests SET status=? WHERE id=?", (action, id))
         conn.commit()
@@ -1916,7 +1909,7 @@ def handle_request(id, action):
 
 @app.route('/reply_staff_activity/<int:id>', methods=['POST'])
 def reply_staff_activity(id):
-    if session.get('user_role'] != 'Admin': return "Unauthorized", 403
+    if session.get('user_role') != 'Admin': return "Unauthorized", 403
     with get_db() as conn:
         conn.execute("UPDATE staff_activity_log SET admin_reply=? WHERE id=?", (request.form.get('admin_reply'), id))
         conn.commit()
@@ -1925,7 +1918,7 @@ def reply_staff_activity(id):
 
 @app.route('/add_new_system_user', methods=['POST'])
 def add_new_system_user():
-    if session.get('user_role'] != 'Admin': return "Unauthorized", 403
+    if session.get('user_role') != 'Admin': return "Unauthorized", 403
     with get_db() as conn:
         conn.execute("INSERT INTO users (role, password) VALUES (?, ?)", (request.form.get('new_role'), request.form.get('new_password')))
         conn.commit()
@@ -1934,7 +1927,7 @@ def add_new_system_user():
 
 @app.route('/delete_system_user/<int:id>')
 def delete_system_user(id):
-    if session.get('user_role'] != 'Admin': return "Unauthorized", 403
+    if session.get('user_role') != 'Admin': return "Unauthorized", 403
     with get_db() as conn:
         conn.execute("DELETE FROM users WHERE id=?", (id,))
         conn.commit()
@@ -2041,7 +2034,7 @@ def save_attendance():
 
 @app.route('/attendance')
 def clerk_attendance_portal():
-    if session.get('user_role'] not in ['Clerk', 'Admin', 'Manager']:
+    if session.get('user_role') not in ['Clerk', 'Admin', 'Manager']:
         return redirect(url_for('login'))
     with get_db() as conn:
         students = conn.execute("SELECT * FROM students ORDER BY name ASC").fetchall()
@@ -2529,10 +2522,9 @@ def ground_tracker():
 </html>"""
     return render_template_string(html)
 
-# ----------------- ADMIN: STAFF ACTIVITIES & REMARKS -----------------
 @app.route('/delete_staff_activity/<int:act_id>', methods=['POST', 'GET'])
 def delete_staff_activity(act_id):
-    if session.get('user_role'] != 'Admin' and session.get('role'] != 'admin':
+    if session.get('user_role') != 'Admin' and session.get('role') != 'admin':
         return "अनधिकृत प्रवेश!", 403
     with get_db() as conn:
         conn.execute("DELETE FROM staff_activities WHERE id = ?", (act_id,))
@@ -2541,7 +2533,7 @@ def delete_staff_activity(act_id):
 
 @app.route('/edit_staff_activity/<int:act_id>', methods=['GET', 'POST'])
 def edit_staff_activity(act_id):
-    if session.get('user_role'] != 'Admin' and session.get('role'] != 'admin':
+    if session.get('user_role') != 'Admin' and session.get('role') != 'admin':
         return "अनधिकृत प्रवेश!", 403
     with get_db() as conn:
         if request.method == 'POST':
@@ -2563,7 +2555,7 @@ def edit_staff_activity(act_id):
 
 @app.route('/delete_student_remark/<int:record_id>', methods=['POST', 'GET'])
 def delete_student_remark(record_id):
-    if session.get('user_role'] != 'Admin' and session.get('role'] != 'admin':
+    if session.get('user_role') != 'Admin' and session.get('role') != 'admin':
         return "अनधिकृत प्रवेश!", 403
     with get_db() as conn:
         rec = conn.execute("SELECT student_id FROM student_activities WHERE id = ?", (record_id,)).fetchone()
@@ -2575,7 +2567,7 @@ def delete_student_remark(record_id):
 
 @app.route('/edit_student_remark/<int:record_id>', methods=['GET', 'POST'])
 def edit_student_remark(record_id):
-    if session.get('user_role'] != 'Admin' and session.get('role'] != 'admin':
+    if session.get('user_role') != 'Admin' and session.get('role') != 'admin':
         return "अनधिकृत प्रवेश!", 403
     with get_db() as conn:
         if request.method == 'POST':
@@ -2596,7 +2588,6 @@ def edit_student_remark(record_id):
         <button type="submit">सेव्ह करा</button>
     </form></body></html>''', record=record)
 
-# --- STUDY LAB & LIBRARY ROUTES ---
 @app.route('/library')
 def library_dashboard():
     with get_db() as conn:
@@ -2633,11 +2624,6 @@ def return_book(issue_id, book_id):
         conn.commit()
     return redirect('/library')
 
-# ==============================================================================
-# 🎯 SHREEGURU CAREER ACADEMY - ADMISSION DESK & ONLINE MOCK TEST ENGINE
-# ==============================================================================
-
-# १. सार्वजनिक प्रवेश चौकशी फॉर्म (Public Admission Form)
 PUBLIC_INQUIRY_HTML = '''<!DOCTYPE html>
 <html lang="mr">
 <head>
@@ -2729,7 +2715,6 @@ def public_inquiry():
         msg = "तुमची नोंदणी यशस्वी झाली आहे! श्रीगुरु अकॅडमीकडून तुम्हाला लवकरच सविस्तर माहितीचा कॉल येईल."
     return render_template_string(PUBLIC_INQUIRY_HTML, msg=msg)
 
-# २. मोफत ऑनलाइन महासराव टेस्ट (Online Mock Test with Timer & Lead Capture)
 MOCK_TEST_HTML = '''<!DOCTYPE html>
 <html lang="mr">
 <head>
@@ -2840,7 +2825,6 @@ def mock_test():
 
     return render_template_string(MOCK_TEST_HTML, score=score, total=total, name=name)
 
-# ३. ॲडमिन कॉलिंग डेस्क व टेस्ट डेटा डॅशबोर्ड (Staff & Admin Calling Desk)
 @app.route('/inquiries')
 def inquiry_desk():
     if session.get('user_role') not in ['Admin', 'Clerk', 'Manager']:
@@ -2938,9 +2922,7 @@ def update_inquiry(id):
         conn.commit()
     return redirect('/inquiries')
 
-# ----------------- सुरळीत डेटाबेस निर्मिती व ॲप रन -----------------
 init_db()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
-                                           
