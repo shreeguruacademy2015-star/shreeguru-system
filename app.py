@@ -381,7 +381,7 @@ def init_db():
             conn.execute("INSERT OR IGNORE INTO mess_diet (day_name, breakfast, lunch, dinner, special_diet) VALUES (?, 'पोहे / उपमा', 'डाळ, भात, चपाती, उसळ', 'भाकरी, सुकी भाजी, आमटी', 'दूध, केळी, भिजवलेले हरभरे-गूळ')", (d,))
         conn.commit()
 
-# ----------------- POLICE & DEFENCE HD THEME LOGIN HTML -----------------
+# ----------------- LOGIN HTML -----------------
 LOGIN_HTML = '''<!DOCTYPE html>
 <html lang="{{ lang }}">
 <head>
@@ -480,7 +480,7 @@ MANAGER_LAYOUT = '''<!DOCTYPE html>
     <a href="/library" target="_blank" class="mgr-btn" style="background: linear-gradient(135deg, #0284c7, #06b6d4); color: white;">📚 स्टडी लॅब / लायब्ररी</a>
     <a href="/manager?tab=diet" class="mgr-btn {% if curr_tab == 'diet' %}active{% endif %}">🍱 {{ 'Food Menu' if lang == 'en' else 'शाकाहारी डाएट शेड्युल' }}</a>
     <a href="/manager?tab=cook" class="mgr-btn {% if curr_tab == 'cook' %}active{% endif %}">👩‍🍳 {{ 'Kitchen Attendance' if lang == 'en' else 'स्वयंपाकी महिला हजेरी' }}</a>
-    <a href="/manager?tab=physical" class="mgr-btn {% if curr_tab == 'physical' %}active{% endif %}" style="background:#0284c7; color:white;">🏃‍♂️️ {{ 'Physical Records' if lang == 'en' else 'फिजिकल रेकॉर्ड' }}</a>
+    <a href="/manager?tab=physical" class="mgr-btn {% if curr_tab == 'physical' %}active{% endif %}" style="background:#0284c7; color:white;">🏃‍♂️ {{ 'Physical Records' if lang == 'en' else 'फिजिकल रेकॉर्ड' }}</a>
     <a href="/manager?tab=written" class="mgr-btn {% if curr_tab == 'written' %}active{% endif %}" style="background:#10b981; color:white;">📝 {{ 'Written Exam' if lang == 'en' else 'रिटर्न टेस्ट रेकॉर्ड' }}</a>
     <a href="/manager?tab=care" class="mgr-btn {% if curr_tab == 'care' %}active{% endif %}">🌸 {{ 'Hostel Care' if lang == 'en' else 'मुलींचे हॉस्टेल व काळजी' }}</a>
     <a href="/manager?tab=req" class="mgr-btn {% if curr_tab == 'req' %}active{% endif %}" style="background:#e11d48; color:white;">📩 {{ 'Send Request' if lang == 'en' else 'ॲडमिनला विनंती' }}</a>
@@ -1232,7 +1232,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
     <a href="/admin?tab=att" class="menu-btn {% if curr_tab == 'att' %}active{% endif %}" style="background:#e11d48;">📋 {{ 'Attendance' if lang == 'en' else 'सर्व हजेरी' }}</a>
     <a href="/library" target="_blank" class="menu-btn" style="background: linear-gradient(135deg, #0284c7, #06b6d4); color: white;">📚 स्टडी लॅब / लायब्ररी</a>
     <a href="/admin?tab=diet" class="menu-btn {% if curr_tab == 'diet' %}active{% endif %}" style="background:#6366f1;">🥗 {{ 'Mess Diet' if lang == 'en' else 'मेस डाएट' }}</a>
-    <a href="/admin?tab=disc" class="menu-btn {% if curr_tab == 'disc' %}active{% endif %}" style="background:#6b21a8;">⚠️ {{ 'Discipline & Gatepass' if lang == 'en' else 'गेटपास/शिस्त' }}</a>
+    <a href="/admin?tab=disc" class="menu-btn {% if curr_tab == 'disc' %}active{% endif %}" style="background:#6b21a8;">⚠️️ {{ 'Discipline & Gatepass' if lang == 'en' else 'गेटपास/शिस्त' }}</a>
     <a href="/admin?tab=exp" class="menu-btn {% if curr_tab == 'exp' %}active{% endif %}" style="background:#ff416c;">💵 {{ 'Expenses' if lang == 'en' else 'खर्च वही' }}</a>
     <a href="/admin?tab=wa" class="menu-btn {% if curr_tab == 'wa' %}active{% endif %}" style="background:#10b981;">📲 WhatsApp</a>
     <a href="/admin?tab=staff" class="menu-btn {% if curr_tab == 'staff' %}active{% endif %}" style="background:#4f46e5;">👔 {{ 'Staff Salary' if lang == 'en' else 'स्टाफ पगार' }}</a>
@@ -1296,7 +1296,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
 
     {% if curr_tab == 'physical' %}
     <div class="admin-tab">
-        <h3 style="color:#0284c7; margin-top:0;">🏃‍♂️ विद्यार्थ्यांचे फिजिकल टेस्ट रेकॉर्ड</h3>
+        <h3 style="color:#0284c7; margin-top:0;">🏃‍♂️️ विद्यार्थ्यांचे फिजिकल टेस्ट रेकॉर्ड</h3>
         <form action="/add_physical_record" method="POST" style="background:#f0f9ff; padding:12px; border-radius:6px; margin-bottom:15px;">
             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:8px;">
                 <div>विद्यार्थी: <select name="student_id" required style="width:100%;"><option value="">-- निवडा --</option>{% for s in students %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}</select></div>
@@ -1820,8 +1820,7 @@ def delete_discipline(id):
         conn.commit()
     log_staff_activity("Admin", f"गेटपास रद्द/हटवला (ID: {id})")
     return redirect('/admin?tab=disc')
-
-@app.route('/save_trainer_student_diet', methods=['POST'])
+    @app.route('/save_trainer_student_diet', methods=['POST'])
 def save_trainer_student_diet():
     sid = safe_int(request.form.get('student_id'))
     d_text = request.form.get('diet_text')
@@ -1885,7 +1884,8 @@ def delete_written_record(id):
         conn.execute("DELETE FROM written_tests WHERE id=?", (id,))
         conn.commit()
     return redirect('/admin?tab=written')
-    @app.route('/add_hostel_fee', methods=['POST'])
+
+@app.route('/add_hostel_fee', methods=['POST'])
 def add_hostel_fee():
     with get_db() as conn:
         conn.execute("INSERT INTO hostel_mess_fees (student_id, package_type, from_month, to_month, total_amount, paid_amount, pay_date) VALUES (?, '१ महिना', 'सप्टें', 'ऑक्टो', ?, ?, ?)",
@@ -1907,7 +1907,7 @@ def send_staff_request():
 
 @app.route('/handle_request/<int:id>/<action>')
 def handle_request(id, action):
-    if session.get('user_role') != 'Admin': return "Unauthorized", 403
+    if session.get('user_role'] != 'Admin': return "Unauthorized", 403
     with get_db() as conn:
         conn.execute("UPDATE staff_requests SET status=? WHERE id=?", (action, id))
         conn.commit()
@@ -1916,7 +1916,7 @@ def handle_request(id, action):
 
 @app.route('/reply_staff_activity/<int:id>', methods=['POST'])
 def reply_staff_activity(id):
-    if session.get('user_role') != 'Admin': return "Unauthorized", 403
+    if session.get('user_role'] != 'Admin': return "Unauthorized", 403
     with get_db() as conn:
         conn.execute("UPDATE staff_activity_log SET admin_reply=? WHERE id=?", (request.form.get('admin_reply'), id))
         conn.commit()
@@ -1925,7 +1925,7 @@ def reply_staff_activity(id):
 
 @app.route('/add_new_system_user', methods=['POST'])
 def add_new_system_user():
-    if session.get('user_role') != 'Admin': return "Unauthorized", 403
+    if session.get('user_role'] != 'Admin': return "Unauthorized", 403
     with get_db() as conn:
         conn.execute("INSERT INTO users (role, password) VALUES (?, ?)", (request.form.get('new_role'), request.form.get('new_password')))
         conn.commit()
@@ -1934,7 +1934,7 @@ def add_new_system_user():
 
 @app.route('/delete_system_user/<int:id>')
 def delete_system_user(id):
-    if session.get('user_role') != 'Admin': return "Unauthorized", 403
+    if session.get('user_role'] != 'Admin': return "Unauthorized", 403
     with get_db() as conn:
         conn.execute("DELETE FROM users WHERE id=?", (id,))
         conn.commit()
@@ -2041,7 +2041,7 @@ def save_attendance():
 
 @app.route('/attendance')
 def clerk_attendance_portal():
-    if session.get('user_role') not in ['Clerk', 'Admin', 'Manager']:
+    if session.get('user_role'] not in ['Clerk', 'Admin', 'Manager']:
         return redirect(url_for('login'))
     with get_db() as conn:
         students = conn.execute("SELECT * FROM students ORDER BY name ASC").fetchall()
@@ -2528,10 +2528,11 @@ def ground_tracker():
 </body>
 </html>"""
     return render_template_string(html)
-    # ----------------- ADMIN: STAFF ACTIVITIES & REMARKS -----------------
+
+# ----------------- ADMIN: STAFF ACTIVITIES & REMARKS -----------------
 @app.route('/delete_staff_activity/<int:act_id>', methods=['POST', 'GET'])
 def delete_staff_activity(act_id):
-    if session.get('user_role') != 'Admin' and session.get('role') != 'admin':
+    if session.get('user_role'] != 'Admin' and session.get('role'] != 'admin':
         return "अनधिकृत प्रवेश!", 403
     with get_db() as conn:
         conn.execute("DELETE FROM staff_activities WHERE id = ?", (act_id,))
@@ -2540,7 +2541,7 @@ def delete_staff_activity(act_id):
 
 @app.route('/edit_staff_activity/<int:act_id>', methods=['GET', 'POST'])
 def edit_staff_activity(act_id):
-    if session.get('user_role') != 'Admin' and session.get('role') != 'admin':
+    if session.get('user_role'] != 'Admin' and session.get('role'] != 'admin':
         return "अनधिकृत प्रवेश!", 403
     with get_db() as conn:
         if request.method == 'POST':
@@ -2562,7 +2563,7 @@ def edit_staff_activity(act_id):
 
 @app.route('/delete_student_remark/<int:record_id>', methods=['POST', 'GET'])
 def delete_student_remark(record_id):
-    if session.get('user_role') != 'Admin' and session.get('role') != 'admin':
+    if session.get('user_role'] != 'Admin' and session.get('role'] != 'admin':
         return "अनधिकृत प्रवेश!", 403
     with get_db() as conn:
         rec = conn.execute("SELECT student_id FROM student_activities WHERE id = ?", (record_id,)).fetchone()
@@ -2574,7 +2575,7 @@ def delete_student_remark(record_id):
 
 @app.route('/edit_student_remark/<int:record_id>', methods=['GET', 'POST'])
 def edit_student_remark(record_id):
-    if session.get('user_role') != 'Admin' and session.get('role') != 'admin':
+    if session.get('user_role'] != 'Admin' and session.get('role'] != 'admin':
         return "अनधिकृत प्रवेश!", 403
     with get_db() as conn:
         if request.method == 'POST':
@@ -2899,7 +2900,7 @@ def inquiry_desk():
             </tr>
             </form>
             {% else %}
-            <tr><td colspan="8" style="text-align:center; color:#64748b; padding:15px;">अद्याप कोणतीही चौकशी आलेली नाही.</td></tr>
+            <tr><td colspan="8" style="text-align:center; color:#64748b;">अद्याप कोणतीही चौकशी आलेली नाही.</td></tr>
             {% endfor %}
         </tbody>
     </table>
@@ -2921,7 +2922,7 @@ def inquiry_desk():
                 </td>
             </tr>
             {% else %}
-            <tr><td colspan="6" style="text-align:center; color:#64748b; padding:15px;">अद्याप कोणीही ऑनलाइन टेस्ट सोडवलेली नाही.</td></tr>
+            <tr><td colspan="6" style="text-align:center; color:#64748b;">अद्याप कोणीही ऑनलाइन टेस्ट सोडवलेली नाही.</td></tr>
             {% endfor %}
         </tbody>
     </table>
@@ -2942,4 +2943,4 @@ init_db()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
-    
+                                           
