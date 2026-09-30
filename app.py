@@ -681,9 +681,9 @@ MANAGER_LAYOUT = '''<!DOCTYPE html>
     {% endif %}
 </div>
 </body>
-</html>
+</html>'''
 
-TRAINER_LAYOUT = '''<!DOCTYPE html>
+TRAINER_LAYOUT = """<!DOCTYPE html>
 <html lang="{{ lang }}">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -713,6 +713,7 @@ TRAINER_LAYOUT = '''<!DOCTYPE html>
     </div>
 </div>
 <div class="nav-bar">
+    <a href="/inquiries" class="nav-btn" style="background:#b45309; color:white;">📞 चौकशी व टेस्ट डेस्क</a>
     <a href="/trainer?tab=practice" class="nav-btn {% if curr_tab == 'practice' %}active{% endif %}">🏃‍♂️ {{ 'Practice' if lang == 'en' else 'आजचा सराव' }}</a>
     <a href="/trainer?tab=stopwatch" class="nav-btn {% if curr_tab == 'stopwatch' %}active{% endif %}" style="background:#f59e0b; color:#111;">⏱️ {{ 'Stopwatch' if lang == 'en' else 'स्टॉपवॉच' }}</a>
     <a href="/trainer?tab=physical" class="nav-btn {% if curr_tab == 'physical' %}active{% endif %}">🏃‍♂️ {{ 'Physical Test' if lang == 'en' else 'फिजिकल रेकॉर्ड नोंद' }}</a>
@@ -743,7 +744,7 @@ TRAINER_LAYOUT = '''<!DOCTYPE html>
                         <option value="पावसामुळे ग्राउंड ओले / चिखल">🌧️ पावसामुळे ग्राउंड ओले / चिखल</option>
                         <option value="ट्रॅक दुरुस्ती सुरू">🛠️ ट्रॅक दुरुस्ती काम सुरू</option>
                         <option value="खराब हवामान / मुसळधार पाऊस">⛈️ खराब हवामान / मुसळधार पाऊस</option>
-                        <option value="इतर तांत्रिक अडचण">⚠️ इतर अडचणीमुळे ग्राउंड होऊ शकले नाही</option>
+                        <option value="इतर तांत्रिक अडचण">⚠️️ इतर अडचणीमुळे ग्राउंड होऊ शकले नाही</option>
                     </select>
                 </div>
             </div>
@@ -756,7 +757,7 @@ TRAINER_LAYOUT = '''<!DOCTYPE html>
 
     {% if curr_tab == 'stopwatch' %}
     <div class="card" style="text-align:center;">
-        <h3 style="color:#0284c7; margin-top:0;">⏱️️ डिजिटल मैदानी स्टॉपवॉच (लॅप फिचरसह)</h3>
+        <h3 style="color:#0284c7; margin-top:0;">⏱️ डिजिटल मैदानी स्टॉपवॉच (लॅप फिचरसह)</h3>
         <div id="sw_display" style="font-size:46px; font-weight:bold; color:#0b3c5d; font-family:monospace; margin:15px 0;">00:00.00</div>
         <div style="display:flex; justify-content:center; gap:8px; flex-wrap:wrap;">
             <button onclick="startSW()" class="btn-act" style="background:green; width:95px;">Start ▶️</button>
@@ -934,7 +935,7 @@ TRAINER_LAYOUT = '''<!DOCTYPE html>
     {% endif %}
 </div>
 </body>
-</html>
+</html>"""
 
 CLERK_LAYOUT = '''<!DOCTYPE html>
 <html lang="{{ lang }}">
@@ -972,7 +973,7 @@ CLERK_LAYOUT = '''<!DOCTYPE html>
     <a href="/attendance" target="_blank" class="clk-btn" style="background: linear-gradient(135deg, #6366f1, #a855f7); color: white; font-weight: bold; border-radius: 4px; padding: 6px 12px; text-decoration: none; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">📋 हजेरी</a>
     <a href="/library" target="_blank" class="clk-btn" style="background: linear-gradient(135deg, #0284c7, #06b6d4); color: white; font-weight: bold; border-radius: 4px; padding: 6px 12px; text-decoration: none; box-shadow: 0 2px 5px rgba(0,0,0,0.2); margin-left: 6px;">📚 स्टडी लॅब / लायब्ररी</a>
     <a href="/clerk?tab=hostel" class="clk-btn {% if curr_tab == 'hostel' %}active{% endif %}" style="background:#8e2de2;">🏠 {{ 'Hostel/Mess Fee' if lang == 'en' else 'हॉस्टेल/मेस फी' }}</a>
-    <a href="/clerk?tab=physical" class="clk-btn {% if curr_tab == 'physical' %}active{% endif %}" style="background:#0284c7;">🏃‍♂️ {{ 'Physical Test' if lang == 'en' else 'फिजिकल टेस्ट नोंद' }}</a>
+    <a href="/clerk?tab=physical" class="clk-btn {% if curr_tab == 'physical' %}active{% endif %}" style="background:#0284c7;">🏃‍♂️️ {{ 'Physical Test' if lang == 'en' else 'फिजिकल टेस्ट नोंद' }}</a>
     <a href="/clerk?tab=written" class="clk-btn {% if curr_tab == 'written' %}active{% endif %}" style="background:#10b981;">📝 {{ 'Written Exam' if lang == 'en' else 'रिटर्न टेस्ट नोंद' }}</a>
     <a href="/clerk?tab=exp" class="clk-btn {% if curr_tab == 'exp' %}active{% endif %}">💵 {{ 'Expense Entry' if lang == 'en' else 'खर्च नोंद' }}</a>
     <a href="/clerk?tab=kit" class="clk-btn {% if curr_tab == 'kit' %}active{% endif %}">📦 {{ 'Kit Distribution' if lang == 'en' else 'किट वाटप' }}</a>
@@ -1175,7 +1176,7 @@ CLERK_LAYOUT = '''<!DOCTYPE html>
     {% endif %}
 </div>
 </body>
-</html>
+</html>'''
 
 ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
 <html lang="{{ lang }}">
@@ -1427,7 +1428,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
 
     {% if curr_tab == 'disc' %}
     <div class="admin-tab">
-        <h3 style="color:#6b21a8; margin-top:0;">⚠️ सुट्टी गेटपास व शिस्तभंग नोंद (एडिट व रद्द पर्यायासह)</h3>
+        <h3 style="color:#6b21a8; margin-top:0;">⚠️️ सुट्टी गेटपास व शिस्तभंग नोंद (एडिट व रद्द पर्यायासह)</h3>
         <form action="/add_discipline" method="POST" style="background:#f5f3ff; padding:12px; border-radius:6px; margin-bottom:15px;">
             विद्यार्थी: <select name="student_id" required><option value="">-- निवडा --</option>{% for s in students %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}</select>
             प्रकार: <select name="record_type"><option value="सुट्टी गेटपास">सुट्टी गेटपास</option><option value="शिस्तभंग ताकीद">शिस्तभंग ताकीद</option></select>
@@ -1645,7 +1646,7 @@ function updateClock() {
 setInterval(updateClock, 1000); updateClock();
 </script>
 </body>
-</html>
+</html>'''
 
 @app.route('/toggle_lang')
 def toggle_lang():
