@@ -409,6 +409,7 @@ MANAGER_LAYOUT = '''<!DOCTYPE html>
 
 <div class="nav-bar">
     <a href="/manager?tab=grocery" class="mgr-btn {% if curr_tab == 'grocery' %}active{% endif %}">🛒 {{ 'Grocery Slip' if lang == 'en' else '१-क्लिक किराणा स्लिप' }}</a>
+    <a href="/library" target="_blank" class="btn" style="background: linear-gradient(135deg, #0284c7, #06b6d4); color: white; font-weight: bold; border-radius: 4px; padding: 6px 12px; text-decoration: none; box-shadow: 0 2px 5px rgba(0,0,0,0.2); margin-left: 6px;">📚 स्टडी लॅब / लायब्ररी</a>
     <a href="/manager?tab=diet" class="mgr-btn {% if curr_tab == 'diet' %}active{% endif %}">🍱 {{ 'Food Menu' if lang == 'en' else 'शाकाहारी डाएट शेड्युल' }}</a>
     <a href="/manager?tab=cook" class="mgr-btn {% if curr_tab == 'cook' %}active{% endif %}">👩‍🍳 {{ 'Kitchen Attendance' if lang == 'en' else 'स्वयंपाकी महिला हजेरी' }}</a>
     <a href="/manager?tab=physical" class="mgr-btn {% if curr_tab == 'physical' %}active{% endif %}" style="background:#0284c7; color:white;">🏃‍♂️ {{ 'Physical Records' if lang == 'en' else 'फिजिकल रेकॉर्ड' }}</a>
