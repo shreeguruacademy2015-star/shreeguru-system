@@ -2704,5 +2704,47 @@ def edit_student_remark(record_id):
     </body>
     </html>"""
     return render_template_string(form_html)
+# --- STUDY LAB & LIBRARY ROUTES ---
+@app.route('/library')
+def library_dashboard():
+    with get_db() as conn:
+        books = conn.execute("SELECT * FROM books ORDER BY id DESC").fetchall()
+        issues = conn.execute("SELECT * FROM book_issues WHERE status = 'Issued' ORDER BY id DESC").fetchall()
+        seats = conn.execute("SELECT * FROM study_lab_seats ORDER BY seat_number ASC").fetchall()
+    return render_template('library.html', books=books, issues=issues, seats=seats)
+
+@app.route('/add_book', methods=['POST'])
+def add_book():
+    title = request.form.get('title')
+    author = request.form.get('author')
+    category = request.form.get('category')
+    copies = int(request.form.get('copies', 1))
+    with get_db() as conn:
+        conn.execute("INSERT INTO books (title, author, category, total_copies, available_copies) VALUES (?, ?, ?, ?, ?)",
+                     (title, author, category, copies, copies))
+        conn.commit()
+    return redirect('/library')
+
+@app.route('/issue_book', methods=['POST'])
+def issue_book():
+    book_id = request.form.get('book_id')
+    student_name = request.form.get('student_name')
+    issue_date = request.form.get('issue_date')
+    with get_db() as conn:
+        conn.execute("INSERT INTO book_issues (book_id, student_name, issue_date, status) VALUES (?, ?, ?, 'Issued')",
+                     (book_id, student_name, issue_date))
+        conn.execute("UPDATE books SET available_copies = available_copies - 1 WHERE id = ? AND available_copies > 0", (book_id,))
+        conn.commit()
+    return redirect('/library')
+
+@app.route('/return_book/<int:issue_id>/<int:book_id>')
+def return_book(issue_id, book_id):
+    from datetime import date
+    today = date.today().strftime('%Y-%m-%d')
+    with get_db() as conn:
+        conn.execute("UPDATE book_issues SET return_date = ?, status = 'Returned' WHERE id = ?", (today, issue_id))
+        conn.execute("UPDATE books SET available_copies = available_copies + 1 WHERE id = ?", (book_id,))
+        conn.commit()
+    return redirect('/library')
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
