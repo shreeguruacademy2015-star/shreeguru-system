@@ -1252,6 +1252,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
     <a href="/admin?tab=fee" class="menu-btn {% if curr_tab == 'fee' %}active{% endif %}" style="background:#f59e0b;">💰 {{ 'Fee Collection' if lang == 'en' else 'फी जमा' }}</a>
     <a href="/admin?tab=hostel" class="menu-btn {% if curr_tab == 'hostel' %}active{% endif %}" style="background:#8e2de2;">🏠 {{ 'Hostel / Mess' if lang == 'en' else 'हॉस्टेल/मेस' }}</a>
     <a href="/admin?tab=att" class="menu-btn {% if curr_tab == 'att' %}active{% endif %}" style="background:#e11d48;">📋 {{ 'Attendance' if lang == 'en' else 'सर्व हजेरी' }}</a>
+    <a href="/library" target="_blank" class="btn" style="background: linear-gradient(135deg, #0284c7, #06b6d4); color: white; font-weight: bold; border-radius: 4px; padding: 6px 12px; text-decoration: none; box-shadow: 0 2px 5px rgba(0,0,0,0.2); margin-left: 6px;">📚 स्टडी लॅब / लायब्ररी</a>
     <a href="/admin?tab=diet" class="menu-btn {% if curr_tab == 'diet' %}active{% endif %}" style="background:#6366f1;">🥗 {{ 'Mess Diet' if lang == 'en' else 'मेस डाएट' }}</a>
     <a href="/admin?tab=disc" class="menu-btn {% if curr_tab == 'disc' %}active{% endif %}" style="background:#6b21a8;">⚠️ {{ 'Discipline & Gatepass' if lang == 'en' else 'गेटपास/शिस्त' }}</a>
     <a href="/admin?tab=exp" class="menu-btn {% if curr_tab == 'exp' %}active{% endif %}" style="background:#ff416c;">💵 {{ 'Expenses' if lang == 'en' else 'खर्च वही' }}</a>
