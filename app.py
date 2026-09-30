@@ -2194,7 +2194,7 @@ def print_receipt(id):
     </body></html>'''
     return render_template_string(html)
 
-# ----- STUDENT FULL REPORT ROUTE -----
+# ----- STUDENT FULL REPORT ROUTE (FIXED & COMPLETE) -----
 @app.route('/student_report/<int:student_id>', methods=['GET', 'POST'])
 def student_report(student_id):
     if 'user_role' not in session and 'role' not in session:
@@ -2212,40 +2212,75 @@ def student_report(student_id):
             conn.commit()
             return redirect(url_for('student_report', student_id=student_id))
 
-        try:
-            staff_logs = conn.execute("""
-                SELECT * FROM staff_activities 
-                WHERE student_id = ? 
-                ORDER BY id DESC
-            """, (student_id,)).fetchall()
-        except Exception:
-            staff_logs = []
-
+        # १. हजेरी नोंदी (Attendance)
         try:
             attendance_records = conn.execute("""
-                SELECT att_date as date, status, 'Staff' as marked_by 
+                SELECT att_date as date, status, att_type as marked_by 
                 FROM attendance 
                 WHERE person_id = ? 
-                ORDER BY att_date DESC
+                ORDER BY att_date DESC LIMIT 30
             """, (student_id,)).fetchall()
         except Exception:
             attendance_records = []
 
+        # २. मैदानी चाचणी अहवाल (Physical Tests - Clerk & Trainer)
         try:
-            ground_records = conn.execute("""
-                SELECT * FROM ground_records 
+            physical_records = conn.execute("""
+                SELECT * FROM physical_tests 
                 WHERE student_id = ? 
                 ORDER BY test_date DESC
             """, (student_id,)).fetchall()
         except Exception:
-            ground_records = []
+            physical_records = []
+
+        # ३. लेखी परीक्षा गुण निकाल (Written Tests)
+        try:
+            written_records = conn.execute("""
+                SELECT * FROM written_tests 
+                WHERE student_id = ? 
+                ORDER BY test_date DESC
+            """, (student_id,)).fetchall()
+        except Exception:
+            written_records = []
+
+        # ४. आरोग्य व ट्रेनर डाएट शिफारस (Student Care & Diet Log)
+        try:
+            care_logs = conn.execute("""
+                SELECT * FROM student_care_log 
+                WHERE student_id = ? 
+                ORDER BY care_date DESC
+            """, (student_id,)).fetchall()
+        except Exception:
+            care_logs = []
+
+        # ५. सुट्टी गेटपास व शिस्तभंग नोंदी (Discipline & Gatepass)
+        try:
+            discipline_logs = conn.execute("""
+                SELECT * FROM discipline_records 
+                WHERE student_id = ? 
+                ORDER BY record_date DESC
+            """, (student_id,)).fetchall()
+        except Exception:
+            discipline_logs = []
+
+        # ६. किट वाटप नोंदी (Kit Distribution)
+        try:
+            kit_logs = conn.execute("""
+                SELECT * FROM kit_distribution 
+                WHERE student_id = ? 
+                ORDER BY issue_date DESC
+            """, (student_id,)).fetchall()
+        except Exception:
+            kit_logs = []
 
     return render_template('student_report.html', 
                            student=student, 
-                           logs=staff_logs, 
                            attendance=attendance_records, 
-                           ground_records=ground_records)
-
+                           physical_records=physical_records,
+                           written_records=written_records,
+                           care_logs=care_logs,
+                           discipline_logs=discipline_logs,
+                           kit_logs=kit_logs)
 # ================= PHYSICAL / GROUND FITNESS TRACKER =================
 def calculate_ground_marks(gender, event_name, val):
     try:
