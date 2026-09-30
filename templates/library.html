@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>स्टडी लॅब व लायब्ररी मॅनेजमेंट</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f1f5f9; margin: 0; padding: 20px; }
+        .header { background: linear-gradient(135deg, #1e3a8a, #3b82f6); color: white; padding: 18px 24px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px; }
+        h3 { margin-top: 0; color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }
+        input, select, button { width: 100%; padding: 10px; margin-top: 8px; margin-bottom: 12px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; }
+        button { background: #2563eb; color: white; font-weight: bold; cursor: pointer; border: none; }
+        button:hover { background: #1d4ed8; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        th, td { border: 1px solid #e2e8f0; padding: 8px 10px; text-align: left; }
+        th { background: #f8fafc; color: #475569; }
+        .badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; background: #dcfce7; color: #166534; }
+        .btn-ret { background: #ef4444; color: white; padding: 4px 8px; border-radius: 4px; text-decoration: none; font-size: 12px; }
+        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2 style="margin:0;">📚 स्टडी लॅब व लायब्ररी व्यवस्थापन</h2>
+        <a href="javascript:window.close()" style="color:white; text-decoration:none; font-weight:bold; background:rgba(255,255,255,0.2); padding:6px 12px; border-radius:6px;">बंद करा ✖</a>
+    </div>
+
+    <div class="grid">
+        <!-- पुस्तक जोडणे -->
+        <div class="card">
+            <h3>➕ नवीन पुस्तक जोडा</h3>
+            <form action="/add_book" methods="POST">
+                <input type="text" name="title" placeholder="पुस्तकाचे नाव (उदा. पोलीस भरती ठोकळा)" required>
+                <input type="text" name="author" placeholder="लेखक / प्रकाशन">
+                <input type="text" name="category" placeholder="विषय / प्रवर्ग (उदा. गणित, चालू घडामोडी)">
+                <input type="number" name="copies" placeholder="एकूण प्रती (उदा. 5)" value="1" required>
+                <button type="submit">पुस्तक सेव्ह करा</button>
+            </form>
+        </div>
+
+        <!-- पुस्तक इश्यू करणे -->
+        <div class="card">
+            <h3>📖 पुस्तक इश्यू करा (विद्यार्थ्याला द्या)</h3>
+            <form action="/issue_book" method="POST">
+                <select name="book_id" required>
+                    <option value="">-- पुस्तक निवडा --</option>
+                    {% for b in books %}
+                        {% if b['available_copies'] > 0 %}
+                        <option value="{{ b['id'] }}">{{ b['title'] }} (शिल्लक: {{ b['available_copies'] }})</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+                <input type="text" name="student_name" placeholder="विद्यार्थ्याचे पूर्ण नाव / रोल नं." required>
+                <input type="date" name="issue_date" required>
+                <button type="submit" style="background:#059669;">पुस्तक द्या (Issue)</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- सध्या इश्यू केलेली पुस्तके -->
+    <div class="card">
+        <h3>📋 सध्या दिलेली पुस्तके (Pending Returns)</h3>
+        <table>
+            <tr>
+                <th>विद्यार्थी</th>
+                <th>पुस्तकाचे नाव</th>
+                <th>दिलेली तारीख</th>
+                <th>कृती</th>
+            </tr>
+            {% for issue in issues %}
+            <tr>
+                <td><strong>{{ issue['student_name'] }}</strong></td>
+                <td>
+                    {% for b in books %}{% if b['id'] == issue['book_id'] %}{{ b['title'] }}{% endif %}{% endfor %}
+                </td>
+                <td>{{ issue['issue_date'] }}</td>
+                <td>
+                    <a href="/return_book/{{ issue['id'] }}/{{ issue['book_id'] }}" class="btn-ret" onclick="return confirm('पुस्तक जमा करून घेतले आहे का?')">जमा करा (Return)</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" style="text-align:center; color:#64748b;">सध्या कोणतेही पुस्तक वाटप शिल्लक नाही.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <!-- उपलब्ध पुस्तकांचा साठा -->
+    <div class="card">
+        <h3>📚 सर्व पुस्तकांचा साठा (Book Inventory)</h3>
+        <table>
+            <tr>
+                <th>पुस्तकाचे नाव</th>
+                <th>लेखक</th>
+                <th>विषय</th>
+                <th>एकूण प्रती</th>
+                <th>शिल्लक</th>
+            </tr>
+            {% for b in books %}
+            <tr>
+                <td><strong>{{ b['title'] }}</strong></td>
+                <td>{{ b['author'] or '-' }}</td>
+                <td>{{ b['category'] or '-' }}</td>
+                <td>{{ b['total_copies'] }}</td>
+                <td><span class="badge">{{ b['available_copies'] }} शिल्लक</span></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" style="text-align:center; color:#64748b;">कोणतीही पुस्तके जोडलेली नाहीत.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+</body>
+</html>
