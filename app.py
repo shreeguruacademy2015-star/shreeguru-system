@@ -329,7 +329,7 @@ def init_db():
             )
         """)
 
-         conn.execute("""CREATE TABLE IF NOT EXISTS admission_inquiries (id INTEGER PRIMARY KEY AUTOINCREMENT, inquiry_date TEXT NOT NULL, student_name TEXT NOT NULL, district TEXT NOT NULL, taluka TEXT, phone TEXT NOT NULL, course TEXT NOT NULL, hostel_interest TEXT DEFAULT 'होय', call_status TEXT DEFAULT 'नवीन चौकशी (New)', staff_note TEXT DEFAULT '')""")
+ conn.execute("""CREATE TABLE IF NOT EXISTS admission_inquiries (id INTEGER PRIMARY KEY AUTOINCREMENT, inquiry_date TEXT NOT NULL, student_name TEXT NOT NULL, district TEXT NOT NULL, taluka TEXT, phone TEXT NOT NULL, course TEXT NOT NULL, hostel_interest TEXT DEFAULT 'होय', call_status TEXT DEFAULT 'नवीन चौकशी (New)', staff_note TEXT DEFAULT '')""")
             )
          """)
         conn.commit()
