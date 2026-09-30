@@ -329,13 +329,59 @@ def init_db():
             )
         """)
 
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS ground_records (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                student_id INTEGER NOT NULL,
+                test_date TEXT NOT NULL,
+                event_name TEXT NOT NULL,
+                raw_value REAL NOT NULL,
+                marks REAL NOT NULL,
+                trainer_name TEXT,
+                remark TEXT
+            )
+        """)
+
+        # १. महाराष्ट्र प्रवेश चौकशी टेबल
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS admission_inquiries (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                inquiry_date TEXT NOT NULL,
+                student_name TEXT NOT NULL,
+                district TEXT NOT NULL,
+                taluka TEXT,
+                phone TEXT NOT NULL,
+                course TEXT NOT NULL,
+                hostel_interest TEXT DEFAULT 'होय',
+                call_status TEXT DEFAULT 'नवीन चौकशी (New)',
+                staff_note TEXT DEFAULT ''
+            )
+        """)
+
+        # २. ऑनलाइन टेस्ट सोडवणाऱ्या विद्यार्थ्यांचे लीड्स व निकाल टेबल
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS mock_test_leads (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                test_date TEXT NOT NULL,
+                student_name TEXT NOT NULL,
+                district TEXT NOT NULL,
+                phone TEXT NOT NULL,
+                score INTEGER NOT NULL,
+                total_marks INTEGER NOT NULL,
+                test_name TEXT NOT NULL,
+                call_status TEXT DEFAULT 'नवीन टेस्ट निकाल',
+                staff_note TEXT DEFAULT ''
+            )
+        """)
+
         conn.commit()
 
         days = ['सोमवार', 'मंगळवार', 'बुधवार', 'गुरुवार', 'शुक्रवार', 'शनिवार', 'रविवार']
         for d in days:
             conn.execute("INSERT OR IGNORE INTO mess_diet (day_name, breakfast, lunch, dinner, special_diet) VALUES (?, 'पोहे / उपमा', 'डाळ, भात, चपाती, उसळ', 'भाकरी, सुकी भाजी, आमटी', 'दूध, केळी, भिजवलेले हरभरे-गूळ')", (d,))
         conn.commit()
-     # ----------------- POLICE & DEFENCE HD THEME LOGIN HTML -----------------
+
+# ----------------- POLICE & DEFENCE HD THEME LOGIN HTML -----------------
 LOGIN_HTML = '''<!DOCTYPE html>
 <html lang="{{ lang }}">
 <head>
@@ -393,8 +439,6 @@ LOGIN_HTML = '''<!DOCTYPE html>
     </form>
 </div>
 </body>
-</html>'''
-
 # ----------------- MANAGER PORTAL -----------------
 MANAGER_LAYOUT = '''<!DOCTYPE html>
 <html lang="{{ lang }}">
@@ -431,11 +475,12 @@ MANAGER_LAYOUT = '''<!DOCTYPE html>
 </div>
 
 <div class="nav-bar">
+    <a href="/inquiries" class="mgr-btn" style="background:#b45309; color:white;">📞 चौकशी व टेस्ट डेस्क</a>
     <a href="/manager?tab=grocery" class="mgr-btn {% if curr_tab == 'grocery' %}active{% endif %}">🛒 {{ 'Grocery Slip' if lang == 'en' else '१-क्लिक किराणा स्लिप' }}</a>
     <a href="/library" target="_blank" class="mgr-btn" style="background: linear-gradient(135deg, #0284c7, #06b6d4); color: white;">📚 स्टडी लॅब / लायब्ररी</a>
     <a href="/manager?tab=diet" class="mgr-btn {% if curr_tab == 'diet' %}active{% endif %}">🍱 {{ 'Food Menu' if lang == 'en' else 'शाकाहारी डाएट शेड्युल' }}</a>
     <a href="/manager?tab=cook" class="mgr-btn {% if curr_tab == 'cook' %}active{% endif %}">👩‍🍳 {{ 'Kitchen Attendance' if lang == 'en' else 'स्वयंपाकी महिला हजेरी' }}</a>
-    <a href="/manager?tab=physical" class="mgr-btn {% if curr_tab == 'physical' %}active{% endif %}" style="background:#0284c7; color:white;">🏃‍♂️ {{ 'Physical Records' if lang == 'en' else 'फिजिकल रेकॉर्ड' }}</a>
+    <a href="/manager?tab=physical" class="mgr-btn {% if curr_tab == 'physical' %}active{% endif %}" style="background:#0284c7; color:white;">🏃‍♂️️ {{ 'Physical Records' if lang == 'en' else 'फिजिकल रेकॉर्ड' }}</a>
     <a href="/manager?tab=written" class="mgr-btn {% if curr_tab == 'written' %}active{% endif %}" style="background:#10b981; color:white;">📝 {{ 'Written Exam' if lang == 'en' else 'रिटर्न टेस्ट रेकॉर्ड' }}</a>
     <a href="/manager?tab=care" class="mgr-btn {% if curr_tab == 'care' %}active{% endif %}">🌸 {{ 'Hostel Care' if lang == 'en' else 'मुलींचे हॉस्टेल व काळजी' }}</a>
     <a href="/manager?tab=req" class="mgr-btn {% if curr_tab == 'req' %}active{% endif %}" style="background:#e11d48; color:white;">📩 {{ 'Send Request' if lang == 'en' else 'ॲडमिनला विनंती' }}</a>
@@ -641,6 +686,7 @@ MANAGER_LAYOUT = '''<!DOCTYPE html>
 </div>
 </body>
 </html>'''
+
 # ----------------- PHYSICAL TRAINER / COACH PORTAL -----------------
 TRAINER_LAYOUT = '''<!DOCTYPE html>
 <html lang="{{ lang }}">
@@ -894,8 +940,8 @@ TRAINER_LAYOUT = '''<!DOCTYPE html>
 </div>
 </body>
 </html>'''
-
-# ----------------- CLERK PORTAL -----------------
+</html>'''
+                                           # ----------------- CLERK PORTAL -----------------
 CLERK_LAYOUT = '''<!DOCTYPE html>
 <html lang="{{ lang }}">
 <head>
@@ -925,6 +971,7 @@ CLERK_LAYOUT = '''<!DOCTYPE html>
     </div>
 </div>
 <div class="nav-bar"> 
+    <a href="/inquiries" class="clk-btn" style="background:#b45309;">📞 चौकशी व टेस्ट डेस्क</a>
     <a href="/clerk?tab=stud" class="clk-btn {% if curr_tab == 'stud' %}active{% endif %}">👥 {{ 'Students List' if lang == 'en' else 'विद्यार्थी यादी' }}</a>
     <a href="/clerk?tab=adm" class="clk-btn {% if curr_tab == 'adm' %}active{% endif %}">📝 {{ 'New Admission' if lang == 'en' else 'नवीन प्रवेश' }}</a>
     <a href="/clerk?tab=fee" class="clk-btn {% if curr_tab == 'fee' %}active{% endif %}">💰 {{ 'Collect Fee' if lang == 'en' else 'फी जमा' }}</a>
@@ -1135,6 +1182,7 @@ CLERK_LAYOUT = '''<!DOCTYPE html>
 </div>
 </body>
 </html>'''
+
 # ----------------- ADMIN DASHBOARD -----------------
 ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
 <html lang="{{ lang }}">
@@ -1173,6 +1221,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
 </div>
 
 <div class="menu-bar">
+    <a href="/inquiries" class="menu-btn" style="background:#b45309; border:2px solid #fde047;">📞 चौकशी व टेस्ट डेस्क</a>
     <a href="/admin?tab=students" class="menu-btn {% if curr_tab == 'students' %}active{% endif %}" style="background:#2563eb;">👥 {{ 'All Students' if lang == 'en' else 'सर्व विद्यार्थी' }}</a>
     <a href="/admin?tab=admission" class="menu-btn {% if curr_tab == 'admission' %}active{% endif %}" style="background:#2563eb;">📝 {{ 'New Admission' if lang == 'en' else 'नवीन प्रवेश' }}</a>
     <a href="/admin?tab=physical" class="menu-btn {% if curr_tab == 'physical' %}active{% endif %}" style="background:#0284c7;">🏃‍♂️ {{ 'Physical Test' if lang == 'en' else 'फिजिकल रेकॉर्ड' }}</a>
@@ -1836,8 +1885,7 @@ def delete_written_record(id):
         conn.execute("DELETE FROM written_tests WHERE id=?", (id,))
         conn.commit()
     return redirect('/admin?tab=written')
-
-@app.route('/add_hostel_fee', methods=['POST'])
+    @app.route('/add_hostel_fee', methods=['POST'])
 def add_hostel_fee():
     with get_db() as conn:
         conn.execute("INSERT INTO hostel_mess_fees (student_id, package_type, from_month, to_month, total_amount, paid_amount, pay_date) VALUES (?, '१ महिना', 'सप्टें', 'ऑक्टो', ?, ?, ?)",
@@ -2101,7 +2149,6 @@ def delete_student(id):
         conn.commit()
     return redirect('/admin?tab=students')
 
-# ----------------- ATTRACTIVE OFFICIAL RECEIPTS & SLIPS -----------------
 @app.route('/print_grocery_slip', methods=['POST'])
 def print_grocery_slip():
     items = request.form.getlist('items')
@@ -2180,7 +2227,6 @@ def print_receipt(id):
     </body></html>'''
     return render_template_string(html)
 
-# ----- STUDENT FULL REPORT ROUTE (FIXED & COMPLETE) -----
 @app.route('/student_report/<int:student_id>', methods=['GET', 'POST'])
 def student_report(student_id):
     if 'user_role' not in session and 'role' not in session:
@@ -2198,7 +2244,6 @@ def student_report(student_id):
             conn.commit()
             return redirect(url_for('student_report', student_id=student_id))
 
-        # १. हजेरी नोंदी (Attendance)
         try:
             attendance_records = conn.execute("""
                 SELECT att_date as date, status, att_type as marked_by 
@@ -2209,7 +2254,6 @@ def student_report(student_id):
         except Exception:
             attendance_records = []
 
-        # २. मैदानी चाचणी अहवाल (Physical Tests - Clerk & Trainer)
         try:
             physical_records = conn.execute("""
                 SELECT * FROM physical_tests 
@@ -2219,7 +2263,6 @@ def student_report(student_id):
         except Exception:
             physical_records = []
 
-        # ३. लेखी परीक्षा गुण निकाल (Written Tests)
         try:
             written_records = conn.execute("""
                 SELECT * FROM written_tests 
@@ -2229,7 +2272,6 @@ def student_report(student_id):
         except Exception:
             written_records = []
 
-        # ४. आरोग्य व ट्रेनर डाएट शिफारस (Student Care & Diet Log)
         try:
             care_logs = conn.execute("""
                 SELECT * FROM student_care_log 
@@ -2239,7 +2281,6 @@ def student_report(student_id):
         except Exception:
             care_logs = []
 
-        # ५. सुट्टी गेटपास व शिस्तभंग नोंदी (Discipline & Gatepass)
         try:
             discipline_logs = conn.execute("""
                 SELECT * FROM discipline_records 
@@ -2249,7 +2290,6 @@ def student_report(student_id):
         except Exception:
             discipline_logs = []
 
-        # ६. किट वाटप नोंदी (Kit Distribution)
         try:
             kit_logs = conn.execute("""
                 SELECT * FROM kit_distribution 
@@ -2267,7 +2307,7 @@ def student_report(student_id):
                            care_logs=care_logs,
                            discipline_logs=discipline_logs,
                            kit_logs=kit_logs)
-# ================= PHYSICAL / GROUND FITNESS TRACKER =================
+
 def calculate_ground_marks(gender, event_name, val):
     try:
         val = float(val)
@@ -2487,154 +2527,73 @@ def ground_tracker():
 </div>
 </body>
 </html>"""
-    return render_template_string(html)  
-
-# ----------------- ADMIN: STAFF ACTIVITIES & STUDENT REMARKS (EDIT & DELETE) -----------------
+    return render_template_string(html)
+    # ----------------- ADMIN: STAFF ACTIVITIES & REMARKS -----------------
 @app.route('/delete_staff_activity/<int:act_id>', methods=['POST', 'GET'])
 def delete_staff_activity(act_id):
     if session.get('user_role') != 'Admin' and session.get('role') != 'admin':
-        return "अनधिकृत प्रवेश! फक्त ॲडमिन ही नोंद डिलीट करू शकतात.", 403
-
+        return "अनधिकृत प्रवेश!", 403
     with get_db() as conn:
         conn.execute("DELETE FROM staff_activities WHERE id = ?", (act_id,))
         conn.commit()
-
     return redirect(request.referrer or url_for('admin_view'))
 
 @app.route('/edit_staff_activity/<int:act_id>', methods=['GET', 'POST'])
 def edit_staff_activity(act_id):
     if session.get('user_role') != 'Admin' and session.get('role') != 'admin':
-        return "अनधिकृत प्रवेश! फक्त ॲडमिन ही नोंद एडिट करू शकतात.", 403
-
+        return "अनधिकृत प्रवेश!", 403
     with get_db() as conn:
         if request.method == 'POST':
-            new_date = request.form.get('activity_date')
-            new_action = request.form.get('action_text')
-            new_remark = request.form.get('remark', '')
-
-            conn.execute("""
-                UPDATE staff_activities 
-                SET activity_date = ?, action_text = ?, remark = ?
-                WHERE id = ?
-            """, (new_date, new_action, new_remark, act_id))
+            conn.execute("UPDATE staff_activities SET activity_date=?, action_text=?, remark=? WHERE id=?", 
+                         (request.form.get('activity_date'), request.form.get('action_text'), request.form.get('remark', ''), act_id))
             conn.commit()
             return redirect(url_for('admin_view'))
-
         record = conn.execute("SELECT * FROM staff_activities WHERE id = ?", (act_id,)).fetchone()
-
-    if not record:
-        return "नोंद सापडली नाही!", 404
-
-    form_html = f"""<!DOCTYPE html>
-    <html lang="mr">
-    <head>
-    <meta charset="UTF-8"><title>स्टाफ नोंद दुरुस्त करा</title>
-    <style>
-      body {{ font-family: sans-serif; background: #f1f5f9; padding: 20px; }}
-      .box {{ max-width: 500px; margin: auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }}
-      input, textarea {{ width: 100%; padding: 10px; margin: 8px 0 16px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }}
-      .btn {{ background: #065f46; color: white; border: none; padding: 10px 18px; border-radius: 5px; cursor: pointer; font-weight: bold; }}
-      .cancel {{ color: #dc2626; text-decoration: none; margin-left: 15px; }}
-    </style>
-    </head>
-    <body>
-    <div class="box">
-      <h3 style="color:#065f46; margin-top:0;">✏️ स्टाफ नोंद दुरुस्त करा</h3>
-      <p><b>कर्मचारी:</b> {record['staff_name']}</p>
-      <form method="POST">
-        <label>तारीख:</label>
-        <input type="text" name="activity_date" value="{record['activity_date']}" required>
-        
-        <label>काम / कृती:</label>
-        <textarea name="action_text" rows="3" required>{record['action_text']}</textarea>
-        
-        <label>शेरा / तपशील:</label>
-        <input type="text" name="remark" value="{record['remark'] if record['remark'] else ''}">
-        
-        <button type="submit" class="btn">बदल सेव्ह करा</button>
-        <a href="javascript:history.back()" class="cancel">रद्द करा</a>
-      </form>
-    </div>
-    </body>
-    </html>"""
-    return render_template_string(form_html)
+    if not record: return "नोंद सापडली नाही!", 404
+    return render_template_string('''<!DOCTYPE html><html lang="mr"><head><meta charset="UTF-8"><title>दुरुस्ती</title></head>
+    <body style="font-family:sans-serif; padding:20px;">
+    <h3>✏️ स्टाफ नोंद दुरुस्त करा</h3>
+    <form method="POST">
+        तारीख: <input type="text" name="activity_date" value="{{ record['activity_date'] }}" required><br><br>
+        काम: <textarea name="action_text" rows="3" required>{{ record['action_text'] }}</textarea><br><br>
+        शेरा: <input type="text" name="remark" value="{{ record['remark'] or '' }}"><br><br>
+        <button type="submit">बदल सेव्ह करा</button>
+    </form></body></html>''', record=record)
 
 @app.route('/delete_student_remark/<int:record_id>', methods=['POST', 'GET'])
 def delete_student_remark(record_id):
     if session.get('user_role') != 'Admin' and session.get('role') != 'admin':
-        return "फक्त ॲडमिनला ही नोंद हटवण्याची परवानगी आहे.", 403
-
+        return "अनधिकृत प्रवेश!", 403
     with get_db() as conn:
         rec = conn.execute("SELECT student_id FROM student_activities WHERE id = ?", (record_id,)).fetchone()
-        student_id = rec['student_id'] if rec else None
-        
+        sid = rec['student_id'] if rec else None
         conn.execute("DELETE FROM student_activities WHERE id = ?", (record_id,))
         conn.commit()
-
-    if student_id:
-        return redirect(f"/student_report/{student_id}")
+    if sid: return redirect(f"/student_report/{sid}")
     return redirect(request.referrer or url_for('admin_view'))
 
 @app.route('/edit_student_remark/<int:record_id>', methods=['GET', 'POST'])
 def edit_student_remark(record_id):
     if session.get('user_role') != 'Admin' and session.get('role') != 'admin':
-        return "फक्त ॲडमिनला ही नोंद दुरुस्त करण्याची परवानगी आहे.", 403
-
+        return "अनधिकृत प्रवेश!", 403
     with get_db() as conn:
         if request.method == 'POST':
-            new_date = request.form.get('activity_date')
-            new_remark = request.form.get('remark')
-            new_diet = request.form.get('diet_plan', '')
-            student_id = request.form.get('student_id')
-
-            conn.execute("""
-                UPDATE student_activities 
-                SET activity_date = ?, remark = ?, diet_plan = ?
-                WHERE id = ?
-            """, (new_date, new_remark, new_diet, record_id))
+            conn.execute("UPDATE student_activities SET activity_date=?, remark=?, diet_plan=? WHERE id=?", 
+                         (request.form.get('activity_date'), request.form.get('remark'), request.form.get('diet_plan', ''), record_id))
             conn.commit()
-            return redirect(f"/student_report/{student_id}")
-
+            return redirect(f"/student_report/{request.form.get('student_id')}")
         record = conn.execute("SELECT * FROM student_activities WHERE id = ?", (record_id,)).fetchone()
-
-    if not record:
-        return "नोंद सापडली नाही!", 404
-
-    form_html = f"""<!DOCTYPE html>
-    <html lang="mr">
-    <head>
-    <meta charset="UTF-8"><title>विद्यार्थी अहवाल नोंद दुरुस्त करा</title>
-    <style>
-      body {{ font-family: sans-serif; background: #f1f5f9; padding: 20px; }}
-      .box {{ max-width: 500px; margin: auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }}
-      label {{ font-size: 13px; font-weight: bold; margin-bottom: 5px; display: block; }}
-      input, textarea {{ width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }}
-      .btn {{ background: #065f46; color: white; border: none; padding: 10px 18px; border-radius: 5px; cursor: pointer; font-weight: bold; }}
-      .cancel {{ color: #dc2626; text-decoration: none; margin-left: 15px; }}
-    </style>
-    </head>
-    <body>
-    <div class="box">
-      <h3 style="color:#065f46; margin-top:0;">✏️ अहवाल नोंद दुरुस्त करा (Admin)</h3>
-      <form method="POST">
-        <input type="hidden" name="student_id" value="{record['student_id']}">
-        
-        <label>तारीख:</label>
-        <input type="date" name="activity_date" value="{record['activity_date']}" required>
-        
-        <label>डाएट प्लॅन व विशेष सूचना:</label>
-        <textarea name="diet_plan" rows="3">{record['diet_plan'] if 'diet_plan' in record.keys() and record['diet_plan'] else ''}</textarea>
-        
-        <label>ट्रेनरचा / विशेष शेरा:</label>
-        <textarea name="remark" rows="3" required>{record['remark'] if record['remark'] else ''}</textarea>
-        
-        <button type="submit" class="btn">💾 बदल सेव्ह करा</button>
-        <a href="javascript:history.back()" class="cancel">रद्द करा</a>
-      </form>
-    </div>
-    </body>
-    </html>"""
-    return render_template_string(form_html)
+    if not record: return "नोंद सापडली नाही!", 404
+    return render_template_string('''<!DOCTYPE html><html lang="mr"><head><meta charset="UTF-8"><title>दुरुस्ती</title></head>
+    <body style="font-family:sans-serif; padding:20px;">
+    <h3>✏️ विद्यार्थी शेरा दुरुस्त करा</h3>
+    <form method="POST">
+        <input type="hidden" name="student_id" value="{{ record['student_id'] }}">
+        तारीख: <input type="date" name="activity_date" value="{{ record['activity_date'] }}" required><br><br>
+        डाएट: <textarea name="diet_plan">{{ record['diet_plan'] or '' }}</textarea><br><br>
+        शेरा: <textarea name="remark" required>{{ record['remark'] }}</textarea><br><br>
+        <button type="submit">सेव्ह करा</button>
+    </form></body></html>''', record=record)
 
 # --- STUDY LAB & LIBRARY ROUTES ---
 @app.route('/library')
@@ -2647,38 +2606,37 @@ def library_dashboard():
 
 @app.route('/add_book', methods=['POST'])
 def add_book():
-    title = request.form.get('title')
-    author = request.form.get('author')
-    category = request.form.get('category')
     copies = int(request.form.get('copies', 1))
     with get_db() as conn:
         conn.execute("INSERT INTO books (title, author, category, total_copies, available_copies) VALUES (?, ?, ?, ?, ?)",
-                     (title, author, category, copies, copies))
+                     (request.form.get('title'), request.form.get('author'), request.form.get('category'), copies, copies))
         conn.commit()
     return redirect('/library')
 
 @app.route('/issue_book', methods=['POST'])
 def issue_book():
-    book_id = request.form.get('book_id')
-    student_name = request.form.get('student_name')
-    issue_date = request.form.get('issue_date')
+    bid = request.form.get('book_id')
     with get_db() as conn:
         conn.execute("INSERT INTO book_issues (book_id, student_name, issue_date, status) VALUES (?, ?, ?, 'Issued')",
-                     (book_id, student_name, issue_date))
-        conn.execute("UPDATE books SET available_copies = available_copies - 1 WHERE id = ? AND available_copies > 0", (book_id,))
+                     (bid, request.form.get('student_name'), request.form.get('issue_date')))
+        conn.execute("UPDATE books SET available_copies = available_copies - 1 WHERE id = ? AND available_copies > 0", (bid,))
         conn.commit()
     return redirect('/library')
 
 @app.route('/return_book/<int:issue_id>/<int:book_id>')
 def return_book(issue_id, book_id):
-    from datetime import date
     today = date.today().strftime('%Y-%m-%d')
     with get_db() as conn:
         conn.execute("UPDATE book_issues SET return_date = ?, status = 'Returned' WHERE id = ?", (today, issue_id))
         conn.execute("UPDATE books SET available_copies = available_copies + 1 WHERE id = ?", (book_id,))
         conn.commit()
     return redirect('/library')
-# ----------------- PUBLIC INQUIRY & CALLING DESK -----------------
+
+# ==============================================================================
+# 🎯 SHREEGURU CAREER ACADEMY - ADMISSION DESK & ONLINE MOCK TEST ENGINE
+# ==============================================================================
+
+# १. सार्वजनिक प्रवेश चौकशी फॉर्म (Public Admission Form)
 PUBLIC_INQUIRY_HTML = '''<!DOCTYPE html>
 <html lang="mr">
 <head>
@@ -2689,16 +2647,18 @@ PUBLIC_INQUIRY_HTML = '''<!DOCTYPE html>
         body { margin: 0; background: linear-gradient(135deg, #0b2545, #134e4a); color: #1e293b; min-height: 100vh; padding: 20px 10px; display: flex; align-items: center; justify-content: center; }
         .card { background: white; max-width: 520px; width: 100%; border-radius: 12px; padding: 25px; box-shadow: 0 15px 30px rgba(0,0,0,0.3); border-top: 5px solid #d97706; }
         h2 { margin: 0 0 5px; color: #0b2545; font-size: 22px; text-align: center; }
-        p.sub { margin: 0 0 20px; text-align: center; font-size: 13px; color: #64748b; }
+        p.sub { margin: 0 0 20px; text-align: center; font-size: 13px; color: #64748b; line-height: 1.5; }
         label { font-size: 13px; font-weight: bold; margin-bottom: 4px; display: block; color: #334155; }
         input, select { width: 100%; padding: 10px; border: 1.5px solid #cbd5e1; border-radius: 6px; margin-bottom: 14px; font-size: 14px; }
         .btn-submit { width: 100%; background: linear-gradient(135deg, #059669, #10b981); color: white; padding: 12px; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; }
+        .banner { background: #eff6ff; border: 1px dashed #3b82f6; padding: 10px; border-radius: 6px; font-size: 12px; text-align: center; margin-bottom: 15px; color: #1e40af; }
     </style>
 </head>
 <body>
 <div class="card">
     <h2>⚔️ श्रीगुरु करिअर अकॅडमी, आडूर</h2>
     <p class="sub">पोलीस व सैन्य भरती पूर्व प्रशिक्षण केंद्र (जि. कोल्हापूर)<br><b>मोफत प्रवेश व हॉस्टेल माहिती अर्ज</b></p>
+    <div class="banner">✨ फिजिकल ग्राउंड + डिजिटल पॅनेल क्लास + हॉस्टेल व मेस सोय</div>
     {% if msg %}<div style="background:#dcfce7; color:#166534; padding:10px; border-radius:6px; margin-bottom:15px; text-align:center; font-weight:bold;">{{ msg }}</div>{% endif %}
     <form method="POST" action="/inquiry">
         <label>विद्यार्थ्याचे पूर्ण नाव *:</label>
@@ -2765,32 +2725,154 @@ def public_inquiry():
             """, (t_date, s_name, dist, tal, phone, course, hostel))
             conn.commit()
         log_staff_activity("Website", f"नवीन चौकशी अर्ज: {s_name} ({dist} - {course})")
-        msg = "तुमची नोंदणी यशस्वी झाली आहे! श्रीगुरु अकॅडमीकडून तुम्हाला लवकरच कॉल येईल."
+        msg = "तुमची नोंदणी यशस्वी झाली आहे! श्रीगुरु अकॅडमीकडून तुम्हाला लवकरच सविस्तर माहितीचा कॉल येईल."
     return render_template_string(PUBLIC_INQUIRY_HTML, msg=msg)
 
+# २. मोफत ऑनलाइन महासराव टेस्ट (Online Mock Test with Timer & Lead Capture)
+MOCK_TEST_HTML = '''<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>महाराष्ट्र पोलीस भरती - मोफत ऑनलाइन सराव टेस्ट</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { margin: 0; background: #f1f5f9; color: #1e293b; padding: 15px; }
+        .box { max-width: 650px; margin: 0 auto; background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-top: 5px solid #0284c7; }
+        h2 { margin: 0 0 5px; color: #0b2545; text-align: center; }
+        .q-item { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e2e8f0; }
+        .q-text { font-weight: bold; margin-bottom: 8px; font-size: 15px; color: #0f172a; }
+        .opt-label { display: block; margin-bottom: 6px; font-size: 14px; cursor: pointer; }
+        input[type="text"], input[type="tel"] { width: 100%; padding: 9px; border: 1.5px solid #cbd5e1; border-radius: 6px; margin-bottom: 10px; }
+        .btn-submit { width: 100%; background: #059669; color: white; padding: 12px; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+<div class="box">
+    <h2>🎯 श्रीगुरु राज्यस्तरीय महासराव टेस्ट</h2>
+    <p style="text-align:center; color:#64748b; font-size:13px; margin-bottom:20px;">पोलीस व सैन्य भरती विशेष सराव परीक्षा</p>
+
+    {% if score is not none %}
+    <div style="background:#f0fdf4; border:2px solid #86efac; border-radius:8px; padding:20px; text-align:center; margin-bottom:20px;">
+        <h3 style="margin:0 0 10px; color:#166534;">अभिनंदन, {{ name }}! 🎉</h3>
+        <p style="font-size:18px; margin:5px 0;">तुमचा स्कोअर: <b style="color:#059669; font-size:24px;">{{ score }} / {{ total }}</b></p>
+        <p style="color:#475569; font-size:14px; margin-top:10px;">
+            लेखी परीक्षेत आउट ऑफ गुण मिळवण्यासाठी आणि प्रत्यक्ष फिजिकल सरावासाठी<br>
+            <b>श्रीगुरु करिअर अकॅडमी, आडूर (जि. कोल्हापूर)</b> मध्ये आजच संपर्क साधा!
+        </p>
+        <a href="https://wa.me/919921111960?text=नमस्कार%20सर,%20मी%20ऑनलाइन%20टेस्ट%20दिली.%20माझा%20स्कोअर%20{{ score }}/{{ total }}%20आहे.%20मला%20ॲडमिशनची%20माहिती%20हवी%20आहे." 
+           style="display:inline-block; background:#25D366; color:white; padding:10px 20px; border-radius:6px; text-decoration:none; font-weight:bold; margin-top:10px;">
+           📲 ॲडमिशन माहितीसाठी WhatsApp करा
+        </a>
+    </div>
+    {% endif %}
+
+    <form method="POST" action="/test">
+        <div style="background:#f8fafc; padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid #cbd5e1;">
+            <label style="font-weight:bold; font-size:13px;">विद्यार्थ्याचे नाव *:</label>
+            <input type="text" name="student_name" placeholder="उदा. गणेश पाटील" required>
+            
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <div>
+                    <label style="font-weight:bold; font-size:13px;">जिल्हा *:</label>
+                    <input type="text" name="district" placeholder="उदा. सातारा / सांगली" required>
+                </div>
+                <div>
+                    <label style="font-weight:bold; font-size:13px;">मोबाईल नंबर *:</label>
+                    <input type="tel" name="phone" placeholder="१० अंकी नंबर" pattern="[0-9]{10}" required>
+                </div>
+            </div>
+        </div>
+
+        <div class="q-item">
+            <div class="q-text">१. महाराष्ट्राची ऐतिहासिक राजधानी कोणती?</div>
+            <label class="opt-label"><input type="radio" name="q1" value="A" required> A) पुणे</label>
+            <label class="opt-label"><input type="radio" name="q1" value="B"> B) कोल्हापूर</label>
+            <label class="opt-label"><input type="radio" name="q1" value="C"> C) सातारा</label>
+            <label class="opt-label"><input type="radio" name="q1" value="D"> D) नागपूर</label>
+        </div>
+
+        <div class="q-item">
+            <div class="q-text">२. पोलीस पाटलाची नेमणूक कोण करतो?</div>
+            <label class="opt-label"><input type="radio" name="q2" value="A" required> A) पोलीस अधीक्षक</label>
+            <label class="opt-label"><input type="radio" name="q2" value="B"> B) तहसीलदार</label>
+            <label class="opt-label"><input type="radio" name="q2" value="C"> C) उपविभागीय दंडाधिकारी (प्रांत)</label>
+            <label class="opt-label"><input type="radio" name="q2" value="D"> D) सरपंच</label>
+        </div>
+
+        <div class="q-item">
+            <div class="q-text">३. एका रांगेत सचिनचा क्रमांक दोन्ही बाजूंनी १५ वा असल्यास रांगेत एकूण मुले किती?</div>
+            <label class="opt-label"><input type="radio" name="q3" value="A" required> A) ३०</label>
+            <label class="opt-label"><input type="radio" name="q3" value="B"> B) २९</label>
+            <label class="opt-label"><input type="radio" name="q3" value="C"> C) ३१</label>
+            <label class="opt-label"><input type="radio" name="q3" value="D"> D) २८</label>
+        </div>
+
+        <button type="submit" class="btn-submit">✅ टेस्ट सबमिट करा व निकाल पहा</button>
+    </form>
+</div>
+</body>
+</html>'''
+
+@app.route('/test', methods=['GET', 'POST'])
+def mock_test():
+    score = None
+    total = 3
+    name = ""
+    if request.method == 'POST':
+        name = request.form.get('student_name')
+        dist = request.form.get('district')
+        phone = request.form.get('phone')
+        
+        current_score = 0
+        if request.form.get('q1') == 'B': current_score += 1
+        if request.form.get('q2') == 'C': current_score += 1
+        if request.form.get('q3') == 'B': current_score += 1
+
+        t_date = date.today().strftime("%Y-%m-%d")
+        with get_db() as conn:
+            conn.execute("""
+                INSERT INTO mock_test_leads (test_date, student_name, district, phone, score, total_marks, test_name)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (t_date, name, dist, phone, current_score, total, "पोलीस सराव टेस्ट - १"))
+            conn.commit()
+        score = current_score
+
+    return render_template_string(MOCK_TEST_HTML, score=score, total=total, name=name)
+
+# ३. ॲडमिन कॉलिंग डेस्क व टेस्ट डेटा डॅशबोर्ड (Staff & Admin Calling Desk)
 @app.route('/inquiries')
 def inquiry_desk():
     if session.get('user_role') not in ['Admin', 'Clerk', 'Manager']:
         return redirect(url_for('login'))
+    
     with get_db() as conn:
         inquiries = conn.execute("SELECT * FROM admission_inquiries ORDER BY id DESC").fetchall()
+        test_leads = conn.execute("SELECT * FROM mock_test_leads ORDER BY id DESC LIMIT 50").fetchall()
     
     html = '''<!DOCTYPE html>
-    <html lang="mr"><head><meta charset="UTF-8"><title>चौकशी व कॉलिंग डेस्क</title>
+    <html lang="mr"><head><meta charset="UTF-8"><title>प्रवेश चौकशी व कॉलिंग डेस्क</title>
     <style>
-        body { font-family:'Segoe UI',sans-serif; background:#f8fafc; padding:15px; color:#1e293b; }
-        table { width:100%; border-collapse:collapse; background:white; font-size:13px; margin-top:10px; }
-        th, td { border:1px solid #cbd5e1; padding:8px; text-align:left; }
-        th { background:#0b3c5d; color:white; }
-        .btn-wa { background:#25D366; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-weight:bold; }
-        .btn-call { background:#0284c7; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-weight:bold; }
+        body { font-family:'Segoe UI',sans-serif; background:#f8fafc; padding:15px; color:#1e293b; margin:0; }
+        .header { background:#0b3c5d; color:white; padding:12px 20px; display:flex; justify-content:space-between; align-items:center; border-radius:8px; margin-bottom:20px; }
+        table { width:100%; border-collapse:collapse; background:white; font-size:13px; margin-top:10px; border-radius:6px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.1); }
+        th, td { border:1px solid #cbd5e1; padding:8px 10px; text-align:left; }
+        th { background:#1e293b; color:white; font-weight:600; }
+        .btn-wa { background:#25D366; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-weight:bold; font-size:12px; }
+        .btn-call { background:#0284c7; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-weight:bold; font-size:12px; margin-right:4px; }
     </style></head><body>
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h2 style="color:#0b3c5d; margin:0;">📞 नवीन प्रवेश चौकशी व कॉलिंग डेस्क (Total: {{ inquiries|length }})</h2>
-        <a href="/" style="text-decoration:none; font-weight:bold; color:#0b3c5d;">मुख्य डॅशबोर्ड</a>
+
+    <div class="header">
+        <h3 style="margin:0;">📞 श्रीगुरु ॲडमिशन कॉलिंग डेस्क (एकूण अर्ज: {{ inquiries|length }})</h3>
+        <div>
+            <a href="/" style="color:white; text-decoration:none; font-weight:bold; margin-right:15px;">🏠 मुख्य डॅशबोर्ड</a>
+            <a href="/inquiry" target="_blank" style="color:#fde047; text-decoration:none; font-weight:bold; margin-right:15px;">🌐 प्रवेश अर्ज उघडा</a>
+            <a href="/test" target="_blank" style="color:#67e8f9; text-decoration:none; font-weight:bold;">📝 मोफत टेस्ट उघडा</a>
+        </div>
     </div>
+
+    <h4 style="color:#0b3c5d; margin:15px 0 5px;">📋 थेट प्रवेश चौकशी अर्ज (Admission Inquiries):</h4>
     <table>
-        <thead><tr><th>तारीख</th><th>नाव</th><th>जिल्हा / तालुका</th><th>कोर्स</th><th>हॉस्टेल</th><th>संपर्क</th><th>स्थिती / शेरा</th><th>बदल</th></tr></thead>
+        <thead><tr><th>तारीख</th><th>नाव</th><th>जिल्हा (तालुका)</th><th>कोर्स</th><th>हॉस्टेल</th><th>१-क्लिक संपर्क</th><th>स्थिती / शेरा</th><th>बदल</th></tr></thead>
         <tbody>
             {% for inq in inquiries %}
             <form action="/update_inquiry/{{ inq.id }}" method="POST">
@@ -2798,31 +2880,53 @@ def inquiry_desk():
                 <td>{{ inq.inquiry_date }}</td>
                 <td><b>{{ inq.student_name }}</b></td>
                 <td>{{ inq.district }} ({{ inq.taluka or '-' }})</td>
-                <td>{{ inq.course }}</td>
+                <td><span style="background:#e0f2fe; padding:2px 6px; border-radius:4px;">{{ inq.course }}</span></td>
                 <td>{{ inq.hostel_interest }}</td>
                 <td>
                     <a href="tel:{{ inq.phone }}" class="btn-call">📞 कॉल</a>
                     <a href="https://wa.me/91{{ inq.phone }}?text=नमस्कार%20{{ inq.student_name }},%20श्रीगुरु%20करिअर%20अकॅडमी%20आडूर%20मध्ये%20आपली%20चौकशी%20प्राप्त%20झाली.%20नवीन%20बॅचची%20माहिती%20खालीलप्रमाणे:" target="_blank" class="btn-wa">📲 WA</a>
                 </td>
                 <td>
-                    <select name="call_status">
+                    <select name="call_status" style="padding:3px; border-radius:4px; font-size:12px;">
                         <option value="नवीन चौकशी (New)" {% if inq.call_status=='नवीन चौकशी (New)' %}selected{% endif %}>नवीन चौकशी</option>
                         <option value="कॉल झाला - विचारून सांगणार" {% if inq.call_status=='कॉल झाला - विचारून सांगणार' %}selected{% endif %}>विचारून सांगणार</option>
                         <option value="भेट देणार (Visiting)" {% if inq.call_status=='भेट देणार (Visiting)' %}selected{% endif %}>भेट देणार</option>
                         <option value="प्रवेश निश्चित (Admitted)" {% if inq.call_status=='प्रवेश निश्चित (Admitted)' %}selected{% endif %}>प्रवेश निश्चित</option>
                     </select><br>
-                    <input type="text" name="staff_note" value="{{ inq.staff_note or '' }}" placeholder="कॉल शेरा..." style="width:90%; margin-top:3px; padding:3px;">
+                    <input type="text" name="staff_note" value="{{ inq.staff_note or '' }}" placeholder="कॉल शेरा..." style="width:90%; margin-top:4px; padding:3px; font-size:12px;">
                 </td>
-                <td><button type="submit" style="background:#059669; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer;">💾</button></td>
+                <td><button type="submit" style="background:#059669; color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer;">💾</button></td>
             </tr>
             </form>
             {% else %}
-            <tr><td colspan="8" style="text-align:center; color:#64748b;">सध्या कोणतीही चौकशी आलेली नाही.</td></tr>
+            <tr><td colspan="8" style="text-align:center; color:#64748b; padding:15px;">अद्याप कोणतीही चौकशी आलेली नाही.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h4 style="color:#0b3c5d; margin:25px 0 5px;">📝 मोफत ऑनलाइन टेस्ट लीड्स व निकाल (Mock Test Leads):</h4>
+    <table>
+        <thead><tr><th>तारीख</th><th>नाव</th><th>जिल्हा</th><th>मोबाईल</th><th>मिळालेले गुण</th><th>१-क्लिक संपर्क</th></tr></thead>
+        <tbody>
+            {% for t in test_leads %}
+            <tr>
+                <td>{{ t.test_date }}</td>
+                <td><b>{{ t.student_name }}</b></td>
+                <td>{{ t.district }}</td>
+                <td>{{ t.phone }}</td>
+                <td><b style="color:#059669;">{{ t.score }} / {{ t.total_marks }}</b></td>
+                <td>
+                    <a href="tel:{{ t.phone }}" class="btn-call">📞 कॉल</a>
+                    <a href="https://wa.me/91{{ t.phone }}?text=नमस्कार%20{{ t.student_name }},%20श्रीगुरु%20अकॅडमीच्या%20टेस्टमध्ये%20तुम्हाला%20{{ t.score }}/{{ t.total_marks }}%20गुण%20मिळाले!%20प्रवेशासाठी%20आमच्याशी%20जोडले%20रहा." target="_blank" class="btn-wa">📲 WA निकाल</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" style="text-align:center; color:#64748b; padding:15px;">अद्याप कोणीही ऑनलाइन टेस्ट सोडवलेली नाही.</td></tr>
             {% endfor %}
         </tbody>
     </table>
     </body></html>'''
-    return render_template_string(html, inquiries=inquiries)
+    return render_template_string(html, inquiries=inquiries, test_leads=test_leads)
 
 @app.route('/update_inquiry/<int:id>', methods=['POST'])
 def update_inquiry(id):
@@ -2831,8 +2935,11 @@ def update_inquiry(id):
     with get_db() as conn:
         conn.execute("UPDATE admission_inquiries SET call_status=?, staff_note=? WHERE id=?", (c_status, note, id))
         conn.commit()
-    return redirect('/inquiries') 
+    return redirect('/inquiries')
+
+# ----------------- सुरळीत डेटाबेस निर्मिती व ॲप रन -----------------
+init_db()
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
-
-init_db()
+    
