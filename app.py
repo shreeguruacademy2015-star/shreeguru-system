@@ -2705,7 +2705,160 @@ def return_book(issue_id, book_id):
         conn.execute("UPDATE books SET available_copies = available_copies + 1 WHERE id = ?", (book_id,))
         conn.commit()
     return redirect('/library')
+# ----------------- PUBLIC INQUIRY & CALLING DESK -----------------
+PUBLIC_INQUIRY_HTML = '''<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>प्रवेश चौकशी - श्रीगुरु करिअर अकॅडमी</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { margin: 0; background: linear-gradient(135deg, #0b2545, #134e4a); color: #1e293b; min-height: 100vh; padding: 20px 10px; display: flex; align-items: center; justify-content: center; }
+        .card { background: white; max-width: 520px; width: 100%; border-radius: 12px; padding: 25px; box-shadow: 0 15px 30px rgba(0,0,0,0.3); border-top: 5px solid #d97706; }
+        h2 { margin: 0 0 5px; color: #0b2545; font-size: 22px; text-align: center; }
+        p.sub { margin: 0 0 20px; text-align: center; font-size: 13px; color: #64748b; }
+        label { font-size: 13px; font-weight: bold; margin-bottom: 4px; display: block; color: #334155; }
+        input, select { width: 100%; padding: 10px; border: 1.5px solid #cbd5e1; border-radius: 6px; margin-bottom: 14px; font-size: 14px; }
+        .btn-submit { width: 100%; background: linear-gradient(135deg, #059669, #10b981); color: white; padding: 12px; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h2>⚔️ श्रीगुरु करिअर अकॅडमी, आडूर</h2>
+    <p class="sub">पोलीस व सैन्य भरती पूर्व प्रशिक्षण केंद्र (जि. कोल्हापूर)<br><b>मोफत प्रवेश व हॉस्टेल माहिती अर्ज</b></p>
+    {% if msg %}<div style="background:#dcfce7; color:#166534; padding:10px; border-radius:6px; margin-bottom:15px; text-align:center; font-weight:bold;">{{ msg }}</div>{% endif %}
+    <form method="POST" action="/inquiry">
+        <label>विद्यार्थ्याचे पूर्ण नाव *:</label>
+        <input type="text" name="student_name" placeholder="उदा. सचिन दत्तात्रय चौगले" required>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+            <div>
+                <label>जिल्हा *:</label>
+                <input type="text" name="district" placeholder="उदा. कोल्हापूर / सातारा" required>
+            </div>
+            <div>
+                <label>तालुका:</label>
+                <input type="text" name="taluka" placeholder="उदा. करवीर">
+            </div>
+        </div>
 
+        <label>व्हॉट्सॲप / संपर्क मोबाईल *:</label>
+        <input type="tel" name="phone" placeholder="१० अंकी मोबाईल नंबर" pattern="[0-9]{10}" required>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+            <div>
+                <label>कोणत्या भरतीसाठी? *:</label>
+                <select name="course">
+                    <option value="महाराष्ट्र पोलीस भरती">महाराष्ट्र पोलीस भरती</option>
+                    <option value="आर्मी भरती (अग्निवीर)">आर्मी भरती (अग्निवीर)</option>
+                    <option value="SSC GD भरती">SSC GD भरती</option>
+                    <option value="वनरक्षक / इतर भरती">वनरक्षक / इतर भरती</option>
+                </select>
+            </div>
+            <div>
+                <label>हॉस्टेल/मेस हवी का?:</label>
+                <select name="hostel_interest">
+                    <option value="होय (हॉस्टेल आवश्यक)">होय (हॉस्टेल आवश्यक)</option>
+                    <option value="नाही (फक्त ग्राउंड व क्लास)">नाही (फक्त ग्राउंड व क्लास)</option>
+                </select>
+            </div>
+        </div>
+
+        <button type="submit" class="btn-submit">📲 मोफत माहिती मिळवा / नोंदणी करा</button>
+    </form>
+    <div style="text-align:center; margin-top:15px; font-size:12px; color:#64748b;">
+        संपर्क: ९९२११११९६० | आडूर, ता. करवीर, जि. कोल्हापूर
+    </div>
+</div>
+</body>
+</html>'''
+
+@app.route('/inquiry', methods=['GET', 'POST'])
+def public_inquiry():
+    msg = None
+    if request.method == 'POST':
+        s_name = request.form.get('student_name')
+        dist = request.form.get('district')
+        tal = request.form.get('taluka', '')
+        phone = request.form.get('phone')
+        course = request.form.get('course')
+        hostel = request.form.get('hostel_interest', 'होय')
+        t_date = date.today().strftime("%Y-%m-%d")
+
+        with get_db() as conn:
+            conn.execute("""
+                INSERT INTO admission_inquiries (inquiry_date, student_name, district, taluka, phone, course, hostel_interest)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (t_date, s_name, dist, tal, phone, course, hostel))
+            conn.commit()
+        log_staff_activity("Website", f"नवीन चौकशी अर्ज: {s_name} ({dist} - {course})")
+        msg = "तुमची नोंदणी यशस्वी झाली आहे! श्रीगुरु अकॅडमीकडून तुम्हाला लवकरच कॉल येईल."
+    return render_template_string(PUBLIC_INQUIRY_HTML, msg=msg)
+
+@app.route('/inquiries')
+def inquiry_desk():
+    if session.get('user_role') not in ['Admin', 'Clerk', 'Manager']:
+        return redirect(url_for('login'))
+    with get_db() as conn:
+        inquiries = conn.execute("SELECT * FROM admission_inquiries ORDER BY id DESC").fetchall()
+    
+    html = '''<!DOCTYPE html>
+    <html lang="mr"><head><meta charset="UTF-8"><title>चौकशी व कॉलिंग डेस्क</title>
+    <style>
+        body { font-family:'Segoe UI',sans-serif; background:#f8fafc; padding:15px; color:#1e293b; }
+        table { width:100%; border-collapse:collapse; background:white; font-size:13px; margin-top:10px; }
+        th, td { border:1px solid #cbd5e1; padding:8px; text-align:left; }
+        th { background:#0b3c5d; color:white; }
+        .btn-wa { background:#25D366; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-weight:bold; }
+        .btn-call { background:#0284c7; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-weight:bold; }
+    </style></head><body>
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2 style="color:#0b3c5d; margin:0;">📞 नवीन प्रवेश चौकशी व कॉलिंग डेस्क (Total: {{ inquiries|length }})</h2>
+        <a href="/" style="text-decoration:none; font-weight:bold; color:#0b3c5d;">मुख्य डॅशबोर्ड</a>
+    </div>
+    <table>
+        <thead><tr><th>तारीख</th><th>नाव</th><th>जिल्हा / तालुका</th><th>कोर्स</th><th>हॉस्टेल</th><th>संपर्क</th><th>स्थिती / शेरा</th><th>बदल</th></tr></thead>
+        <tbody>
+            {% for inq in inquiries %}
+            <form action="/update_inquiry/{{ inq.id }}" method="POST">
+            <tr>
+                <td>{{ inq.inquiry_date }}</td>
+                <td><b>{{ inq.student_name }}</b></td>
+                <td>{{ inq.district }} ({{ inq.taluka or '-' }})</td>
+                <td>{{ inq.course }}</td>
+                <td>{{ inq.hostel_interest }}</td>
+                <td>
+                    <a href="tel:{{ inq.phone }}" class="btn-call">📞 कॉल</a>
+                    <a href="https://wa.me/91{{ inq.phone }}?text=नमस्कार%20{{ inq.student_name }},%20श्रीगुरु%20करिअर%20अकॅडमी%20आडूर%20मध्ये%20आपली%20चौकशी%20प्राप्त%20झाली.%20नवीन%20बॅचची%20माहिती%20खालीलप्रमाणे:" target="_blank" class="btn-wa">📲 WA</a>
+                </td>
+                <td>
+                    <select name="call_status">
+                        <option value="नवीन चौकशी (New)" {% if inq.call_status=='नवीन चौकशी (New)' %}selected{% endif %}>नवीन चौकशी</option>
+                        <option value="कॉल झाला - विचारून सांगणार" {% if inq.call_status=='कॉल झाला - विचारून सांगणार' %}selected{% endif %}>विचारून सांगणार</option>
+                        <option value="भेट देणार (Visiting)" {% if inq.call_status=='भेट देणार (Visiting)' %}selected{% endif %}>भेट देणार</option>
+                        <option value="प्रवेश निश्चित (Admitted)" {% if inq.call_status=='प्रवेश निश्चित (Admitted)' %}selected{% endif %}>प्रवेश निश्चित</option>
+                    </select><br>
+                    <input type="text" name="staff_note" value="{{ inq.staff_note or '' }}" placeholder="कॉल शेरा..." style="width:90%; margin-top:3px; padding:3px;">
+                </td>
+                <td><button type="submit" style="background:#059669; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer;">💾</button></td>
+            </tr>
+            </form>
+            {% else %}
+            <tr><td colspan="8" style="text-align:center; color:#64748b;">सध्या कोणतीही चौकशी आलेली नाही.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </body></html>'''
+    return render_template_string(html, inquiries=inquiries)
+
+@app.route('/update_inquiry/<int:id>', methods=['POST'])
+def update_inquiry(id):
+    c_status = request.form.get('call_status')
+    note = request.form.get('staff_note')
+    with get_db() as conn:
+        conn.execute("UPDATE admission_inquiries SET call_status=?, staff_note=? WHERE id=?", (c_status, note, id))
+        conn.commit()
+    return redirect('/inquiries') 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
 
