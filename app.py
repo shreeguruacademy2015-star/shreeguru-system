@@ -63,6 +63,33 @@ def init_db():
         conn.execute("INSERT OR IGNORE INTO users (role, password) VALUES ('Manager', 'manager123')")
         conn.execute("INSERT OR IGNORE INTO users (role, password) VALUES ('Clerk', 'clerk123')")
         conn.execute("INSERT OR IGNORE INTO users (role, password) VALUES ('Trainer', 'trainer123')")
+        conn.execute('''CREATE TABLE IF NOT EXISTS books (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            author TEXT,
+            category TEXT,
+            total_copies INTEGER DEFAULT 1,
+            available_copies INTEGER DEFAULT 1
+        )''')
+
+        conn.execute('''CREATE TABLE IF NOT EXISTS book_issues (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            book_id INTEGER,
+            student_id INTEGER,
+            student_name TEXT,
+            issue_date TEXT,
+            return_date TEXT,
+            status TEXT DEFAULT 'Issued'
+        )''')
+
+        conn.execute('''CREATE TABLE IF NOT EXISTS study_lab_seats (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            seat_number TEXT NOT NULL,
+            shift TEXT NOT NULL,
+            student_id INTEGER,
+            student_name TEXT,
+            status TEXT DEFAULT 'Available'
+        )''')
 
         conn.execute("""
             CREATE TABLE IF NOT EXISTS staff_activity_log (
