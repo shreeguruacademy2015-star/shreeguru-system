@@ -6,7 +6,7 @@ from werkzeug.utils import secure_filename
 import io
 import csv
 import urllib.parse
-import re
+import re 
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
