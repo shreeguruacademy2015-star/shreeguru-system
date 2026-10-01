@@ -6,12 +6,12 @@ from werkzeug.utils import secure_filename
 import io
 import csv
 import urllib.parse
-import re 
+import re
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
-app.secret_key = "shreeguru_complete_bulletproof_v46_final_tests"
+app.secret_key = "shreeguru_complete_bulletproof_v47_all_modules_final"
 
 # Supabase PostgreSQL Database Connection URL
 DATABASE_URL = "postgresql://postgres:Shreeguru@123@db.pcwdribwbcuoxkqhozmu.supabase.co:5432/postgres"
@@ -32,14 +32,15 @@ def get_db():
     conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
     return conn
 
-def create_automatic_backup():
+def log_staff_activity(role_name, act_text):
     try:
-        today_str = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        backup_file_path = os.path.join(BACKUP_FOLDER, f"shreeguru_cloud_sync_{today_str}.txt")
-        with open(backup_file_path, "w", encoding="utf-8") as f:
-            f.write(f"Shreeguru Cloud Sync Backup Active - {today_str}")
+        with get_db() as conn:
+            with conn.cursor() as cur:
+                now_str = datetime.now().strftime("%Y-%m-%d %I:%M %p")
+                cur.execute("INSERT INTO staff_activity_log (staff_role, act_time, activity_text) VALUES (%s, %s, %s)", (role_name, now_str, act_text))
+            conn.commit()
     except Exception as e:
-        print(f"Auto Backup Error: {e}")
+        print(f"Log Error: {e}")
 
 def safe_float(val, default=0.0):
     try:
@@ -54,7 +55,6 @@ def safe_int(val, default=0):
     except: return default
 
 def init_db():
-    create_automatic_backup()
     with get_db() as conn:
         with conn.cursor() as cur:
             # Users & Roles
@@ -85,7 +85,7 @@ def init_db():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )""")
 
-            # Main Academy Tables
+            # Academy Core Tables (Library, Study Lab, Students, Fees, Expenses, etc.)
             cur.execute('''CREATE TABLE IF NOT EXISTS books (id SERIAL PRIMARY KEY, title TEXT NOT NULL, author TEXT, category TEXT, total_copies INTEGER DEFAULT 1, available_copies INTEGER DEFAULT 1)''')
             cur.execute('''CREATE TABLE IF NOT EXISTS book_issues (id SERIAL PRIMARY KEY, book_id INTEGER, student_id INTEGER, student_name TEXT, issue_date TEXT, return_date TEXT, status TEXT DEFAULT 'Issued')''')
             cur.execute('''CREATE TABLE IF NOT EXISTS study_lab_seats (id SERIAL PRIMARY KEY, seat_number TEXT NOT NULL, shift TEXT NOT NULL, student_id INTEGER, student_name TEXT, status TEXT DEFAULT 'Available')''')
@@ -130,7 +130,7 @@ def init_db():
                 cur.execute("INSERT INTO mess_diet (day_name, breakfast, lunch, dinner, special_diet) VALUES (%s, 'पोहे / उपमा', 'डाळ, भात, चपाती, उसळ', 'भाकरी, सुकी भाजी, आमटी', 'दूध, केळी, भिजवलेले हरभरे-गूळ') ON CONFLICT (day_name) DO NOTHING", (d,))
             conn.commit()
 
-# --- LOGIN SCREEN HTML TEMPLATE ---
+# --- LOGIN SCREEN HTML ---
 LOGIN_HTML = '''<!DOCTYPE html>
 <html lang="{{ lang }}">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -229,7 +229,9 @@ def admin_view():
         <hr>
         <div style="margin-bottom:20px;">
             <a href="/admin/add_test" style="background:#2563eb; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; font-weight:bold; margin-right:10px; display:inline-block;">📝 नवीन टेस्ट (Timer / Bulk / Manual) तयार करा</a>
-            <a href="/logout" style="background:#dc2626; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; font-weight:bold; display:inline-block;">लॉग आउट (Logout) 🚪</a>
+            <a href="/inquiries" style="background:#b45309; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; font-weight:bold; margin-right:10px; display:inline-block;">📞 कॉलिंग व टेस्ट डेस्क</a>
+            <a href="/library" style="background:#0284c7; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; font-weight:bold; margin-right:10px; display:inline-block;" target="_blank">📚 लायब्ररी / लॅब</a>
+            <a href="/logout" style="background:#dc2626; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; font-weight:bold; display:inline-block;">लॉग आउट 🚪</a>
         </div>
         <h3>थोडक्यात माहिती (Summary):</h3>
         <ul>
@@ -280,7 +282,7 @@ def clerk_view():
     """
 
 # ---------------------------------------------------------
-# नवीन फिचर्स: ॲडमिन/क्लार्कसाठी टेस्ट निर्मिती (Manual + Bulk + Timer)
+# टेस्ट निर्मिती: मॅन्युअल, बल्क व टाईम लिमिट (Admin / Clerk)
 # ---------------------------------------------------------
 @app.route('/admin/add_test', methods=['GET', 'POST'])
 def add_test():
@@ -331,7 +333,7 @@ def add_test():
     """
 
 # ---------------------------------------------------------
-# नवीन फिचर्स: विद्यार्थी टेस्ट सबमिशन, स्ट्रिक्ट व्हॅलिडेशन व WhatsApp फ्लो
+# विद्यार्थी टेस्ट सबमिशन, स्ट्रिक्ट व्हॅलिडेशन व WhatsApp फ्लो
 # ---------------------------------------------------------
 @app.route('/submit_test', methods=['POST'])
 def submit_test():
@@ -362,7 +364,6 @@ def submit_test():
                 )
             conn.commit()
 
-        # विद्यार्थी स्वतःचा नंबर टाकून पुढे गेल्यावर त्याच्या खऱ्या WhatsApp वर रिपोर्ट व प्रशस्तीपत्रक पाठवण्यासाठी URL तयार करणे
         academy_whatsapp = "919921111960"
         wa_text = f"नमस्कार {student_name}, श्रीगुरु करिअर अकॅडमी ऑनलाइन टेस्ट निकाल:\nतुमचे गुण: {score}/{total_marks}\nअभिनंदन! आपले डिजिटल प्रशस्तीपत्रक व आन्सर की अधिकृतपणे जतन झाली आहे."
         whatsapp_url = f"https://wa.me/{academy_whatsapp}?text={urllib.parse.quote(wa_text)}"
@@ -375,6 +376,61 @@ def submit_test():
 
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
+# --- लायब्ररी डॅशबोर्ड (Library Module) ---
+@app.route('/library')
+def library_dashboard():
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM books ORDER BY id DESC")
+            books = cur.fetchall()
+            cur.execute("SELECT * FROM book_issues WHERE status = 'Issued' ORDER BY id DESC")
+            issues = cur.fetchall()
+            cur.execute("SELECT * FROM study_lab_seats ORDER BY seat_number ASC")
+            seats = cur.fetchall()
+    return render_template_string('''<!DOCTYPE html>
+    <html lang="mr"><head><meta charset="UTF-8"><title>लायब्ररी व स्टडी लॅब</title>
+    <style>body{font-family:sans-serif;background:#f8fafc;padding:20px;}</style>
+    </head><body>
+    <h2>📚 स्टडी लॅब व लायब्ररी व्यवस्थापन</h2>
+    <a href="/" style="background:#0b3c5d; color:white; padding:8px 15px; text-decoration:none; border-radius:4px; font-weight:bold;">🏠 मुख्य डॅशबोर्ड</a>
+    <hr>
+    <h3>पुस्तकांची यादी (Books Available):</h3>
+    <table border="1" cellpadding="8" style="border-collapse:collapse; background:white; width:100%;">
+    <tr style="background:#0b3c5d; color:white;"><th>पुस्तकाचे नाव</th><th>लेखक</th><th>वर्गवारी</th><th>एकूण प्रती</th><th>उपलब्ध प्रती</th></tr>
+    {% for b in books %}
+    <tr><td><b>{{ b.title }}</b></td><td>{{ b.author }}</td><td>{{ b.category }}</td><td>{{ b.total_copies }}</td><td>{{ b.available_copies }}</td></tr>
+    {% else %}
+    <tr><td colspan="5">पुस्तके उपलब्ध नाहीत.</td></tr>
+    {% endfor %}
+    </table>
+    </body></html>''', books=books, issues=issues, seats=seats)
+
+# --- कॉलिंग व चौकशी डेस्क (Inquiries Desk) ---
+@app.route('/inquiries')
+def inquiry_desk():
+    if session.get('user_role') not in ['Admin', 'Clerk', 'Manager']:
+        return redirect(url_for('login'))
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM admission_inquiries ORDER BY id DESC")
+            inquiries = cur.fetchall()
+    return render_template_string('''<!DOCTYPE html>
+    <html lang="mr"><head><meta charset="UTF-8"><title>कॉलिंग व चौकशी डेस्क</title>
+    <style>body{font-family:sans-serif;background:#f8fafc;padding:20px;}</style>
+    </head><body>
+    <h2>📞 श्रीगुरु ॲडमिशन कॉलिंग डेस्क</h2>
+    <a href="/" style="background:#0b3c5d; color:white; padding:8px 15px; text-decoration:none; border-radius:4px; font-weight:bold;">🏠 मुख्य डॅशबोर्ड</a>
+    <hr>
+    <table border="1" cellpadding="8" style="border-collapse:collapse; background:white; width:100%; margin-top:10px;">
+    <tr style="background:#1e293b; color:white;"><th>तारीख</th><th>नाव</th><th>जिल्हा</th><th>फोन</th><th>कोर्स</th><th>स्थिती</th></tr>
+    {% for inq in inquiries %}
+    <tr><td>{{ inq.inquiry_date }}</td><td><b>{{ inq.student_name }}</b></td><td>{{ inq.district }}</td><td><a href="tel:{{ inq.phone }}">{{ inq.phone }}</a></td><td>{{ inq.course }}</td><td>{{ inq.call_status }}</td></tr>
+    {% else %}
+    <tr><td colspan="6">चौकशी अर्ज नाहीत.</td></tr>
+    {% endfor %}
+    </table>
+    </body></html>''', inquiries=inquiries)
 
 init_db()
 
