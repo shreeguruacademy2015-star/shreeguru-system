@@ -9,8 +9,8 @@ import csv
 import urllib.parse
  
 app = Flask(__name__)
-app.secret_key = "shreeguru_complete_bulletproof_v44_final"
-DB_NAME = "shreeguru_master_v44.db"
+app.secret_key = "shreeguru_complete_bulletproof_v45_cloud_backup"
+DB_NAME = "shreeguru_master_v45.db"
 
 DESKTOP_PATH = os.path.join(os.path.expanduser("~"), "Desktop")
 UPLOAD_FOLDER = os.path.join(DESKTOP_PATH, "student_photos")
@@ -23,6 +23,18 @@ os.makedirs(BACKUP_FOLDER, exist_ok=True)
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['DOCS_FOLDER'] = DOCS_FOLDER
+
+# --- AUTOMATIC BACKUP SYSTEM ---
+def create_automatic_backup():
+    try:
+        if os.path.exists(DB_NAME):
+            today_str = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            backup_file_name = f"shreeguru_backup_{today_str}.db"
+            backup_file_path = os.path.join(BACKUP_FOLDER, backup_file_name)
+            shutil.copy(DB_NAME, backup_file_path)
+            print(f"Auto Backup Created Successfully: {backup_file_path}")
+    except Exception as e:
+        print(f"Auto Backup Error: {e}")
 
 def safe_float(val, default=0.0):
     try:
@@ -51,6 +63,9 @@ def log_staff_activity(role_name, act_text):
         print(f"Log Error: {e}")
 
 def init_db():
+    # Server start hotanch automatic backup gheil
+    create_automatic_backup()
+
     with get_db() as conn:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS users (
@@ -64,7 +79,7 @@ def init_db():
         conn.execute("INSERT OR IGNORE INTO users (role, password) VALUES ('Clerk', 'clerk123')")
         conn.execute("INSERT OR IGNORE INTO users (role, password) VALUES ('Trainer', 'trainer123')")
 
-        # Questions Table for Dynamic Mock Test (New Feature Integrated)
+        # Questions Table for Dynamic Mock Test
         conn.execute('''CREATE TABLE IF NOT EXISTS questions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             question TEXT NOT NULL,
@@ -75,7 +90,6 @@ def init_db():
             correct TEXT NOT NULL
         )''')
 
-        # Add default questions if table is empty
         cursor_chk = conn.execute('SELECT COUNT(*) FROM questions').fetchone()
         if cursor_chk[0] == 0:
             default_qs = [
@@ -786,7 +800,7 @@ TRAINER_LAYOUT = """<!DOCTYPE html>
                     <select name="ground_status">
                         <option value="सराव योग्य (Ground Ready)">✔️ सराव योग्य (Ground Ready)</option>
                         <option value="पावसामुळे ग्राउंड ओले / चिखल">🌧️ पावसामुळे ग्राउंड ओले / चिखल</option>
-                        <option value="ट्रॅक दुरुस्ती सुरू">🛠️ ट्रॅक दुरुस्ती काम सुरू</option>
+                        <option value="ट्रॅक दुरुस्ती सुरू">🛠️️ ट्रॅक दुरुस्ती काम सुरू</option>
                         <option value="खराब हवामान / मुसळधार पाऊस">⛈️ खराब हवामान / मुसळधार पाऊस</option>
                         <option value="इतर तांत्रिक अडचण">⚠ इतर अडचणीमुळे ग्राउंड होऊ शकले नाही</option>
                     </select>
@@ -835,7 +849,7 @@ TRAINER_LAYOUT = """<!DOCTYPE html>
 
     {% if curr_tab == 'physical' %}
     <div class="card">
-        <h3 style="color:#0284c7; margin-top:0;">🏃‍♂️ फिजिकल चाचणी गुण भरणे व तक्ता</h3>
+        <h3 style="color:#0284c7; margin-top:0;">🏃‍♂️️ फिजिकल चाचणी गुण भरणे व तक्ता</h3>
         <form action="/add_physical_record" method="POST" style="background:#f0f9ff; padding:12px; border-radius:6px; margin-bottom:15px;">
             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:8px;">
                 <div>विद्यार्थी: <select name="student_id" required><option value="">-- निवडा --</option>{% for s in students %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}</select></div>
@@ -1356,7 +1370,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
     <div class="admin-tab">
         <h3 style="color:#059669; margin-top:0;">📝 टेस्ट प्रश्न व्यवस्थापन (Admin Question Panel & Quick Link)</h3>
         
-        <!-- Test Link Copy Section (New Feature) -->
+        <!-- Test Link Copy Section -->
         <div style="background:#fefce8; border:1px solid #fde047; padding:15px; border-radius:6px; margin-bottom:20px;">
             <h4 style="margin:0 0 8px; color:#854d0e;">🔗 सोशल मीडियावर शेअर करण्यासाठी टेस्टची थेट लिंक:</h4>
             <div style="display:flex; gap:10px;">
@@ -1470,7 +1484,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
             <thead><tr><th>तारीख</th><th>नाव</th><th>परीक्षा</th><th>एकूण</th><th>मिळालेले गुण</th><th>हटवा</th></tr></thead>
             <tbody>
                 {% for wt in written_records %}
-                <tr><td>{{ wt.test_date }}</td><td><b>{{ wt.name }}</b></td><td>{{ wt.test_name }}</td><td>{{ wt.total_marks }}</td><td><b style="color:green;">{{ wt.obtained_marks }}</b></td><td><a href="/delete_written_record/{{ wt.id }}" onclick="return confirm('हटवायचे?')" style="color:red;">🗑️️</a></td></tr>
+                <tr><td>{{ wt.test_date }}</td><td><b>{{ wt.name }}</b></td><td>{{ wt.test_name }}</td><td>{{ wt.total_marks }}</td><td><b style="color:green;">{{ wt.obtained_marks }}</b></td><td><a href="/delete_written_record/{{ wt.id }}" onclick="return confirm('हटवायचे?')" style="color:red;">🗑</a></td></tr>
                 {% else %}<tr><td colspan="6">नोंद नाही.</td></tr>{% endfor %}
             </tbody>
         </table>
@@ -1907,7 +1921,7 @@ def admin_view():
 
     return render_template_string(ADMIN_DASHBOARD_LAYOUT, curr_tab=curr_tab, students=students, questions=questions, expenses_list=expenses_list, users_list=users_list, diet_list=diet_list, staff_members=staff_members, staff_tasks=staff_tasks, all_requests=all_requests, all_staff_logs=all_staff_logs, discipline_logs=discipline_logs, hostel_logs=hostel_logs, physical_records=physical_records, written_records=written_records, total_paid=total_paid, total_pending=total_pending, total_expenses=total_expenses, test_link=test_link, today_date=today_date, lang=lang)
 
-# Question Management Routes (New Feature)
+# Question Management Routes
 @app.route('/add_question', methods=['POST'])
 def add_question():
     if session.get('user_role') not in ['Admin', 'Clerk']: return "Unauthorized", 403
