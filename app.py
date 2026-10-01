@@ -11,7 +11,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
-app.secret_key = "shreeguru_complete_bulletproof_v47_all_modules_final"
+app.secret_key = "shreeguru_complete_bulletproof_v50_master_all_tabs"
 
 # Supabase PostgreSQL Database Connection URL
 DATABASE_URL = "postgresql://postgres:Shreeguru@123@db.pcwdribwbcuoxkqhozmu.supabase.co:5432/postgres"
@@ -85,7 +85,7 @@ def init_db():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )""")
 
-            # Academy Core Tables (Library, Study Lab, Students, Fees, Expenses, etc.)
+            # Core Academy Tables (Library, Study Lab, Students, Fees, Expenses, etc.)
             cur.execute('''CREATE TABLE IF NOT EXISTS books (id SERIAL PRIMARY KEY, title TEXT NOT NULL, author TEXT, category TEXT, total_copies INTEGER DEFAULT 1, available_copies INTEGER DEFAULT 1)''')
             cur.execute('''CREATE TABLE IF NOT EXISTS book_issues (id SERIAL PRIMARY KEY, book_id INTEGER, student_id INTEGER, student_name TEXT, issue_date TEXT, return_date TEXT, status TEXT DEFAULT 'Issued')''')
             cur.execute('''CREATE TABLE IF NOT EXISTS study_lab_seats (id SERIAL PRIMARY KEY, seat_number TEXT NOT NULL, shift TEXT NOT NULL, student_id INTEGER, student_name TEXT, status TEXT DEFAULT 'Available')''')
@@ -206,48 +206,207 @@ def root():
     elif role == 'Clerk': return redirect('/clerk')
     else: return redirect('/admin')
 
+# ---------------------------------------------------------
+# ADMIN DASHBOARD WITH ALL TABS & TEST SUBMISSIONS
+# ---------------------------------------------------------
+ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+    <meta charset="UTF-8"><title>Admin Dashboard - SHREEGURU ACADEMY</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { margin: 0; background: #eef2f7; }
+        .header { background: #0b3c5d; color: white; padding: 12px 20px; text-align: center; position: relative; }
+        .clock { position: absolute; left: 15px; top: 10px; background: rgba(255,255,255,0.15); padding: 4px 8px; border-radius: 4px; font-size: 11px; text-align: left; }
+        .top-right { position: absolute; right: 15px; top: 12px; display: flex; align-items: center; gap: 8px; }
+        .menu-bar { background: #111c24; display: flex; justify-content: center; gap: 4px; padding: 8px; flex-wrap: wrap; }
+        .menu-btn { border: none; padding: 7px 11px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px; color: white; text-decoration: none; display: inline-block; }
+        .menu-btn.active { background: #fde047 !important; color: #0b3c5d !important; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        .container { max-width: 1350px; margin: 15px auto; padding: 0 10px; }
+        .kpis { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
+        .kpi { background: white; padding: 10px 14px; border-radius: 4px; flex: 1; min-width: 150px; border-left: 4px solid #0b3c5d; font-size: 13px; }
+        .admin-tab { background: white; padding: 15px; border-radius: 4px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+        th, td { border: 1px solid #ddd; padding: 7px; text-align: left; }
+        th { background: #0b3c5d; color: white; }
+        input, select { padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; }
+        .btn-act { padding: 4px 7px; border-radius: 3px; color: white; text-decoration: none; font-size: 11px; font-weight: bold; display: inline-block; cursor: pointer; border: none; }
+    </style>
+</head>
+<body>
+<div class="header">
+    <div class="clock"><div id="liveTime" style="font-weight:bold; color:#ffdd59;">04:15:32 PM</div><div id="liveDate">२५/९/२०२६</div></div>
+    <h1 style="margin:0; color:#ffdd59; font-size:24px;">SHREEGURU CAREER ACADEMY</h1>
+    <p style="margin:3px 0 0; font-size:12px;">पत्ता: आडूर, करवीर, कोल्हापूर | संपर्क: ९९२११११९६०</p>
+    <div class="top-right">
+        <a href="/toggle_lang" style="background:#ffdd59; color:#0b3c5d; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:bold; text-decoration:none;">🌐 MR/EN</a>
+        <span style="color:#ffdd59; font-size:12px;">👤 Admin</span>
+        <a href="/logout" style="background:#ef4444; color:white; padding:3px 8px; border-radius:4px; text-decoration:none; font-size:11px; font-weight:bold;">Logout</a>
+    </div>
+</div>
+
+<div class="menu-bar">
+    <a href="/admin/add_test" class="menu-btn" style="background:#059669; border:2px solid #fde047;">📝 नवीन टेस्ट (Timer/Bulk)</a>
+    <a href="/inquiries" class="menu-btn" style="background:#b45309; border:2px solid #fde047;">📞 कॉलिंग व टेस्ट डेस्क</a>
+    <a href="/admin?tab=students" class="menu-btn {% if curr_tab == 'students' %}active{% endif %}" style="background:#2563eb;">👥 सर्व विद्यार्थी</a>
+    <a href="/admin?tab=admission" class="menu-btn {% if curr_tab == 'admission' %}active{% endif %}" style="background:#2563eb;">📝 नवीन प्रवेश</a>
+    <a href="/admin?tab=test_leads" class="menu-btn {% if curr_tab == 'test_leads' %}active{% endif %}" style="background:#10b981; border:2px solid #ffdd59;">📊 टेस्ट लीड्स व नंबर</a>
+    <a href="/library" target="_blank" class="menu-btn" style="background: linear-gradient(135deg, #0284c7, #06b6d4); color: white;">📚 लायब्ररी</a>
+    <a href="/admin?tab=fee" class="menu-btn {% if curr_tab == 'fee' %}active{% endif %}" style="background:#f59e0b;">💰 फी जमा</a>
+    <a href="/admin?tab=exp" class="menu-btn {% if curr_tab == 'exp' %}active{% endif %}" style="background:#ff416c;">💵 खर्च वही</a>
+    <a href="/admin?tab=passwords" class="menu-btn {% if curr_tab == 'passwords' %}active{% endif %}" style="background:#dc2626;">🔐 युजर्स व पासवर्ड</a>
+</div>
+
+<div class="container">
+    <div class="kpis">
+        <div class="kpi"><b>एकूण विद्यार्थी:</b> {{ students|length }}</div>
+        <div class="kpi" style="border-color:#10b981;"><b>जमा फी:</b> ₹{{ total_paid }}</div>
+        <div class="kpi" style="border-color:#ef4444;"><b>शिल्लक फी:</b> <span style="color:red;">₹{{ total_pending }}</span></div>
+        <div class="kpi" style="border-color:#ff416c;"><b>एकूण खर्च:</b> ₹{{ total_expenses }}</div>
+    </div>
+
+    {% if curr_tab == 'students' %}
+    <div class="admin-tab">
+        <h3>📋 विद्यार्थी यादी</h3>
+        <table>
+            <thead><tr><th>Reg</th><th>नाव</th><th>कोर्स</th><th>फोन</th><th>शिल्लक</th><th>पावती</th></tr></thead>
+            <tbody>
+                {% for s in students %}
+                <tr>
+                    <td>REG-{{ s.id }}</td><td><b>{{ s.name }}</b></td><td>{{ s.course }}</td><td>{{ s.phone }}</td>
+                    <td style="color:red; font-weight:bold;">₹{{ (s.total_fees or 0) - (s.paid_fees or 0) }}</td>
+                    <td><a href="/receipt/{{ s.id }}" target="_blank" class="btn-act" style="background:#10b981;">🧾 पावती</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    {% if curr_tab == 'test_leads' %}
+    <div class="admin-tab">
+        <h3 style="color:#059669;">📊 ऑनलाईन टेस्ट सबमिशन व पडताळणी केलेले खरे मोबाईल नंबर (Test Leads & WhatsApp Verified Numbers)</h3>
+        <table>
+            <thead><tr><th>टेस्ट आयडी</th><th>विद्यार्थी नाव</th><th>खरा मोबाईल नंबर (WhatsApp Verified)</th><th>टेस्टचे नाव</th><th>गुण</th><th>वेळ</th></tr></thead>
+            <tbody>
+                {% for sub in test_submissions %}
+                <tr>
+                    <td>REG-{{ sub.test_id }}</td>
+                    <td><b>{{ sub.student_name }}</b></td>
+                    <td><b style="color:#16a34a; font-size:14px;">{{ sub.student_mobile }}</b> <a href="https://wa.me/91{{ sub.student_mobile }}" target="_blank" class="btn-act" style="background:#25D366; margin-left:8px;">📲 मेसेज</a></td>
+                    <td>{{ sub.title or 'सराव टेस्ट' }}</td>
+                    <td><b style="color:green;">{{ sub.score }} / {{ sub.total_marks }}</b></td>
+                    <td>{{ sub.created_at }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6">अद्याप कोणतीही टेस्ट सबमिशन आलेली नाही.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    {% if curr_tab == 'admission' %}
+    <div class="admin-tab">
+        <h3>📝 नवीन विद्यार्थी प्रवेश नोंदणी</h3>
+        <form action="/add_student" method="POST" enctype="multipart/form-data">
+            <input type="text" name="name" placeholder="नाव" required>
+            <input type="date" name="admission_date" value="{{ today_date }}" required>
+            <input type="text" name="course" value="पोलीस भरती" required>
+            <input type="text" name="phone" placeholder="मोबाईल" required>
+            <input type="text" name="parent_phone" placeholder="पालक मोबाईल" required>
+            <input type="number" name="total_fees" placeholder="एकूण फी" required>
+            <input type="number" name="paid_fees" placeholder="भरलेली फी" required>
+            <button type="submit" class="btn-act" style="background:green; padding:8px 15px;">+ प्रवेश सेव्ह करा</button>
+        </form>
+    </div>
+    {% endif %}
+
+    {% if curr_tab == 'fee' %}
+    <div class="admin-tab">
+        <h3>💰 फी हप्ता जमा</h3>
+        <form action="/pay_installment" method="POST">
+            विद्यार्थी: <select name="student_id" required><option value="">-- निवडा --</option>{% for s in students %}<option value="{{ s.id }}">{{ s.name }} (बाकी: ₹{{ (s.total_fees or 0)-(s.paid_fees or 0) }})</option>{% endfor %}</select>
+            रक्कम: <input type="number" name="amount" placeholder="रक्कम (₹)" required>
+            <button type="submit" class="btn-act" style="background:green;">जमा करा</button>
+        </form>
+    </div>
+    {% endif %}
+
+    {% if curr_tab == 'exp' %}
+    <div class="admin-tab">
+        <h3>💵 दैनिक खर्च वही</h3>
+        <form action="/add_expense" method="POST">
+            प्रकार: <input type="text" name="category" placeholder="उदा. भाजीपाला" required>
+            रक्कम: <input type="number" name="amount" placeholder="रक्कम" required>
+            तपशील: <input type="text" name="description" placeholder="तपशील" required>
+            <button type="submit" class="btn-act" style="background:green;">नोंदवा</button>
+        </form>
+        <table>
+            <thead><tr><th>तारीख</th><th>प्रकार</th><th>तपशील</th><th>रक्कम</th></tr></thead>
+            <tbody>
+                {% for ex in expenses_list %}
+                <tr><td>{{ ex.exp_date }}</td><td>{{ ex.category }}</td><td><b>{{ ex.description }}</b></td><td style="color:red; font-weight:bold;">₹{{ ex.amount }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    {% if curr_tab == 'passwords' %}
+    <div class="admin-tab">
+        <h3 style="color:#dc2626;">🔐 युजर पासवर्ड व्यवस्थापन</h3>
+        <table>
+            <thead><tr><th>Role</th><th>Password</th><th>Action</th></tr></thead>
+            <tbody>
+                {% for u in users_list %}
+                <form action="/change_password/{{ u.id }}" method="POST">
+                <tr>
+                    <td><b>{{ u.role }}</b></td><td><input type="text" name="new_password" value="{{ u.password }}"></td>
+                    <td><button type="submit" class="btn-act" style="background:#10b981;">अपडेट</button></td>
+                </tr>
+                </form>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+<script>
+function updateClock() {
+    var now = new Date();
+    var h = now.getHours(), m = String(now.getMinutes()).padStart(2,'0'), s = String(now.getSeconds()).padStart(2,'0');
+    var ap = h>=12 ? 'PM':'AM'; h = h%12; h = h?h:12;
+    document.getElementById('liveTime').innerText = String(h).padStart(2,'0') + ":" + m + ":" + s + " " + ap;
+    document.getElementById('liveDate').innerText = now.toLocaleDateString();
+}
+setInterval(updateClock, 1000); updateClock();
+</script>
+</body>
+</html>'''
+
 @app.route('/admin')
 def admin_view():
     if session.get('user_role') != 'Admin': return redirect(url_for('login'))
+    curr_tab = request.args.get('tab', 'test_leads')
+    today_date = date.today().strftime("%Y-%m-%d")
+    lang = session.get('site_lang', 'mr')
     with get_db() as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT * FROM students")
             students = cur.fetchall()
             cur.execute("SELECT * FROM expenses ORDER BY id DESC")
             expenses_list = cur.fetchall()
+            cur.execute("SELECT * FROM users")
+            users_list = cur.fetchall()
             cur.execute("SELECT s.*, t.title FROM student_submissions s LEFT JOIN online_tests t ON s.test_id = t.id ORDER BY s.id DESC")
             test_submissions = cur.fetchall()
+
     total_paid = sum(safe_float(s['paid_fees']) for s in students)
     total_pending = sum(safe_float(s['total_fees']) - safe_float(s['paid_fees']) for s in students)
-    
-    sub_rows = "".join([f"<tr><td>REG-{sub['test_id']}</td><td><b>{sub['student_name']}</b></td><td>{sub['student_mobile']}</td><td>{sub.get('title','सराव टेस्ट')}</td><td><b style='color:green;'>{sub['score']}/{sub['total_marks']}</b></td><td>{sub['created_at']}</td></tr>" for sub in test_submissions]) if test_submissions else "<tr><td colspan='6'>अद्याप कोणत्याही टेस्ट सबमिशन आलेले नाहीत.</td></tr>"
+    total_expenses = sum(safe_float(ex['amount']) for ex in expenses_list)
 
-    return f"""
-    <div style="font-family:Arial; padding:30px; background:#f8fafc;">
-        <h1 style="color:#1e293b;">⚔️ श्रीगुरु करिअर अकॅडमी - प्रशासक पॅनेल (Admin Dashboard)</h1>
-        <p style="background:#e2e8f0; padding:10px; border-radius:5px;"><b>क्लाउड डेटाबेस (Supabase):</b> यशस्वीरित्या जोडलेले आहे! ✅</p>
-        <hr>
-        <div style="margin-bottom:20px;">
-            <a href="/admin/add_test" style="background:#2563eb; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; font-weight:bold; margin-right:10px; display:inline-block;">📝 नवीन टेस्ट (Timer / Bulk / Manual) तयार करा</a>
-            <a href="/inquiries" style="background:#b45309; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; font-weight:bold; margin-right:10px; display:inline-block;">📞 कॉलिंग व टेस्ट डेस्क</a>
-            <a href="/library" style="background:#0284c7; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; font-weight:bold; margin-right:10px; display:inline-block;" target="_blank">📚 लायब्ररी / लॅब</a>
-            <a href="/logout" style="background:#dc2626; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; font-weight:bold; display:inline-block;">लॉग आउट 🚪</a>
-        </div>
-        <h3>थोडक्यात माहिती (Summary):</h3>
-        <ul>
-            <li><b>एकूण विद्यार्थी संख्या:</b> {len(students)}</li>
-            <li><b>गोळा झालेली एकूण फी:</b> ₹ {total_paid}</li>
-            <li><b>बाकी असलेली फी:</b> ₹ {total_pending}</li>
-            <li><b>एकूण खर्च:</b> ₹ {sum(safe_float(ex['amount']) for ex in expenses_list)}</li>
-        </ul>
-        <hr>
-        <h3>📋 विद्यार्थी ऑनलाईन टेस्ट सबमिशन व खरे मोबाईल नंबर (Test Leads & Records):</h3>
-        <table border="1" cellpadding="8" style="border-collapse:collapse; background:white; width:100%; margin-top:10px;">
-            <tr style="background:#e2e8f0;"><th>टेस्ट आयडी</th><th>विद्यार्थी नाव</th><th>खरा मोबाईल नंबर (WhatsApp Verified)</th><th>टेस्टचे नाव</th><th>गुण</th><th>वेळ</th></tr>
-            {sub_rows}
-        </table>
-    </div>
-    """
+    return render_template_string(ADMIN_DASHBOARD_LAYOUT, curr_tab=curr_tab, students=students, expenses_list=expenses_list, users_list=users_list, test_submissions=test_submissions, total_paid=total_paid, total_pending=total_pending, total_expenses=total_expenses, today_date=today_date, lang=lang)
 
 @app.route('/manager')
 def manager_view():
@@ -266,7 +425,7 @@ def clerk_view():
         with conn.cursor() as cur:
             cur.execute("SELECT s.*, t.title FROM student_submissions s LEFT JOIN online_tests t ON s.test_id = t.id ORDER BY s.id DESC")
             test_submissions = cur.fetchall()
-    sub_rows = "".join([f"<tr><td><b>{sub['student_name']}</b></td><td>{sub['student_mobile']}</td><td>{sub.get('title','सराव टेस्ट')}</td><td><b style='color:green;'>{sub['score']}/{sub['total_marks']}</b></td><td>{sub['created_at']}</td></tr>" for sub in test_submissions]) if test_submissions else "<tr><td colspan='5'>नोंद नाही.</td></tr>"
+    sub_rows = "".join([f"<tr><td><b>{sub['student_name']}</b></td><td><b style='color:#16a34a;'>{sub['student_mobile']}</b></td><td>{sub.get('title','सराव टेस्ट')}</td><td><b style='color:green;'>{sub['score']}/{sub['total_marks']}</b></td><td>{sub['created_at']}</td></tr>" for sub in test_submissions]) if test_submissions else "<tr><td colspan='5'>नोंद नाही.</td></tr>"
     return f"""
     <div style="font-family:Arial; padding:30px; background:#f8fafc;">
         <h2>Clerk Dashboard - श्रीगुरु करिअर अकॅडमी</h2>
@@ -282,7 +441,7 @@ def clerk_view():
     """
 
 # ---------------------------------------------------------
-# टेस्ट निर्मिती: मॅन्युअल, बल्क व टाईम लिमिट (Admin / Clerk)
+# TEST CREATION: MANUAL + BULK + TIMER
 # ---------------------------------------------------------
 @app.route('/admin/add_test', methods=['GET', 'POST'])
 def add_test():
@@ -333,7 +492,7 @@ def add_test():
     """
 
 # ---------------------------------------------------------
-# विद्यार्थी टेस्ट सबमिशन, स्ट्रिक्ट व्हॅलिडेशन व WhatsApp फ्लो
+# STUDENT SUBMISSION & WHATSAPP VERIFICATION FLOW
 # ---------------------------------------------------------
 @app.route('/submit_test', methods=['POST'])
 def submit_test():
@@ -346,15 +505,12 @@ def submit_test():
         total_marks = safe_float(data.get('total_marks', 100))
         details = data.get('details', 'सविस्तर निकाल')
         
-        # नाव तपासणे (फक्त अक्षरे आणि स्पेसेस)
         if not student_name or not re.match("^[अ-ॲक-हA-Za-z\\s]+$", student_name):
             return jsonify({"status": "error", "message": "कृपया तुमचे योग्य नाव टाका (नावात आकडे चालणार नाहीत)."}), 400
 
-        # मोबाईल नंबर तपासणे (अचूक १० अंकी नंबर सक्तीचा)
         if not student_mobile or not re.match("^[0-9]{10}$", student_mobile):
             return jsonify({"status": "error", "message": "चुकीचा नंबर! कृपया अचूक १० अंकी मोबाईल नंबर टाका."}), 400
 
-        # डेटाबेसमध्ये विद्यार्थ्याचा खरा नंबर व निकाल सेव्ह करणे
         with get_db() as conn:
             with conn.cursor() as cur:
                 cur.execute(
@@ -377,7 +533,6 @@ def submit_test():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-# --- लायब्ररी डॅशबोर्ड (Library Module) ---
 @app.route('/library')
 def library_dashboard():
     with get_db() as conn:
@@ -406,7 +561,6 @@ def library_dashboard():
     </table>
     </body></html>''', books=books, issues=issues, seats=seats)
 
-# --- कॉलिंग व चौकशी डेस्क (Inquiries Desk) ---
 @app.route('/inquiries')
 def inquiry_desk():
     if session.get('user_role') not in ['Admin', 'Clerk', 'Manager']:
