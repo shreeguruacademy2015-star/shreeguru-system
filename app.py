@@ -12,7 +12,7 @@ from psycopg2.extras import RealDictCursor
 app = Flask(__name__)
 app.secret_key = "shreeguru_complete_bulletproof_v45_cloud_backup"
 
-# Supabase PostgreSQL Database Connection URL (श्रीगुरु करिअर अकॅडमी क्लाउड जोडणी)
+# Supabase PostgreSQL Database Connection URL
 DATABASE_URL = "postgresql://postgres:Shreeguru@123@db.pcwdribwbcuoxkqhozmu.supabase.co:5432/postgres"
 
 DESKTOP_PATH = os.path.join(os.path.expanduser("~"), "Desktop")
@@ -52,16 +52,6 @@ def safe_int(val, default=0):
         if val is None or str(val).strip() == "": return default
         return int(val)
     except: return default
-
-def log_staff_activity(role_name, act_text):
-    try:
-        with get_db() as conn:
-            with conn.cursor() as cur:
-                now_str = datetime.now().strftime("%Y-%m-%d %I:%M %p")
-                cur.execute("INSERT INTO staff_activity_log (staff_role, act_time, activity_text) VALUES (%s, %s, %s)", (role_name, now_str, act_text))
-                conn.commit()
-    except Exception as e:
-        print(f"Log Error: {e}")
 
 def init_db():
     create_automatic_backup()
@@ -211,11 +201,9 @@ def root():
     elif role == 'Clerk': return redirect('/clerk')
     else: return redirect('/admin')
 
-# --- ADMIN PANEL & ROUTES ---
 @app.route('/admin')
 def admin_view():
     if session.get('user_role') != 'Admin': return redirect(url_for('login'))
-    lang = session.get('site_lang', 'mr')
     with get_db() as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT * FROM students")
@@ -245,4 +233,5 @@ def admin_view():
 init_db()
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
