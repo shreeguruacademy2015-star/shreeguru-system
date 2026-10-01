@@ -21,7 +21,7 @@ def safe_float(val):
     except (TypeError, ValueError):
         return 0.0
 
-# Safe Database Initialization
+# डेटाबेस आणि सर्व आवश्यक टेबल तयार करणे (जुने + नवीन)
 def init_db():
     try:
         with get_db() as conn:
@@ -75,7 +75,7 @@ def init_db():
     except Exception as e:
         print(f"Database Init Error: {e}")
 
-# HTML Templates & Login
+# लॉगिन पेज एचटीएमएल
 LOGIN_HTML = '''<!DOCTYPE html>
 <html lang="{{ lang }}">
 <head>
@@ -96,7 +96,7 @@ select, input { width: 100%; padding: 11px 12px; margin-bottom: 15px; border: 1.
 <body>
 <div class="login-box">
     <a href="/toggle_lang" class="lang-btn">🌐 {{ 'MR' if lang == 'en' else 'EN' }}</a>
-    <span class="insignia">⚔️️ POLICE & DEFENCE ACADEMY</span>
+    <span class="insignia">⚔️ POLICE & DEFENCE ACADEMY</span>
     <h2 class="title">श्रीगुरु करिअर अकॅडमी</h2>
     <div class="subtitle">पोलीस व सैन्य भरती पूर्व प्रशिक्षण केंद्र<br>आडूर, ता. करवीर, जि. कोल्हापूर</div>
     {% if error %}<div style="color:#dc2626; font-size:12px; font-weight:bold; margin-bottom:12px;">{{ error }}</div>{% endif %}
@@ -163,6 +163,9 @@ def root():
     elif role == 'Clerk': return redirect('/clerk')
     else: return redirect('/admin')
 
+# ---------------------------------------------------------
+# 1. ॲडमिन डॅशबोर्ड (सर्व जुने मेन्स + नवीन टेस्ट लिंकसह)
+# ---------------------------------------------------------
 @app.route('/admin')
 def admin_view():
     if session.get('user_role') != 'Admin': return redirect(url_for('login'))
@@ -184,34 +187,54 @@ def admin_view():
         <h1 style="color:#1e293b;">⚔️ श्रीगुरु करिअर अकॅडमी - प्रशासक पॅनेल (Admin Dashboard)</h1>
         <p style="background:#e2e8f0; padding:10px; border-radius:5px;"><b>क्लाउड डेटाबेस (Supabase):</b> यशस्वीरित्या जोडलेले आहे! ✅</p>
         <hr>
-        <h3>थोडक्यात माहिती (Summary):</h3>
+        <div style="margin-bottom: 20px;">
+            <a href="/admin/add_test" style="background:#2563eb; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; font-weight:bold; margin-right:10px; display:inline-block;">📝 नवीन टेस्ट (Bulk & Timer) तयार करा</a>
+            <a href="/logout" style="background:#dc2626; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; font-weight:bold; display:inline-block;">लॉग आउट (Logout) 🚪</a>
+        </div>
+        <hr>
+        <h3>थोडक्यात माहिती व वित्तीय रेकॉर्ड (Summary & Records):</h3>
         <ul>
             <li><b>एकूण विद्यार्थी संख्या:</b> {len(students)}</li>
             <li><b>गोळा झालेली एकूण फी:</b> ₹ {total_paid}</li>
             <li><b>बाकी असलेली फी:</b> ₹ {total_pending}</li>
             <li><b>एकूण खर्च:</b> ₹ {sum(safe_float(ex.get('amount', 0)) for ex in expenses_list)}</li>
         </ul>
-        <br>
-        <a href="/admin/add_test" style="background:#2563eb; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; font-weight:bold; margin-right:10px;">नवीन टेस्ट तयार करा 📝</a>
-        <a href="/logout" style="background:#dc2626; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; font-weight:bold;">लॉग आउट (Logout) 🚪</a>
+        
+        <h3>विद्यार्थी यादी:</h3>
+        <table border="1" cellpadding="8" style="border-collapse:collapse; background:white; width:100%;">
+            <tr style="background:#e2e8f0;"><th>नाव</th><th>मोबाईल</th><th>एकूण फी</th><th>भरलेली फी</th></tr>
+            {"".join(f"<tr><td>{s.get('name')}</td><td>{s.get('mobile')}</td><td>{s.get('total_fees')}</td><td>{s.get('paid_fees')}</td></tr>" for s in students) if students else "<tr><td colspan='4'>कोणतीही माहिती उपलब्ध नाही.</td></tr>"}
+        </table>
     </div>
     """
 
 @app.route('/manager')
 def manager_view():
     if session.get('user_role') != 'Manager': return redirect(url_for('login'))
-    return "<h2>Manager Dashboard - श्रीगुरु करिअर अकॅडमी</h2><a href='/logout'>Logout</a>"
+    return "<h2>Manager Dashboard - श्रीगुरु करिअर अकॅडमी</h2><p>मॅनेजरसाठीचे सर्व अधिकार इथे असतील.</p><a href='/logout'>Logout</a>"
 
 @app.route('/trainer')
 def trainer_view():
     if session.get('user_role') != 'Trainer': return redirect(url_for('login'))
-    return "<h2>Trainer Dashboard - श्रीगुरु करिअर अकॅडमी</h2><a href='/logout'>Logout</a>"
+    return "<h2>Trainer Dashboard - श्रीगुरु करिअर अकॅडमी</h2><p>ट्रेनर्ससाठीचे मार्गदर्शन व शेड्युल.</p><a href='/logout'>Logout</a>"
 
 @app.route('/clerk')
 def clerk_view():
     if session.get('user_role') != 'Clerk': return redirect(url_for('login'))
-    return "<h2>Clerk Dashboard - श्रीगुरु करिअर अकॅडमी</h2><a href='/logout'>Logout</a>"
+    return """
+    <div style="font-family:Arial; padding:30px;">
+        <h2>Clerk Dashboard - श्रीगुरु करिअर अकॅडमी</h2>
+        <p>क्लार्कसाठीचे व्यवस्थापन पॅनेल.</p>
+        <br>
+        <a href="/admin/add_test" style="background:#15803d; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; font-weight:bold;">📝 नवीन टेस्ट तयार करा (Bulk Import & Timer)</a>
+        <br><br>
+        <a href='/logout' style="color:red; font-weight:bold;">Logout</a>
+    </div>
+    """
 
+# ---------------------------------------------------------
+# 2. ॲडमिन/क्लार्कसाठी: टाईम सेटिंग आणि बल्क प्रश्न-उत्तर अपलोड (Bulk Import)
+# ---------------------------------------------------------
 @app.route('/admin/add_test', methods=['GET', 'POST'])
 def add_test():
     role = session.get('user_role')
@@ -244,21 +267,27 @@ def add_test():
         })
         
     return """
-    <div style="font-family:Arial; padding:30px; max-width:600px; margin:auto;">
+    <div style="font-family:Arial; padding:30px; max-width:600px; margin:auto; background:#f8fafc; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,0.05);">
         <h2>📝 नवीन टेस्ट तयार करा (Bulk Import & Timer)</h2>
         <form method="POST">
             <label><b>टेस्टचे नाव (Title):</b></label><br>
-            <input type="text" name="test_title" required style="width:100%; padding:8px; margin:8px 0;"><br>
+            <input type="text" name="test_title" required style="width:100%; padding:10px; margin:8px 0; border:1px solid #cbd5e1; border-radius:4px;"><br>
+            
             <label><b>टाईम लिमिट (मिनिटांत - रिकामे ठेवल्यास अनलमीटेड वेळ):</b></label><br>
-            <input type="number" name="time_limit" placeholder="उदा. 10 किंवा 30" style="width:100%; padding:8px; margin:8px 0;"><br>
+            <input type="number" name="time_limit" placeholder="उदा. 10 किंवा 30" style="width:100%; padding:10px; margin:8px 0; border:1px solid #cbd5e1; border-radius:4px;"><br>
+            
             <label><b>सर्व प्रश्न आणि आन्सर की (Bulk Copy-Paste Box):</b></label><br>
-            <textarea name="raw_content" rows="10" placeholder="येथे सर्व प्रश्न एकाच वेळी कॉपी-पेस्ट करा..." style="width:100%; padding:8px; margin:8px 0;"></textarea><br>
-            <button type="submit" style="background:#15803d; color:white; padding:10px 20px; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">टेस्ट सेव्ह करा</button>
+            <textarea name="raw_content" rows="10" placeholder="येथे सर्व प्रश्न एकाच वेळी कॉपी-पेस्ट करा..." style="width:100%; padding:10px; margin:8px 0; border:1px solid #cbd5e1; border-radius:4px;"></textarea><br>
+            
+            <button type="submit" style="background:#15803d; color:white; padding:12px 20px; border:none; border-radius:5px; font-weight:bold; cursor:pointer; width:100%;">टेस्ट सेव्ह करा</button>
         </form>
-        <br><a href="/admin">🔙 डॅशबोर्डकडे जा</a>
+        <br><a href="/admin" style="color:#2563eb; text-decoration:none; font-weight:bold;">🔙 डॅशबोर्डकडे जा</a>
     </div>
     """
 
+# ---------------------------------------------------------
+# 3. विद्यार्थी टेस्ट सबमिट करताना: व्हॅलिडेशन, स्कोर लपवणे व WhatsApp फ्लो
+# ---------------------------------------------------------
 @app.route('/submit_test', methods=['POST'])
 def submit_test():
     try:
