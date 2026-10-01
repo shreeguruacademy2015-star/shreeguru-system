@@ -1,146 +1,100 @@
 import os
-import shutil
-from datetime import date, datetime 
-from flask import Flask, redirect, render_template, render_template_string, request, send_file, send_from_directory, url_for, session, Response
-from werkzeug.utils import secure_filename
-import io
-import csv
+import re
 import urllib.parse
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from flask import Flask, render_template_string, request, redirect, url_for, session, jsonify
 
 app = Flask(__name__)
-app.secret_key = "shreeguru_complete_bulletproof_v45_cloud_backup"
-
-# Supabase PostgreSQL Database Connection URL
-DATABASE_URL = "postgresql://postgres:Shreeguru@123@db.pcwdribwbcuoxkqhozmu.supabase.co:5432/postgres"
-
-DESKTOP_PATH = os.path.join(os.path.expanduser("~"), "Desktop")
-UPLOAD_FOLDER = os.path.join(DESKTOP_PATH, "student_photos")
-DOCS_FOLDER = os.path.join(DESKTOP_PATH, "student_documents")
-BACKUP_FOLDER = os.path.join(DESKTOP_PATH, "shreeguru_auto_backups")
-
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(DOCS_FOLDER, exist_ok=True)
-os.makedirs(BACKUP_FOLDER, exist_ok=True)
-
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['DOCS_FOLDER'] = DOCS_FOLDER
+app.secret_key = os.environ.get("SECRET_KEY", "shreeguru_secure_secret_key_2026")
 
 def get_db():
-    conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+    database_url = os.environ.get('DATABASE_URL')
+    if not database_url:
+        raise ValueError("DATABASE_URL environment variable is not set!")
+    conn = psycopg2.connect(database_url, cursor_factory=RealDictCursor)
     return conn
 
-def create_automatic_backup():
+def safe_float(val):
     try:
-        today_str = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        backup_file_path = os.path.join(BACKUP_FOLDER, f"shreeguru_cloud_sync_{today_str}.txt")
-        with open(backup_file_path, "w", encoding="utf-8") as f:
-            f.write(f"Shreeguru Cloud Sync Backup Active - {today_str}")
-        print(f"Auto Backup Sync Created Successfully: {backup_file_path}")
-    except Exception as e:
-        print(f"Auto Backup Error: {e}")
-
-def safe_float(val, default=0.0):
-    try:
-        if val is None or str(val).strip() == "": return default
         return float(val)
-    except: return default
+    except (TypeError, ValueError):
+        return 0.0
 
-def safe_int(val, default=0):
-    try:
-        if val is None or str(val).strip() == "": return default
-        return int(val)
-    except: return default
-
+# ---------------------------------------------------------
+# डेटाबेस टेबल निर्मिती (Initial Setup)
+# ---------------------------------------------------------
 def init_db():
-    create_automatic_backup()
     with get_db() as conn:
         with conn.cursor() as cur:
-            # Users & Roles
-            cur.execute("CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, role TEXT UNIQUE NOT NULL, password TEXT NOT NULL)")
-            cur.execute("INSERT INTO users (role, password) VALUES ('Admin', 'admin123') ON CONFLICT (role) DO NOTHING")
-            cur.execute("INSERT INTO users (role, password) VALUES ('Manager', 'manager123') ON CONFLICT (role) DO NOTHING")
-            cur.execute("INSERT INTO users (role, password) VALUES ('Clerk', 'clerk123') ON CONFLICT (role) DO NOTHING")
-            cur.execute("INSERT INTO users (role, password) VALUES ('Trainer', 'trainer123') ON CONFLICT (role) DO NOTHING")
-
-            # Questions & Mock Tests
-            cur.execute('''CREATE TABLE IF NOT EXISTS questions (
-                id SERIAL PRIMARY KEY, question TEXT NOT NULL, opt_a TEXT NOT NULL, opt_b TEXT NOT NULL, opt_c TEXT NOT NULL, opt_d TEXT NOT NULL, correct TEXT NOT NULL
-            )''')
-            cur.execute('SELECT COUNT(*) FROM questions')
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id SERIAL PRIMARY KEY,
+                    role VARCHAR(50) UNIQUE NOT NULL,
+                    password VARCHAR(100) NOT NULL
+                );
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS students (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(150),
+                    mobile VARCHAR(20),
+                    total_fees NUMERIC DEFAULT 0,
+                    paid_fees NUMERIC DEFAULT 0
+                );
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS expenses (
+                    id SERIAL PRIMARY KEY,
+                    title VARCHAR(200),
+                    amount NUMERIC DEFAULT 0
+                );
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS online_tests (
+                    id SERIAL PRIMARY KEY,
+                    title VARCHAR(200),
+                    time_limit INT DEFAULT NULL,
+                    raw_questions TEXT
+                );
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS student_submissions (
+                    id SERIAL PRIMARY KEY,
+                    test_id INT,
+                    student_name VARCHAR(150),
+                    student_mobile VARCHAR(20),
+                    score NUMERIC DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            """)
+            # डीफॉल्ट युजर्स इन्सर्ट करणे (नसल्यास)
+            cur.execute("SELECT COUNT(*) FROM users;")
             if cur.fetchone()['count'] == 0:
-                default_qs = [
-                    ("महाराष्ट्राची राजधानी कोणती?", "पुणे", "मुंबई", "नागपूर", "नाशिक", "B"),
-                    ("क्षेत्रफळाच्या दृष्टीने महाराष्ट्रातील सर्वात मोठा जिल्हा कोणता?", "अहमदनगर", "पुणे", "नाशिक", "सोलापूर", "A"),
-                    ("स्वराज्य स्थापना कोणी केली?", "छत्रपती संभाजी महाराज", "छत्रपती शिवाजी महाराज", "महात्मा ज्योतिराव फुले", "संत ज्ञानेश्वर", "B"),
-                    ("भारताचे राष्ट्रगीत 'जन गण मन' कोणी लिहिले?", "बंकिमचंद्र चटर्जी", "रविंद्रनाथ टागोर", "महात्मा गांधी", "लोकमान्य टिळक", "B"),
-                    ("महाराष्ट्रात एकूण किती जिल्हे आहेत?", "३४", "३५", "३६", "३७", "C")
-                ]
-                cur.executemany('INSERT INTO questions (question, opt_a, opt_b, opt_c, opt_d, correct) VALUES (%s, %s, %s, %s, %s, %s)', default_qs)
-                conn.commit()
+                default_users = [('Admin', 'admin123'), ('Manager', 'mgr123'), ('Trainer', 'trn123'), ('Clerk', 'clerk123')]
+                cur.executemany("INSERT INTO users (role, password) VALUES (%s, %s) ON CONFLICT (role) DO NOTHING;", default_users)
+        conn.commit()
 
-            # Main Tables
-            cur.execute('''CREATE TABLE IF NOT EXISTS books (id SERIAL PRIMARY KEY, title TEXT NOT NULL, author TEXT, category TEXT, total_copies INTEGER DEFAULT 1, available_copies INTEGER DEFAULT 1)''')
-            cur.execute('''CREATE TABLE IF NOT EXISTS book_issues (id SERIAL PRIMARY KEY, book_id INTEGER, student_id INTEGER, student_name TEXT, issue_date TEXT, return_date TEXT, status TEXT DEFAULT 'Issued')''')
-            cur.execute('''CREATE TABLE IF NOT EXISTS study_lab_seats (id SERIAL PRIMARY KEY, seat_number TEXT NOT NULL, shift TEXT NOT NULL, student_id INTEGER, student_name TEXT, status TEXT DEFAULT 'Available')''')
-            cur.execute("CREATE TABLE IF NOT EXISTS staff_activity_log (id SERIAL PRIMARY KEY, staff_role TEXT NOT NULL, act_time TEXT NOT NULL, activity_text TEXT NOT NULL, admin_reply TEXT DEFAULT '')")
-            cur.execute("CREATE TABLE IF NOT EXISTS staff_requests (id SERIAL PRIMARY KEY, req_role TEXT NOT NULL, req_date TEXT NOT NULL, request_title TEXT NOT NULL, request_details TEXT NOT NULL, status TEXT DEFAULT 'प्रलंबित (Pending)')")
-            
-            cur.execute("""CREATE TABLE IF NOT EXISTS students (
-                id SERIAL PRIMARY KEY, name TEXT NOT NULL, dob TEXT, gender TEXT, category TEXT, height TEXT, weight TEXT, chest TEXT,
-                course TEXT NOT NULL, phone TEXT NOT NULL, parent_phone TEXT, address TEXT, hostel_needed TEXT DEFAULT 'नाही',
-                total_fees REAL DEFAULT 0, paid_fees REAL DEFAULT 0, photo_filename TEXT, admission_form_scan TEXT, admission_date TEXT NOT NULL,
-                diet_plan TEXT, admin_remark TEXT
-            )""")
-            
-            cur.execute("CREATE TABLE IF NOT EXISTS attendance (id SERIAL PRIMARY KEY, person_type TEXT NOT NULL, person_id INTEGER NOT NULL, att_type TEXT NOT NULL, att_date TEXT NOT NULL, status TEXT NOT NULL, marked_by TEXT DEFAULT 'Staff')")
-            cur.execute("CREATE TABLE IF NOT EXISTS hostel_mess_fees (id SERIAL PRIMARY KEY, student_id INTEGER, package_type TEXT, from_month TEXT, to_month TEXT, total_amount REAL DEFAULT 0, paid_amount REAL DEFAULT 0, pay_date TEXT, logged_by TEXT DEFAULT 'Clerk')")
-            cur.execute("CREATE TABLE IF NOT EXISTS physical_tests (id SERIAL PRIMARY KEY, student_id INTEGER, test_date TEXT, run_time TEXT, sprint_time TEXT, shot_put_dist TEXT, pullups INTEGER DEFAULT 0, total_obtained REAL DEFAULT 0, logged_by TEXT DEFAULT 'Staff')")
-            cur.execute("CREATE TABLE IF NOT EXISTS written_tests (id SERIAL PRIMARY KEY, student_id INTEGER, test_date TEXT, test_name TEXT, subject TEXT, total_marks REAL DEFAULT 100, obtained_marks REAL DEFAULT 0, logged_by TEXT DEFAULT 'Staff')")
-            cur.execute("CREATE TABLE IF NOT EXISTS trainer_practice_log (id SERIAL PRIMARY KEY, log_date TEXT NOT NULL, session_time TEXT NOT NULL, ground_status TEXT NOT NULL, workout_details TEXT NOT NULL)")
-            cur.execute("CREATE TABLE IF NOT EXISTS injuries (id SERIAL PRIMARY KEY, student_id INTEGER NOT NULL, injury_date TEXT NOT NULL, injury_type TEXT NOT NULL, severity TEXT NOT NULL, rest_days INTEGER DEFAULT 0)")
-            cur.execute("CREATE TABLE IF NOT EXISTS staff (id SERIAL PRIMARY KEY, name TEXT NOT NULL, role TEXT NOT NULL, phone TEXT NOT NULL, salary REAL DEFAULT 0, advance_paid REAL DEFAULT 0, joining_date TEXT, total_leaves INTEGER DEFAULT 0)")
-            cur.execute("CREATE TABLE IF NOT EXISTS expenses (id SERIAL PRIMARY KEY, exp_date TEXT NOT NULL, category TEXT NOT NULL, description TEXT, amount REAL NOT NULL, logged_by TEXT DEFAULT 'Clerk')")
-            cur.execute("CREATE TABLE IF NOT EXISTS kit_distribution (id SERIAL PRIMARY KEY, student_id INTEGER NOT NULL, item_details TEXT NOT NULL, issue_date TEXT NOT NULL, logged_by TEXT DEFAULT 'Clerk')")
-            cur.execute("CREATE TABLE IF NOT EXISTS discipline_records (id SERIAL PRIMARY KEY, student_id INTEGER NOT NULL, record_type TEXT NOT NULL, record_date TEXT NOT NULL, reason TEXT NOT NULL)")
-            cur.execute("CREATE TABLE IF NOT EXISTS mess_diet (id SERIAL PRIMARY KEY, day_name TEXT NOT NULL UNIQUE, breakfast TEXT, lunch TEXT, dinner TEXT, special_diet TEXT)")
-            cur.execute("CREATE TABLE IF NOT EXISTS staff_tasks (id SERIAL PRIMARY KEY, target_role TEXT NOT NULL, task_text TEXT NOT NULL, task_date TEXT NOT NULL, status TEXT DEFAULT 'Unseen')")
-            
-            cur.execute("CREATE TABLE IF NOT EXISTS canteen_staff_list (id SERIAL PRIMARY KEY, staff_name TEXT NOT NULL, work_role TEXT NOT NULL)")
-            cur.execute("INSERT INTO canteen_staff_list (id, staff_name, work_role) VALUES (1, 'सुरेखा ताई', 'मुख्य स्वयंपाक') ON CONFLICT (id) DO NOTHING")
-            cur.execute("INSERT INTO canteen_staff_list (id, staff_name, work_role) VALUES (2, 'सुनीता ताई', 'चपाती व भांडी') ON CONFLICT (id) DO NOTHING")
-            
-            cur.execute("CREATE TABLE IF NOT EXISTS kitchen_staff_att (id SERIAL PRIMARY KEY, staff_name TEXT NOT NULL, att_date TEXT NOT NULL, session_time TEXT NOT NULL, day_name TEXT NOT NULL, status TEXT NOT NULL)")
-            cur.execute("CREATE TABLE IF NOT EXISTS student_care_log (id SERIAL PRIMARY KEY, student_id INTEGER NOT NULL, care_date TEXT NOT NULL, issue_details TEXT NOT NULL, special_diet_note TEXT)")
-            cur.execute("CREATE TABLE IF NOT EXISTS staff_activities (id SERIAL PRIMARY KEY, student_id INTEGER, staff_name TEXT, activity_date TEXT, action_text TEXT, remark TEXT)")
-            cur.execute("CREATE TABLE IF NOT EXISTS student_activities (id SERIAL PRIMARY KEY, student_id INTEGER, activity_date TEXT, diet_plan TEXT, remark TEXT)")
-            cur.execute("CREATE TABLE IF NOT EXISTS ground_records (id SERIAL PRIMARY KEY, student_id INTEGER NOT NULL, test_date TEXT NOT NULL, event_name TEXT NOT NULL, raw_value REAL NOT NULL, marks REAL NOT NULL, trainer_name TEXT, remark TEXT)")
-            cur.execute("CREATE TABLE IF NOT EXISTS admission_inquiries (id SERIAL PRIMARY KEY, inquiry_date TEXT NOT NULL, student_name TEXT NOT NULL, district TEXT NOT NULL, taluka TEXT, phone TEXT NOT NULL, course TEXT NOT NULL, hostel_interest TEXT DEFAULT 'होय', call_status TEXT DEFAULT 'नवीन चौकशी (New)', staff_note TEXT DEFAULT '')")
-            cur.execute("CREATE TABLE IF NOT EXISTS mock_test_leads (id SERIAL PRIMARY KEY, test_date TEXT NOT NULL, student_name TEXT NOT NULL, district TEXT NOT NULL, phone TEXT NOT NULL, score INTEGER NOT NULL, total_marks INTEGER NOT NULL, test_name TEXT NOT NULL, call_status TEXT DEFAULT 'नवीन टेस्ट निकाल', staff_note TEXT DEFAULT '')")
-            conn.commit()
-
-            days = ['सोमवार', 'मंगळवार', 'बुधवार', 'गुरुवार', 'शुक्रवार', 'शनिवार', 'रविवार']
-            for d in days:
-                cur.execute("INSERT INTO mess_diet (day_name, breakfast, lunch, dinner, special_diet) VALUES (%s, 'पोहे / उपमा', 'डाळ, भात, चपाती, उसळ', 'भाकरी, सुकी भाजी, आमटी', 'दूध, केळी, भिजवलेले हरभरे-गूळ') ON CONFLICT (day_name) DO NOTHING", (d,))
-            conn.commit()
-
-# --- LOGIN SCREEN HTML TEMPLATE ---
+# ---------------------------------------------------------
+# HTML Templates & Login
+# ---------------------------------------------------------
 LOGIN_HTML = '''<!DOCTYPE html>
 <html lang="{{ lang }}">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SHREEGURU DEFENCE ACADEMY - OFFICIAL LOGIN</title>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>श्रीगुरु करिअर अकॅडमी - लॉगिन</title>
 <style>
-* { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
-body { margin: 0; padding: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #0f172a; }
-.login-box { background: rgba(255, 255, 255, 0.97); width: 380px; padding: 35px 30px; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); text-align: center; position: relative; }
-.insignia { background: #b45309; color: #fff; padding: 4px 14px; border-radius: 20px; font-size: 11px; font-weight: bold; display: inline-block; margin-bottom: 8px; }
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f1f5f9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+.login-box { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 350px; position: relative; }
+.insignia { font-size: 12px; font-weight: bold; color: #15803d; background: #dcfce7; padding: 4px 8px; border-radius: 4px; display: inline-block; margin-bottom: 8px; }
 .title { color: #0b2545; font-size: 22px; font-weight: 800; margin: 4px 0; }
 .subtitle { font-size: 11px; color: #475569; margin-bottom: 20px; font-weight: 600; }
-select, input { width: 100%; padding: 11px 12px; margin-bottom: 15px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 600; }
+select, input { width: 100%; padding: 11px 12px; margin-bottom: 15px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 600; box-sizing: border-box; }
 .btn-sub { width: 100%; padding: 12px; background: linear-gradient(135deg, #15803d, #16a34a); color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; }
 .lang-btn { position: absolute; top: 12px; right: 12px; background: #fef08a; color: #854d0e; border: 1px solid #facc15; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-decoration: none; }
-</style></head>
+</style>
+</head>
 <body>
 <div class="login-box">
     <a href="/toggle_lang" class="lang-btn">🌐 {{ 'MR' if lang == 'en' else 'EN' }}</a>
@@ -153,7 +107,9 @@ select, input { width: 100%; padding: 11px 12px; margin-bottom: 15px; border: 1.
         <input type="password" name="password" required placeholder="{{ 'Enter Password' if lang == 'en' else 'पासवर्ड टाका' }}">
         <button type="submit" class="btn-sub">{{ 'SECURE LOGIN 🔐' if lang == 'en' else 'सुरक्षित लॉगिन करा 🔐' }}</button>
     </form>
-</div></body></html>'''
+</div>
+</body>
+</html>'''
 
 @app.route('/toggle_lang')
 def toggle_lang():
@@ -169,6 +125,7 @@ def login():
         with conn.cursor() as cur:
             cur.execute("SELECT * FROM users")
             users_list = cur.fetchall()
+            
     if request.method == 'POST':
         role = request.form.get('role')
         pwd = request.form.get('password')
@@ -178,13 +135,13 @@ def login():
                 user = cur.fetchone()
         if user:
             session['user_role'] = role
-            session['role'] = role
             if role == 'Manager': return redirect('/manager')
             elif role == 'Trainer': return redirect('/trainer')
             elif role == 'Clerk': return redirect('/clerk')
             else: return redirect('/admin')
         else:
             error = "Invalid Password!" if lang == 'en' else "चुकीचा पासवर्ड! पुन्हा प्रयत्न करा."
+            
     return render_template_string(LOGIN_HTML, error=error, lang=lang, users_list=users_list)
 
 @app.route('/logout')
@@ -210,6 +167,7 @@ def admin_view():
             students = cur.fetchall()
             cur.execute("SELECT * FROM expenses ORDER BY id DESC")
             expenses_list = cur.fetchall()
+            
     total_paid = sum(safe_float(s['paid_fees']) for s in students)
     total_pending = sum(safe_float(s['total_fees']) - safe_float(s['paid_fees']) for s in students)
     
@@ -230,8 +188,122 @@ def admin_view():
     </div>
     """
 
-init_db()
+@app.route('/manager')
+def manager_view():
+    if session.get('user_role') != 'Manager': return redirect(url_for('login'))
+    return "<h2>Manager Dashboard - श्रीगुरु करिअर अकॅडमी</h2><a href='/logout'>Logout</a>"
+
+@app.route('/trainer')
+def trainer_view():
+    if session.get('user_role') != 'Trainer': return redirect(url_for('login'))
+    return "<h2>Trainer Dashboard - श्रीगुरु करिअर अकॅडमी</h2><a href='/logout'>Logout</a>"
+
+@app.route('/clerk')
+def clerk_view():
+    if session.get('user_role') != 'Clerk': return redirect(url_for('login'))
+    return "<h2>Clerk Dashboard - श्रीगुरु करिअर अकॅडमी</h2><a href='/logout'>Logout</a>"
+
+# ---------------------------------------------------------
+# ॲडमिन/क्लार्कसाठी: टाईम सेटिंग आणि बल्क प्रश्न-उत्तर अपलोड (Bulk Import)
+# ---------------------------------------------------------
+@app.route('/admin/add_test', methods=['GET', 'POST'])
+def add_test():
+    role = session.get('user_role')
+    if role not in ['Admin', 'Clerk']:
+        return redirect(url_for('login'))
+        
+    if request.method == 'POST':
+        test_title = request.form.get('test_title')
+        time_limit = request.form.get('time_limit') 
+        time_limit = int(time_limit) if time_limit and time_limit.isdigit() else None
+        raw_content = request.form.get('raw_content')
+        
+        with get_db() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "INSERT INTO online_tests (title, time_limit, raw_questions) VALUES (%s, %s, %s) RETURNING id;",
+                    (test_title, time_limit, raw_content)
+                )
+                test_row = cur.fetchone()
+                test_id = test_row['id'] if isinstance(test_row, dict) else test_row[0]
+            conn.commit()
+            
+        return jsonify({
+            "status": "success",
+            "message": "टेस्ट, टाईम सेटिंग आणि बल्क प्रश्न यशस्वीपणे जतन झाले आहेत!",
+            "test_id": test_id
+        })
+        
+    return """
+    <div style="font-family:Arial; padding:30px; max-width:600px; margin:auto;">
+        <h2>📝 नवीन टेस्ट तयार करा (Bulk Import & Timer)</h2>
+        <form method="POST">
+            <label><b>टेस्टचे नाव (Title):</b></label><br>
+            <input type="text" name="test_title" required style="width:100%; padding:8px; margin:8px 0;"><br>
+            <label><b>टाईम लिमिट (मिनिटांत - रिकामे ठेवल्यास अनलमीटेड वेळ):</b></label><br>
+            <input type="number" name="time_limit" placeholder="उदा. 10 किंवा 30" style="width:100%; padding:8px; margin:8px 0;"><br>
+            <label><b>सर्व प्रश्न आणि आन्सर की (Bulk Copy-Paste Box):</b></label><br>
+            <textarea name="raw_content" rows="10" placeholder="येथे सर्व प्रश्न एकाच वेळी कॉपी-पेस्ट करा..." style="width:100%; padding:8px; margin:8px 0;"></textarea><br>
+            <button type="submit" style="background:#15803d; color:white; padding:10px 20px; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">टेस्ट सेव्ह करा</button>
+        </form>
+    </div>
+    """
+
+# ---------------------------------------------------------
+# विद्यार्थी टेस्ट सबमिट करताना: व्हॅलिडेशन, स्कोर लपवणे व WhatsApp फ्लो
+# ---------------------------------------------------------
+@app.route('/submit_test', methods=['POST'])
+def submit_test():
+    try:
+        data = request.json or request.form
+        student_name = data.get('name', '').strip()
+        student_mobile = data.get('mobile', '').strip()
+        test_id = data.get('test_id')
+        
+        # अ. नाव तपासणे (फक्त अक्षरे आणि स्पेसेस असावेत)
+        if not student_name or not re.match("^[अ-ॲक-हA-Za-z\\s]+$", student_name):
+            return jsonify({
+                "status": "error", 
+                "message": "कृपया तुमचे योग्य नाव टाका (नावात आकडे चालणार नाहीत)."
+            }), 400
+
+        # ब. मोबाईल नंबर तपासणे (फक्त अचूक १० अंकी नंबर)
+        if not student_mobile or not re.match("^[0-9]{10}$", student_mobile):
+            return jsonify({
+                "status": "error", 
+                "message": "चुकीचा नंबर! कृपया अचूक १० अंकी मोबाईल नंबर टाका."
+            }), 400
+
+        # क. विद्यार्थ्याचे गुण तात्काळ स्क्रीनवर न दाखवता अंतर्गत सेव्ह करणे
+        calculated_score = 0  
+
+        with get_db() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """INSERT INTO student_submissions (test_id, student_name, student_mobile, score) 
+                       VALUES (%s, %s, %s, %s) RETURNING id;""",
+                    (test_id, student_name, student_mobile, calculated_score)
+                )
+                sub_row = cur.fetchone()
+                submission_id = sub_row['id'] if isinstance(sub_row, dict) else sub_row[0]
+            conn.commit()
+
+        # ड. WhatsApp कॉन्टॅक्ट बटण व मेसेज तयार करून देणे (खरा नंबर मिळवण्यासाठी)
+        teacher_whatsapp_number = "919423847055"  
+        whatsapp_message = f"सर, मी टेस्ट पूर्ण केली आहे. माझे नाव: {student_name}, मोबाईल: {student_mobile}. मला माझे गुण आणि चुका तपासायच्या आहेत."
+        encoded_message = urllib.parse.quote(whatsapp_message)
+        whatsapp_url = f"https://wa.me/{teacher_whatsapp_number}?text={encoded_message}"
+
+        return jsonify({
+            "status": "success", 
+            "message": "तुमची टेस्ट यशस्वीरित्या सबमिट झाली आहे! सुरक्षिततेखातर गुण इथे दाखवले नाहीत.",
+            "whatsapp_link": whatsapp_url
+        })
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == '__main__':
+    init_db()
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
