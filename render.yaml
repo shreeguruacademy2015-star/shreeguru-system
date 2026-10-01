@@ -9,3 +9,5 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
+      - key: PYTHON_VERSION_OVERRIDE
+        value: 3.11.9
