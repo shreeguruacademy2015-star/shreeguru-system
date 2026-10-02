@@ -10,7 +10,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
-app.secret_key = "shreeguru_complete_bulletproof_v50_final_restored"
+app.secret_key = "shreeguru_complete_bulletproof_v52_launch_control"
 
 # --- NEON CLOUD DATABASE CONNECTION ---
 DATABASE_URL = os.environ.get("DATABASE_URL")
@@ -67,6 +67,15 @@ def init_db():
             cur.execute("INSERT INTO users (role, password) VALUES ('Manager', 'manager123') ON CONFLICT (role) DO NOTHING")
             cur.execute("INSERT INTO users (role, password) VALUES ('Clerk', 'clerk123') ON CONFLICT (role) DO NOTHING")
             cur.execute("INSERT INTO users (role, password) VALUES ('Trainer', 'trainer123') ON CONFLICT (role) DO NOTHING")
+
+            # ॲडमिन कंट्रोलसाठी टेस्ट सेटिंग टेबल (Test Launch Status)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS settings (
+                    key TEXT PRIMARY KEY,
+                    value TEXT
+                )
+            """)
+            cur.execute("INSERT INTO settings (key, value) VALUES ('test_launched', 'no') ON CONFLICT (key) DO NOTHING")
 
             cur.execute('''CREATE TABLE IF NOT EXISTS questions (
                 id SERIAL PRIMARY KEY,
@@ -446,10 +455,10 @@ GROCERY_MASTER_500 = [
     "एल्युमिनियम फॉइल पेपर", "बटर पेपर रोल", "प्लास्टिक फूड रॅप", "कागदी पत्रावळी (Eco)", "द्रोण (कागदी)",
     "डिस्पोजेबल पाण्याचे ग्लास", "चहाचे पेपर कप", "प्लास्टिक चमचे", "झिपर पिशव्या", "प्लास्टिक बरण्या/डबे",
     "एल्युमिनियम पार्सल बॉक्स", "ताट झाकण्याच्या जाळ्या", "कमर्शियल गॅस सिलिंडर", "गॅस लायटर", "काडेपेटी बॉक्स",
-    "पिण्याच्या पाण्याचे जार", "स्टील ताटे (मेस)", "स्टील वाट्या", "स्टील ग्लास", "स्टील चमचे",
+    "पिण्याच्या पाचे जार", "स्टील ताटे (मेस)", "स्टील वाट्या", "स्टील ग्लास", "स्टील चमचे",
     "चपाती हॉट केस / कॅसरोल", "मोठे एल्युमिनियम हंडे", "भाजीचे मोठे उलथणे", "स्टील चाळणी", "प्लास्टिक बाल्टी व मग",
     "उंदराचे औषध / स्प्रे", "मच्छर रिपेलेंट कॉइल", "फर्स्ट एड बॉक्स (मेस)", "अग्निशामक यंत्र (Fire Ext.)", "डायनिंग टेबल कव्हर",
-    "हँडवॉश पेपर सोप", "टूथपिक बॉक्स", "बडीशेप व खडीसाखर जार", "टिश्यू पेपर नॅपकिन्स", "कचराकुंडी (Dustbins)",
+    "हँडवॉश पेपर सोप", "टूथपिक बॉक्स", "बडीशेप व खडीसाखर जार", "तिश्यू पेपर नॅपकिन्स", "कचराकुंडी (Dustbins)",
     "मीठ (अतिरिक्त साठा)", "साखर (अतिरिक्त साठा)", "चहा पत्ती (बल्क)", "कॉफी पावडर (बल्क)", "लोणचे जार (मोठे)",
     "टोमॅटो सॉस (मोठी बॉटल)", "ग्रीन चिली सॉस", "सोया सॉस (बल्क)", "विनेगर (Sirka)", "शेजवान चटणी (जार)",
     "टोमॅटो प्युरी टिन", "गुलाब जामुन मिक्स", "कस्टर्ड पावडर (बल्क)", "पास्ता मसाला प्युरी", "मध (Honey Jar)",
@@ -501,7 +510,7 @@ LOGIN_HTML = '''<!DOCTYPE html>
 <body>
 <div class="login-box">
     <a href="/toggle_lang" class="lang-btn">🌐 {{ 'MR' if lang == 'en' else 'EN' }}</a>
-    <span class="insignia">⚔️ POLICE & DEFENCE ACADEMY</span>
+    <span class="insignia">⚔️️ POLICE & DEFENCE ACADEMY</span>
     <h2 class="title">श्रीगुरु करिअर अकॅडमी</h2>
     <div class="subtitle">पोलीस व सैन्य भरती पूर्व प्रशिक्षण केंद्र<br>आडूर, ता. करवीर, जि. कोल्हापूर</div>
     {% if error %}<div style="color:#dc2626; font-size:12px; font-weight:bold; margin-bottom:12px;">{{ error }}</div>{% endif %}
@@ -557,7 +566,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
 
 <div class="menu-bar">
     <a href="/inquiries" class="menu-btn" style="background:#b45309; border:2px solid #fde047;">📞 चौकशी व टेस्ट डेस्क</a>
-    <a href="/admin?tab=questions" class="menu-btn {% if curr_tab == 'questions' %}active{% endif %}" style="background:#7c3aed; border:2px solid #fde047;">❓ प्रश्न व्यवस्थापन</a>
+    <a href="/admin?tab=questions" class="menu-btn {% if curr_tab == 'questions' %}active{% endif %}" style="background:#7c3aed; border:2px solid #fde047;">❓ प्रश्न व्यवस्थापन व लॉन्च</a>
     <a href="/admin?tab=students" class="menu-btn {% if curr_tab == 'students' %}active{% endif %}" style="background:#2563eb;">👥 सर्व विद्यार्थी</a>
     <a href="/admin?tab=admission" class="menu-btn {% if curr_tab == 'admission' %}active{% endif %}" style="background:#2563eb;">📝 नवीन प्रवेश</a>
     <a href="/admin?tab=physical" class="menu-btn {% if curr_tab == 'physical' %}active{% endif %}" style="background:#0284c7;">🏃‍♂️ फिजिकल रेकॉर्ड</a>
@@ -588,8 +597,32 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
 
     {% if curr_tab == 'questions' %}
     <div class="admin-tab">
-        <h3 style="color:#7c3aed; margin-top:0;">❓ ऑनलाइन टेस्ट प्रश्न व्यवस्थापन व लिंक शेअरिंग</h3>
+        <h3 style="color:#7c3aed; margin-top:0;">❓ ऑनलाइन टेस्ट प्रश्न व्यवस्थापन व लॉन्च कंट्रोल (Admin Only)</h3>
         
+        <!-- Test Launch Control Box -->
+        <div style="background:#f0fdf4; border:2px solid #15803d; padding:15px; border-radius:8px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div>
+                <b style="color:#166534; font-size:15px;">🚀 टेस्ट ऑनलाईन लॉन्च स्टेटस (Test Launch Control):</b><br>
+                <span style="font-size:13px; color:#475569;">सध्याची स्थिती: 
+                    {% if test_launched == 'yes' %}
+                        <b style="color:green; font-size:14px;">✅ टेस्ट लाईव्ह (Launched) आहे. विद्यार्थी सोडवू शकतात.</b>
+                    {% else %}
+                        <b style="color:red; font-size:14px;">❌ टेस्ट बंद (Unlaunched) आहे. प्रश्न टाकून झाल्यावरच लॉन्च करा.</b>
+                    {% endif %}
+                </span>
+            </div>
+            <div>
+                <form action="/toggle_test_launch" method="POST" style="display:inline;">
+                    {% if test_launched == 'yes' %}
+                    <button type="submit" class="btn-act" style="background:#dc2626; padding:10px 16px; font-size:13px;">🔴 टेस्ट बंद करा (Unlaunch)</button>
+                    {% else %}
+                    <button type="submit" class="btn-act" style="background:#16a34a; padding:10px 16px; font-size:13px;">🟢 टेस्ट लाईव्ह करा (Launch Test)</button>
+                    {% endif %}
+                </form>
+                <a href="/test" target="_blank" class="btn-act" style="background:#0284c7; padding:10px 16px; font-size:13px; margin-left:5px;">🌐 टेस्ट पेज तपासा</a>
+            </div>
+        </div>
+
         <!-- Direct Link Copy Box -->
         <div style="background:#fefce8; border:2px dashed #ca8a04; padding:15px; border-radius:8px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
             <div>
@@ -597,7 +630,6 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
                 <code style="font-size:14px; color:#1e293b; background:white; padding:4px 8px; border:1px solid #fde047; border-radius:4px; display:inline-block; margin-top:4px;" id="testLinkText">https://shreeguru-academy.onrender.com/test</code>
             </div>
             <div>
-                <a href="/test" target="_blank" class="btn-act" style="background:#0284c7; padding:8px 12px; font-size:12px; margin-right:5px;">🌐 टेस्ट पेज उघडा</a>
                 <button onclick="navigator.clipboard.writeText(document.getElementById('testLinkText').innerText); alert('टेस्टची लिंक कॉपी झाली!');" class="btn-act" style="background:#16a34a; padding:8px 12px; font-size:12px;">📋 लिंक कॉपी करा</button>
             </div>
         </div>
@@ -1017,7 +1049,7 @@ CLERK_LAYOUT = '''<!DOCTYPE html>
 </body>
 </html>'''
 
-# ----------------- SECURE PUBLIC TEST TEMPLATE -----------------
+# ----------------- SECURE PUBLIC TEST TEMPLATE (LAUNCH CHECKED) -----------------
 MOCK_TEST_HTML = '''<!DOCTYPE html>
 <html lang="mr">
 <head>
@@ -1033,7 +1065,6 @@ MOCK_TEST_HTML = '''<!DOCTYPE html>
         .opt-label { display: block; margin-bottom: 6px; font-size: 14px; cursor: pointer; }
         input[type="text"], input[type="tel"] { width: 100%; padding: 9px; border: 1.5px solid #cbd5e1; border-radius: 6px; margin-bottom: 10px; }
         .btn-submit { width: 100%; background: #059669; color: white; padding: 12px; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; }
-        .cert-box { border: 4px double #b45309; padding: 25px; border-radius: 10px; background: #fffbeb; text-align: center; margin-top: 20px; }
     </style>
 </head>
 <body>
@@ -1041,57 +1072,32 @@ MOCK_TEST_HTML = '''<!DOCTYPE html>
     <h2>🎯 श्रीगुरु राज्यस्तरीय महासराव टेस्ट</h2>
     <p style="text-align:center; color:#64748b; font-size:13px; margin-bottom:20px;">पोलीस व सैन्य भरती विशेष सराव परीक्षा</p>
 
-    {% if submitted %}
-    <div style="background:#f0fdf4; border:2px solid #86efac; border-radius:8px; padding:20px; text-align:center; margin-bottom:20px;">
-        <h3 style="margin:0 0 10px; color:#166534;">हार्दिक अभिनंदन, {{ name }}! 🎉</h3>
-        <p style="font-size:18px; margin:5px 0;">तुमचा अंतिम स्कोअर: <b style="color:#059669; font-size:24px;">{{ score }} / {{ total }}</b></p>
-        <p style="color:#475569; font-size:14px; margin-top:10px;">
-            तुमचा ओरिजनल नंबर आमच्या डेटाबेसमध्ये सेव्ह झाला आहे!<br>
-            खालील बटणावर क्लिक करून तुमचा निकाल व प्रशस्तीपत्र थेट <b>WhatsApp</b> वर पाठवा:
+    {% if not launched %}
+    <div style="background:#fef2f2; border:2px solid #f87171; border-radius:8px; padding:25px; text-align:center;">
+        <h3 style="margin:0 0 10px; color:#991b1b;">⚠️ टेस्ट सध्या बंद आहे!</h3>
+        <p style="color:#475569; font-size:15px; line-height:1.6;">
+            श्रीगुरु करिअर अकॅडमीतर्फे नवीन सराव टेस्ट लवकरच लॉन्च केली जाईल. कृपया ॲडमिनने टेस्ट लाईव्ह (Launch) केल्यावर पुन्हा भेट द्या!
         </p>
-        <a href="https://wa.me/91{{ phone }}?text=नमस्कार%20{{ name }},%20श्रीगुरु%20करिअर%20अकॅडमी%20आडूरच्या%20ऑनलाईन%20टेस्टमध्ये%20तुम्हाला%20{{ score }}/{{ total }}%20गुण%20मिळाले%20आहेत!%20प्रवेशासाठी%20संपर्क:%20९९२११११९६०" 
+    </div>
+    {% elif submitted %}
+    <div style="background:#f0fdf4; border:2px solid #86efac; border-radius:8px; padding:25px; text-align:center;">
+        <h3 style="margin:0 0 10px; color:#166534;">टेस्ट यशस्वीरीत्या सबमिट झाली आहे, {{ name }}! 🎉</h3>
+        <p style="color:#475569; font-size:15px; line-height:1.6; margin-top:10px;">
+            तुमचा निकाल, राईट/रॉन्ग रिव्ह्यू आणि डिजिटल प्रशस्तीपत्र तुमच्या दिलेल्या <b>WhatsApp नंबरवर ({{ phone }})</b> पाठवण्यासाठी तयार आहे!<br>
+            खालील बटणावर क्लिक करून थेट तुमच्या WhatsApp वर निकाल मिळवा:
+        </p>
+        <a href="{{ wa_link }}" 
            target="_blank"
-           style="display:inline-block; background:#25D366; color:white; padding:12px 25px; border-radius:6px; text-decoration:none; font-weight:bold; margin-top:10px; font-size:15px;">
-            📲 WhatsApp वर निकाल व प्रशस्तीपत्र मिळवा
+           style="display:inline-block; background:#25D366; color:white; padding:14px 28px; border-radius:6px; text-decoration:none; font-weight:bold; margin-top:15px; font-size:16px;">
+            📲 WhatsApp वर निकाल व प्रशस्तीपत्र पहा
         </a>
+        <br><br>
+        <div style="margin-top:15px;"><a href="/test" style="color:#0284c7; font-weight:bold; text-decoration:none;">🔄 नवीन टेस्ट सोडवा</a></div>
     </div>
-
-    <!-- अचूक उत्तरे व रिव्ह्यू (Right / Wrong Review) -->
-    <div style="background:#f8fafc; border:1px solid #cbd5e1; padding:15px; border-radius:8px; margin-bottom:20px;">
-        <h3 style="margin-top:0; color:#0b3c5d; font-size:16px;">📖 सविस्तर प्रश्न व अचूक उत्तर रिव्ह्यू:</h3>
-        {% for r in review_list %}
-        <div style="margin-bottom:12px; padding-bottom:8px; border-bottom:1px dashed #cbd5e1; font-size:13px;">
-            <b>प्र. {{ loop.index }}. {{ r.question }}</b><br>
-            तुमचे उत्तर: <span style="color:{{ 'green' if r.is_correct else 'red' }}; font-weight:bold;">{{ r.user_ans or 'सोडवले नाही' }}</span> | 
-            अचूक उत्तर: <b style="color:green;">{{ r.correct_ans }}</b>
-            {% if r.is_correct %} <span style="color:green; font-weight:bold;">✔️ बरोबर</span> {% else %} <span style="color:red; font-weight:bold;">❌ चूक</span> {% endif %}
-        </div>
-        {% endfor %}
-    </div>
-
-    <!-- डिजिटल प्रशस्तीपत्र (Motivational Certificate with Sachin Sir & Academy Message) -->
-    <div class="cert-box">
-        <h3 style="margin:0; color:#b45309; font-size:20px;">🏆 डिजिटल प्रशस्तीपत्र (Certificate of Merit)</h3>
-        <p style="font-size:12px; color:#78350f; margin:5px 0 15px;">श्रीगुरु करिअर अकॅडमी, आडूर (ता. करवीर, जि. कोल्हापूर)</p>
-        <hr style="border:1px solid #fde68a; margin:10px 0;">
-        <p style="font-size:14px; color:#1e293b; line-height:1.6;">
-            प्रमाणपत्र देण्यात येते की, श्री/सौ/कुमार <b>{{ name }}</b> (जिल्हा: {{ district }}) यांनी श्रीगुरु करिअर अकॅडमीतर्फे आयोजित राज्यस्तरीय पोलीस भरती सराव टेस्टमध्ये सहभाग घेऊन <b>{{ score }} / {{ total }}</b> गुण प्राप्त केले आहेत.
-        </p>
-        <p style="font-size:13px; color:#92400e; font-weight:bold; margin-top:15px; line-height:1.5;">
-            मा. सचिन चौगले सर तसेच श्रीगुरु करिअर अकॅडमी परिवारातर्फे घेण्यात आलेल्या या राज्यस्तरीय लेखी स्पर्धेमध्ये सहभागी झाल्याबद्दल खूप खूब अभिनंदन! आपले पोलीस बनण्याचे व इतर शासकीय सेवांमध्ये जाण्याचे स्वप्न लवकरच पूर्ण होवो, अशा सदिच्छा! 🌟
-        </p>
-        <div style="margin-top:20px; display:flex; justify-content:space-between; font-size:12px; font-weight:bold; color:#78350f;">
-            <div>दिनांक: {{ today_date }}</div>
-            <div>संचालक / मार्गदर्शक<br>मा. सचिन चौगले सर व परिवार<br>श्रीगुरु करिअर अकॅडमी, आडूर</div>
-        </div>
-    </div>
-    <br>
-    <div style="text-align:center;"><a href="/test" style="color:#0284c7; font-weight:bold; text-decoration:none;">🔄 नवीन टेस्ट सोडवा</a></div>
-
     {% else %}
     <form method="POST" action="/test">
         <div style="background:#f8fafc; padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid #cbd5e1; border-left:4px solid #b45309;">
-            <b style="color:#b45309; display:block; margin-bottom:8px;">⚠️️ सूचना: निकाल पाहण्यासाठी व प्रमाणपत्र मिळवण्यासाठी खालील माहिती भरणे अनिवार्य आहे:</b>
+            <b style="color:#b45309; display:block; margin-bottom:8px;">⚠️ सुरक्षा सूचना: निकाल व प्रशस्तीपत्र फक्त तुमच्या ओरिजनल WhatsApp नंबरवरच पाठवले जाईल!</b>
             <label style="font-weight:bold; font-size:13px;">विद्यार्थ्याचे पूर्ण नाव *:</label>
             <input type="text" name="student_name" placeholder="उदा. गणेश पाटील" required>
             
@@ -1117,7 +1123,7 @@ MOCK_TEST_HTML = '''<!DOCTYPE html>
         </div>
         {% endfor %}
 
-        <button type="submit" class="btn-submit">✅ टेस्ट सबमिट करा व निकाल पहा</button>
+        <button type="submit" class="btn-submit">✅ टेस्ट सबमिट करा</button>
     </form>
     {% endif %}
 </div>
@@ -1261,8 +1267,13 @@ def admin_view():
     curr_tab = request.args.get('tab', 'students')
     today_date = date.today().strftime("%Y-%m-%d")
     lang = session.get('site_lang', 'mr')
+    
     with get_db() as conn:
         with conn.cursor() as cur:
+            cur.execute("SELECT value FROM settings WHERE key='test_launched'")
+            res_launch = cur.fetchone()
+            test_launched = res_launch['value'] if res_launch else 'no'
+
             cur.execute("SELECT * FROM students")
             students = cur.fetchall()
             cur.execute("SELECT * FROM expenses ORDER BY id DESC")
@@ -1294,12 +1305,25 @@ def admin_view():
     total_pending = sum(safe_float(s['total_fees']) - safe_float(s['paid_fees']) for s in students)
     total_expenses = sum(safe_float(ex['amount']) for ex in expenses_list)
 
-    return render_template_string(ADMIN_DASHBOARD_LAYOUT, curr_tab=curr_tab, students=students, expenses_list=expenses_list, users_list=users_list, diet_list=diet_list, staff_members=staff_members, staff_tasks=staff_tasks, all_requests=all_requests, all_staff_logs=all_staff_logs, discipline_logs=discipline_logs, hostel_logs=hostel_logs, physical_records=physical_records, written_records=written_records, questions=questions, total_paid=total_paid, total_pending=total_pending, total_expenses=total_expenses, today_date=today_date, lang=lang)
+    return render_template_string(ADMIN_DASHBOARD_LAYOUT, curr_tab=curr_tab, students=students, expenses_list=expenses_list, users_list=users_list, diet_list=diet_list, staff_members=staff_members, staff_tasks=staff_tasks, all_requests=all_requests, all_staff_logs=all_staff_logs, discipline_logs=discipline_logs, hostel_logs=hostel_logs, physical_records=physical_records, written_records=written_records, questions=questions, total_paid=total_paid, total_pending=total_pending, total_expenses=total_expenses, today_date=today_date, lang=lang, test_launched=test_launched)
+
+@app.route('/toggle_test_launch', methods=['POST'])
+def toggle_test_launch():
+    if session.get('user_role') != 'Admin': return "Unauthorized", 403
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT value FROM settings WHERE key='test_launched'")
+            res = cur.fetchone()
+            current = res['value'] if res else 'no'
+            new_val = 'no' if current == 'yes' else 'yes'
+            cur.execute("UPDATE settings SET value=%s WHERE key='test_launched'", (new_val,))
+            conn.commit()
+    return redirect('/admin?tab=questions')
 
 # ----------------- QUESTION MANAGEMENT ROUTES -----------------
 @app.route('/add_single_question', methods=['POST'])
 def add_single_question():
-    if session.get('user_role') != 'Admin': return "Unauthorized", 403
+    if session.get('user_role') not in ['Admin', 'Clerk']: return "Unauthorized", 403
     q = request.form.get('question')
     a = request.form.get('opt_a')
     b = request.form.get('opt_b')
@@ -1314,7 +1338,7 @@ def add_single_question():
 
 @app.route('/add_bulk_questions', methods=['POST'])
 def add_bulk_questions():
-    if session.get('user_role') != 'Admin': return "Unauthorized", 403
+    if session.get('user_role') not in ['Admin', 'Clerk']: return "Unauthorized", 403
     text = request.form.get('bulk_text', '')
     lines = text.strip().split('\n')
     with get_db() as conn:
@@ -1329,14 +1353,14 @@ def add_bulk_questions():
 
 @app.route('/delete_question/<int:id>')
 def delete_question(id):
-    if session.get('user_role') != 'Admin': return "Unauthorized", 403
+    if session.get('user_role') not in ['Admin', 'Clerk']: return "Unauthorized", 403
     with get_db() as conn:
         with conn.cursor() as cur:
             cur.execute("DELETE FROM questions WHERE id=%s", (id,))
             conn.commit()
     return redirect('/admin?tab=questions')
 
-# ----------------- PUBLIC INQUIRY & SECURE DYNAMIC TEST ROUTES -----------------
+# ----------------- PUBLIC INQUIRY & STRICT WHATSAPP TEST ROUTES -----------------
 @app.route('/inquiry', methods=['GET', 'POST'])
 def public_inquiry():
     msg = None
@@ -1362,21 +1386,21 @@ def public_inquiry():
 
 @app.route('/test', methods=['GET', 'POST'])
 def mock_test():
-    score = None
-    total = 0
-    name = ""
-    district = ""
-    phone = ""
-    submitted = False
-    review_list = []
-    today_date = date.today().strftime("%d/%m/%Y")
-
     with get_db() as conn:
         with conn.cursor() as cur:
+            cur.execute("SELECT value FROM settings WHERE key='test_launched'")
+            res_launch = cur.fetchone()
+            launched = (res_launch['value'] == 'yes') if res_launch else False
+
             cur.execute("SELECT * FROM questions ORDER BY id ASC")
             questions = cur.fetchall()
 
-    if request.method == 'POST':
+    name = ""
+    phone = ""
+    submitted = False
+    wa_link = ""
+
+    if request.method == 'POST' and launched:
         name = request.form.get('student_name')
         district = request.form.get('district')
         phone = request.form.get('phone')
@@ -1390,15 +1414,8 @@ def mock_test():
                 with conn.cursor() as cur:
                     for q in questions:
                         user_ans = request.form.get(f"q_{q['id']}")
-                        is_corr = (user_ans and user_ans == q['correct'])
-                        if is_corr:
+                        if user_ans and user_ans == q['correct']:
                             current_score += 1
-                        review_list.append({
-                            'question': q['question'],
-                            'user_ans': user_ans,
-                            'correct_ans': q['correct'],
-                            'is_correct': is_corr
-                        })
 
                     t_date = date.today().strftime("%Y-%m-%d")
                     cur.execute("""
@@ -1406,9 +1423,19 @@ def mock_test():
                         VALUES (%s, %s, %s, %s, %s, %s, %s)
                     """, (t_date, name, district, phone, current_score, total, "राज्यस्तरीय पोलीस सराव टेस्ट"))
                     conn.commit()
-            score = current_score
 
-    return render_template_string(MOCK_TEST_HTML, questions=questions, submitted=submitted, score=score, total=total, name=name, district=district, phone=phone, review_list=review_list, today_date=today_date)
+            wa_msg = (
+                f"नमस्कार {name} जी,%0A"
+                f"श्रीगुरु करिअर अकॅडमी, आडूर (कोल्हापूर) तर्फे आयोजित राज्यस्तरीय पोलीस भरती सराव टेस्टमध्ये सहभाग घेतल्याबद्दल अभिनंदन!%0A%0A"
+                f"🏆 *डिजिटल प्रशस्तीपत्र व निकाल*%0A"
+                f"नाम: {name} (जिल्हा: {district})%0A"
+                f"मिळालेले गुण: *{current_score} / {total}*%0A%0A"
+                f"📜 *संदेश:* 'मा. सचिन चौगले सर तसेच श्रीगुरु करिअर अकॅडमी परिवारातर्फे आपल्या उज्ज्वल भविष्यासाठी आणि पोलीस अधिकारी बनण्याच्या स्वप्नासाठी खूप खूप शुभेच्छा!'%0A%0A"
+                f"सविस्तर माहितीसाठी संपर्क: ९९२११११९६०"
+            )
+            wa_link = f"https://wa.me/91{phone}?text={wa_msg}"
+
+    return render_template_string(MOCK_TEST_HTML, questions=questions, submitted=submitted, name=name, phone=phone, wa_link=wa_link, launched=launched)
 
 @app.route('/inquiries')
 def inquiry_desk():
