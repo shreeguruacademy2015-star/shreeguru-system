@@ -11,7 +11,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
-app.secret_key = "shreeguru_complete_bulletproof_v69_all_roles_restored"
+app.secret_key = "shreeguru_complete_bulletproof_v70_all_features_and_roles"
 
 # --- NEON CLOUD DATABASE CONNECTION ---
 DATABASE_URL = os.environ.get("DATABASE_URL")
@@ -126,6 +126,17 @@ def init_db():
                 available_copies INTEGER DEFAULT 1
             )''')
 
+            cur.execute('SELECT COUNT(*) as count FROM books')
+            if cur.fetchone()['count'] == 0:
+                default_books = [
+                    ("महाराष्ट्राचा इतिहास", "जयसिंगराव पवार", "इतिहास", 5, 5),
+                    ("भारतीय संविधान", "एम. लक्ष्मिकांत", "राज्यशास्त्र", 5, 5),
+                    ("सामान्य विज्ञान", "बाळासाहेब शिंदें", "विज्ञान", 5, 5),
+                    ("अंकगणित व बुद्धिमत्ता", "पंढरपूरकर सर", "गणित", 5, 5)
+                ]
+                cur.executemany('INSERT INTO books (title, author, category, total_copies, available_copies) VALUES (%s, %s, %s, %s, %s)', default_books)
+                conn.commit()
+
             cur.execute('''CREATE TABLE IF NOT EXISTS book_issues (
                 id SERIAL PRIMARY KEY,
                 book_id INTEGER,
@@ -144,6 +155,12 @@ def init_db():
                 student_name TEXT,
                 status TEXT DEFAULT 'Available'
             )''')
+
+            cur.execute('SELECT COUNT(*) as count FROM study_lab_seats')
+            if cur.fetchone()['count'] == 0:
+                default_seats = [("Seat-101", "सकाळ (Morning)", None, None, "Available"), ("Seat-102", "दुपार (Evening)", None, None, "Available"), ("Seat-103", "रात्र (Night)", None, None, "Available")]
+                cur.executemany('INSERT INTO study_lab_seats (seat_number, shift, student_id, student_name, status) VALUES (%s, %s, %s, %s, %s)', default_seats)
+                conn.commit()
 
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS staff_activity_log (
@@ -677,7 +694,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
                         {{ '🟢 निवडली आहे' if current_test_id == tp.id else '✏️ प्रश्न पहा' }}
                     </a>
                     {% if tp.id != 1 %}
-                    <a href="/delete_test_paper/{{ tp.id }}" onclick="return confirm('हा टेस्ट पेपर व त्यातील सर्व प्रश्न डिलीट करायचे?')" style="color:red; font-weight:bold; text-decoration:none; font-size:14px;">🗑️</a>
+                    <a href="/delete_test_paper/{{ tp.id }}" onclick="return confirm('हा टेस्ट पेपर व त्यातील सर्व प्रश्न डिलीट करायचे?')" style="color:red; font-weight:bold; text-decoration:none; font-size:14px;">🗑️️</a>
                     {% endif %}
                 </div>
                 {% endfor %}
@@ -1048,7 +1065,7 @@ MANAGER_LAYOUT = '''<!DOCTYPE html>
         
         <form action="/print_grocery_slip" method="POST" target="_blank">
             <div style="margin-bottom:15px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                <button type="submit" class="btn">🖨️ निवडलेल्या साहित्याची पावती प्रिंट करा (Compact 50+ per page)</button>
+                <button type="submit" class="btn">🖨️ निवडलेल्या साहित्याची पावती प्रिंट करा</button>
                 <button type="button" class="btn-alt" onclick="document.getElementById('selectAllBox').checked = true; toggleAll(document.getElementById('selectAllBox'));">✅ सर्व निवडा</button>
                 <button type="button" class="btn-alt" onclick="document.getElementById('selectAllBox').checked = false; toggleAll(document.getElementById('selectAllBox'));">❌ सर्व काढा</button>
                 <label style="font-size:12px; font-weight:bold; margin-left:10px;"><input type="checkbox" id="selectAllBox" onchange="toggleAll(this)"> सर्व ऑन/ऑफ करा</label>
@@ -1142,434 +1159,56 @@ CLERK_LAYOUT = '''<!DOCTYPE html>
 </body>
 </html>'''
 
-# ----------------- DETAILED REVIEW TEMPLATE -----------------
-REVIEW_HTML = '''<!DOCTYPE html>
-<html lang="mr">
-<head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>टेस्ट सविस्तर उत्तरपत्रिका व विश्लेषण - श्रीगुरु अकॅडमी</title>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f8fafc; color: #1e293b; padding: 20px; margin: 0; }
-        .container { max-width: 750px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); border-top: 6px solid #059669; }
-        h2 { margin: 0 0 5px; color: #0b2545; text-align: center; }
-        .score-card { background: #f0fdf4; border: 2px solid #86efac; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 25px; }
-        .q-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
-        .ans-tag { display: inline-block; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; margin-top: 5px; }
-        .correct-ans { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
-        .wrong-ans { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
-        .exp-box { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 10px; margin-top: 10px; font-size: 13px; color: #1e40af; border-radius: 0 6px 6px 0; }
-    </style>
-</head>
-<body>
-<div class="container">
-    <h2>🎯 श्रीगुरु करिअर अकॅडमी - टेस्ट विश्लेषण (Answer Key & Review)</h2>
-    <p style="text-align:center; color:#64748b; font-size:13px;">विद्यार्थ्याचे नाव: <b>{{ lead.student_name }}</b> | जिल्हा: <b>{{ lead.district }}</b> | टेस्ट: <b>{{ lead.test_name }}</b></p>
+# ----------------- STUDY LAB / LIBRARY VIEW ROUTE -----------------
+@app.route('/library')
+def library_view():
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM books ORDER BY id DESC")
+            books = cur.fetchall()
+            cur.execute("SELECT * FROM study_lab_seats ORDER BY id ASC")
+            seats = cur.fetchall()
     
-    <div class="score-card">
-        <h3 style="margin:0; color:#166534; font-size:22px;">प्राप्त गुण: {{ lead.score }} / {{ lead.total_marks }}</h3>
-        <p style="margin:5px 0 0; font-size:13px; color:#475569;">दिनांक: {{ lead.test_date }} | स्थिती: {{ lead.payment_status }}</p>
-    </div>
-
-    <h3 style="color:#0b3c5d; border-bottom:2px solid #cbd5e1; padding-bottom:5px;">📋 प्रश्न व स्पष्टीकरण तक्ता:</h3>
-    
-    {% for item in review_data %}
-    <div class="q-box">
-        <div style="font-weight:bold; font-size:15px; margin-bottom:8px;">प्र. {{ loop.index }}. {{ item.question }}</div>
-        <div style="font-size:13px; color:#334155; line-height:1.5; margin-bottom:8px;">
-            A) {{ item.opt_a }}<br>
-            B) {{ item.opt_b }}<br>
-            C) {{ item.opt_c }}<br>
-            D) {{ item.opt_d }}
-        </div>
-        <div>
-            <span style="font-size:12px; font-weight:bold;">विद्यार्थ्याचे उत्तर: </span>
-            <span class="ans-tag {{ 'correct-ans' if item.is_correct else 'wrong-ans' }}">
-                {{ item.user_ans or 'सोडवले नाही' }}
-            </span>
-            &nbsp;&nbsp;|&nbsp;&nbsp;
-            <span style="font-size:12px; font-weight:bold;">अचूक उत्तर: </span>
-            <span class="ans-tag correct-ans">{{ item.correct }}</span>
-        </div>
-
-        {% if item.explanation %}
-        <div class="exp-box">
-            <b>💡 स्पष्टीकरण (Explanation):</b> {{ item.explanation }}
-        </div>
-        {% endif %}
-    </div>
-    {% endfor %}
-
-    <div style="text-align:center; margin-top:25px;">
-        <a href="/test" style="background:#0284c7; color:white; padding:10px 20px; border-radius:6px; text-decoration:none; font-weight:bold; font-size:14px;">🔄 नवीन टेस्ट पेजवर जा</a>
-    </div>
-</div>
-</body>
-</html>'''
-
-MOCK_TEST_HTML = '''<!DOCTYPE html>
-<html lang="mr">
-<head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>महाराष्ट्र पोलीस भरती - मोफत / सशुल्क ऑनलाइन सराव टेस्ट</title>
+    html = '''<!DOCTYPE html>
+    <html lang="mr"><head><meta charset="UTF-8"><title>अभ्यासिका व ग्रंथालय व्यवस्थापन</title>
     <style>
-        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
-        body { margin: 0; background: #f1f5f9; color: #1e293b; padding: 15px; }
-        .box { max-width: 650px; margin: 0 auto; background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-top: 5px solid #0284c7; }
-        h2 { margin: 0 0 5px; color: #0b2545; text-align: center; }
-        .q-item { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e2e8f0; }
-        .q-text { font-weight: bold; margin-bottom: 8px; font-size: 15px; color: #0f172a; }
-        .opt-label { display: block; margin-bottom: 6px; font-size: 14px; cursor: pointer; }
-        input[type="text"], input[type="tel"], select { width: 100%; padding: 9px; border: 1.5px solid #cbd5e1; border-radius: 6px; margin-bottom: 10px; }
-        .btn-submit { width: 100%; background: #059669; color: white; padding: 12px; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; }
-        .cert-box { border: 4px double #b45309; padding: 25px; border-radius: 10px; background: #fffbeb; text-align: center; margin-top: 20px; }
-    </style>
-</head>
-<body>
-<div class="box">
-    <h2>🎯 श्रीगुरु राज्यस्तरीय महासराव टेस्ट</h2>
-    <p style="text-align:center; color:#64748b; font-size:13px; margin-bottom:10px;">पोलीस व सैन्य भरती विशेष सराव परीक्षा</p>
-
-    {% if not launched %}
-    <div style="background:#fef2f2; border:2px solid #f87171; border-radius:8px; padding:25px; text-align:center;">
-        <h3 style="margin:0 0 10px; color:#991b1b;">⚠️ टेस्ट सध्या बंद आहे!</h3>
-        <p style="color:#475569; font-size:15px; line-height:1.6;">
-            श्रीगुरु करिअर अकॅडमीतर्फे नवीन सराव टेस्ट लवकरच लॉन्च केली जाईल. कृपया ॲडमिनने टेस्ट लाईव्ह (Launch) केल्यावर पुन्हा भेट द्या!
-        </p>
+        body { font-family:'Segoe UI',sans-serif; background:#f8fafc; padding:20px; color:#1e293b; margin:0; }
+        .header { background:#0284c7; color:white; padding:15px 20px; border-radius:8px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; }
+        .box { background:white; padding:20px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.1); margin-bottom:20px; }
+        table { width:100%; border-collapse:collapse; margin-top:10px; font-size:13px; }
+        th, td { border:1px solid #cbd5e1; padding:8px 10px; text-align:left; }
+        th { background:#0284c7; color:white; }
+    </style></head><body>
+    <div class="header">
+        <h2 style="margin:0;">📚 स्टडी लॅब व लायब्ररी व्यवस्थापन</h2>
+        <a href="/" style="color:white; font-weight:bold; text-decoration:none;">🏠 मुख्य डॅशबोर्ड</a>
     </div>
-    {% elif step == 'start' %}
-    <!-- Step 1: Locked Initial Box -->
-    <div style="background:#f8fafc; padding:20px; border-radius:8px; border:1px solid #cbd5e1;">
-        
-        <form method="GET" action="/test" style="margin-bottom:15px;">
-            <label style="font-weight:bold; font-size:13px; color:#5b21b6;">📚 सोडवण्यासाठी टेस्ट पेपर निवडा *:</label>
-            <select name="test_id" onchange="this.form.submit()" style="font-weight:bold; background:#faf5ff;">
-                {% for tp in all_test_papers %}
-                <option value="{{ tp.id }}" {% if tp.id == current_test_id %}selected{% endif %}>{{ tp.test_title }} (फी: ₹{{ tp.test_fee }})</option>
+    <div class="box">
+        <h3 style="color:#0284c7; margin-top:0;">📖 उपलब्ध पुस्तके (Books List)</h3>
+        <table>
+            <thead><tr><th>क्र.</th><th>पुस्तकाचे नाव</th><th>लेखक</th><th>वर्गवारी</th><th>उपलब्ध प्रती</th></tr></thead>
+            <tbody>
+                {% for b in books %}
+                <tr><td>{{ loop.index }}</td><td><b>{{ b.title }}</b></td><td>{{ b.author }}</td><td>{{ b.category }}</td><td>{{ b.available_copies }} / {{ b.total_copies }}</td></tr>
                 {% endfor %}
-            </select>
-        </form>
-
-        {% if current_test_fee|int > 0 %}
-        <div style="background:#fefce8; border:2px solid #facc15; padding:15px; border-radius:8px; text-align:center; margin-bottom:15px;">
-            <b style="color:#854d0e; font-size:16px;">💰 या टेस्टची परीक्षा फी: ₹{{ current_test_fee }}</b><br>
-            <p style="font-size:13px; color:#78350f; margin:8px 0;">खालील QR कोड स्कॅन करून फी भरा आणि ट्रान्झॅक्शन नंबर टाका:</p>
-            <img src="{{ qr_image_url }}" alt="Payment QR Code" width="160" height="160" style="border:1px solid #ccc; border-radius:6px; background:white; padding:4px;"><br>
-            <span style="font-size:13px; font-weight:bold; color:#1e293b;">UPI ID: {{ upi_id }}</span>
-        </div>
-        {% else %}
-        <div style="background:#f0fdf4; border:1px solid #86efac; padding:10px; border-radius:6px; text-align:center; font-size:13px; color:#166534; margin-bottom:15px; font-weight:bold;">
-            ✨ ही निवडलेली टेस्ट पूर्णपणे **मोफत (Free)** आहे! कोणतीही फी नाही.
-        </div>
-        {% endif %}
-
-        {% if error_msg %}
-        <div style="background:#fee2e2; color:#991b1b; padding:8px; border-radius:4px; font-size:13px; font-weight:bold; margin-bottom:10px;">{{ error_msg }}</div>
-        {% endif %}
-
-        <form method="POST" action="/test">
-            <input type="hidden" name="action_type" value="unlock_test">
-            <input type="hidden" name="test_id" value="{{ current_test_id }}">
-            
-            <label style="font-weight:bold; font-size:13px;">विद्यार्थ्याचे पूर्ण नाव *:</label>
-            <input type="text" name="student_name" placeholder="उदा. राहुल पाटील" required>
-
-            <label style="font-weight:bold; font-size:13px;">जिल्हा *:</label>
-            <input type="text" name="district" placeholder="उदा. कोल्हापूर" required>
-
-            {% if current_test_fee|int > 0 %}
-            <label style="font-weight:bold; font-size:13px;">UPI ट्रान्झॅक्शन / युनिक रेफरन्स नंबर (UPI Ref No) *:</label>
-            <input type="text" name="upi_ref" placeholder="उदा. 4235xxxxxxxx (पैसे भरल्याचा नंबर)" required>
-            {% endif %}
-
-            <button type="submit" class="btn-submit" style="background:#0284c7; margin-top:10px;">🔓 प्रश्नपत्रिका ओपन करा व टेस्ट सोडवा</button>
-        </form>
+            </tbody>
+        </table>
     </div>
-
-    {% elif step == 'exam' %}
-    <!-- Step 2: Question Paper -->
-    <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:10px; border-radius:6px; margin-bottom:15px; font-size:13px; color:#166534; display:flex; justify-content:space-between; align-items:center;">
-        <div>👤 सोडवणारे विद्यार्थी: <b>{{ session.get('exam_name') }}</b> | टेस्ट: <b>{{ current_test_title }}</b></div>
-        <a href="/test" style="color:red; font-size:11px; text-decoration:none; font-weight:bold;">[ रद्द् करा ]</a>
+    <div class="box">
+        <h3 style="color:#0284c7; margin-top:0;">💺 अभ्यासिका जागा (Study Lab Seats)</h3>
+        <table>
+            <thead><tr><th>सीट नंबर</th><th>शिफ्ट</th><th>स्थिती</th><th>विद्यार्थ्याचे नाव</th></tr></thead>
+            <tbody>
+                {% for s in seats %}
+                <tr><td><b>{{ s.seat_number }}</b></td><td>{{ s.shift }}</td><td><b style="color:{{ 'green' if s.status=='Available' else 'red' }};">{{ s.status }}</b></td><td>{{ s.student_name or '-' }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
+    </body></html>'''
+    return render_template_string(html, books=books, seats=seats)
 
-    <form method="POST" action="/test">
-        <input type="hidden" name="action_type" value="submit_test">
-        <input type="hidden" name="test_id" value="{{ current_test_id }}">
-        {% for q in questions %}
-        <div class="q-item">
-            <div class="q-text">प्र. {{ loop.index }}. {{ q.question }}</div>
-            <label class="opt-label"><input type="radio" name="q_{{ q.id }}" value="A" required> A) {{ q.opt_a }}</label>
-            <label class="opt-label"><input type="radio" name="q_{{ q.id }}" value="B"> B) {{ q.opt_b }}</label>
-            <label class="opt-label"><input type="radio" name="q_{{ q.id }}" value="C"> C) {{ q.opt_c }}</label>
-            <label class="opt-label"><input type="radio" name="q_{{ q.id }}" value="D"> D) {{ q.opt_d }}</label>
-        </div>
-        {% endfor %}
-
-        <button type="submit" class="btn-submit">✅ टेस्ट सबमिट करा व प्रशस्तीपत्र पहा</button>
-    </form>
-
-    {% elif submitted %}
-    <!-- Step 3: Certificate shown immediately with inspiring message -->
-    <div style="background:#f0fdf4; border:2px solid #86efac; border-radius:8px; padding:20px; text-align:center; margin-bottom:20px;">
-        <h3 style="margin:0 0 5px; color:#166534;">टेस्ट यशस्वीरीत्या पूर्ण झाली आहे! 🎉</h3>
-        <p style="color:#475569; font-size:14px; margin:5px 0;">खाली तुमचे सहभाग घेतल्याबद्दलचे डिजिटल प्रशस्तीपत्र दिले आहे.</p>
-    </div>
-
-    <div class="cert-box">
-        <h3 style="margin:0; color:#b45309; font-size:20px;">🏆 डिजिटल प्रशस्तीपत्र (Certificate of Participation)</h3>
-        <p style="font-size:12px; color:#78350f; margin:5px 0 15px;">श्रीगुरु करिअर अकॅडमी, आडूर (ता. करवीर, जि. कोल्हापूर)</p>
-        <hr style="border:1px solid #fde68a; margin:10px 0;">
-        <p style="font-size:14px; color:#1e293b; line-height:1.6;">
-            प्रमाणपत्र देण्यात येते की, श्री/सौ/कुमार <b>{{ name }}</b> (जिल्हा: {{ district }}) यांनी श्रीगुरु करिअर अकॅडमीतर्फे आयोजित <b>{{ current_test_title }}</b> मध्ये यशस्वी सहभाग घेतला आहे.
-        </p>
-        <p style="font-size:14px; color:#92400e; font-weight:bold; margin-top:15px; line-height:1.6; background:#fef3c7; padding:10px; border-radius:6px;">
-            🌟 प्रशासकीय सेवेत (पोलीस खात्यात) अधिकारी होण्यासाठी आपणास मनापासून खूप खूप शुभेच्छा! आपले ध्येय निश्चितच पूर्ण होईल. - मा. सचिन चौगले सर व परिवार, श्रीगुरु करिअर अकॅडमी, आडूर.
-        </p>
-        <div style="margin-top:20px; display:flex; justify-content:space-between; font-size:12px; font-weight:bold; color:#78350f;">
-            <div>दिनांक: {{ today_date }}</div>
-            <div>संचालक / मार्गदर्शक<br>मा. सचिन चौगले सर व परिवार<br>श्रीगुरु करिअर अकॅडमी, आडूर</div>
-        </div>
-    </div>
-
-    <!-- WhatsApp Number Box to get Score & Review Link -->
-    <div style="background:#fffbeb; border:2px dashed #f59e0b; padding:20px; border-radius:8px; margin-top:20px; text-align:center;">
-        <h4 style="margin-top:0; color:#b45309; font-size:16px;">📊 तुमचे अचूक गुण (Score) व सविस्तर स्पष्टीकरण लिंक हवी का?</h4>
-        <p style="font-size:13px; color:#78350f; margin-bottom:15px;">
-            तुमचा निकाल, गुण आणि सर्व प्रश्नांची बरोबर उत्तरे व स्पष्टीकरण असणारी **रिव्ह्यू लिंक** थेट तुमच्या **WhatsApp** वर मिळवण्यासाठी खाली नंबर टाका:
-        </p>
-        <form method="POST" action="/test">
-            <input type="hidden" name="action_type" value="send_whatsapp_score">
-            <input type="hidden" name="saved_name" value="{{ name }}">
-            <input type="hidden" name="saved_district" value="{{ district }}">
-            <input type="hidden" name="saved_score" value="{{ score }}">
-            <input type="hidden" name="saved_total" value="{{ total }}">
-            <input type="hidden" name="saved_upi_ref" value="{{ upi_ref }}">
-            <input type="hidden" name="saved_test_name" value="{{ current_test_title }}">
-            
-            <input type="tel" name="whatsapp_phone" placeholder="१० अंकी ओरिजनल WhatsApp नंबर (उदा. ९९२११११९६०)" pattern="[6-9][0-9]{9}" required style="max-width:350px; margin:0 auto 10px; display:block; text-align:center; font-weight:bold;">
-            <button type="submit" style="background:#25D366; color:white; border:none; padding:10px 20px; border-radius:6px; font-weight:bold; font-size:14px; cursor:pointer;">
-                📲 WhatsApp वर निकाल व स्पष्टीकरण लिंक मिळवा
-            </button>
-        </form>
-    </div>
-    <br>
-    <div style="text-align:center;"><a href="/test" style="color:#0284c7; font-weight:bold; text-decoration:none;">🔄 नवीन टेस्ट सोडवा</a></div>
-
-    {% elif step == 'whatsapp_sent' %}
-    <div style="background:#f0fdf4; border:2px solid #86efac; border-radius:8px; padding:25px; text-align:center;">
-        <h3 style="margin:0 0 10px; color:#166534;">निकालाची लिंक तयार आहे! 🎉</h3>
-        <p style="color:#475569; font-size:14px; line-height:1.6; margin-bottom:20px;">
-            खालील बटणावर क्लिक करून तुमचा निकाल, गुण आणि सविस्तर स्पष्टीकरणाची लिंक थेट तुमच्या WhatsApp वर पाठवा:
-        </p>
-        <a href="{{ wa_link }}" target="_blank" style="display:inline-block; background:#25D366; color:white; padding:12px 25px; border-radius:6px; text-decoration:none; font-weight:bold; font-size:15px;">
-            📲 WhatsApp वर निकाल उघडा व पाठवा
-        </a>
-        <br><br>
-        <div style="margin-top:15px;"><a href="/test" style="color:#0284c7; font-weight:bold; text-decoration:none;">🔄 नवीन टेस्ट सोडवा</a></div>
-    </div>
-    {% endif %}
-</div>
-</body>
-</html>'''
-
-# ----------------- PUBLIC INQUIRY & INQUIRIES DESK -----------------
-PUBLIC_INQUIRY_HTML = '''<!DOCTYPE html>
-<html lang="mr">
-<head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>प्रवेश चौकशी - श्रीगुरु करिअर अकॅडमी</title>
-    <style>
-        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
-        body { margin: 0; background: linear-gradient(135deg, #0b2545, #134e4a); color: #1e293b; min-height: 100vh; padding: 20px 10px; display: flex; align-items: center; justify-content: center; }
-        .card { background: white; max-width: 520px; width: 100%; border-radius: 12px; padding: 25px; box-shadow: 0 15px 30px rgba(0,0,0,0.3); border-top: 5px solid #d97706; }
-        h2 { margin: 0 0 5px; color: #0b2545; font-size: 22px; text-align: center; }
-        p.sub { margin: 0 0 20px; text-align: center; font-size: 13px; color: #64748b; line-height: 1.5; }
-        label { font-size: 13px; font-weight: bold; margin-bottom: 4px; display: block; color: #334155; }
-        input, select { width: 100%; padding: 10px; border: 1.5px solid #cbd5e1; border-radius: 6px; margin-bottom: 14px; font-size: 14px; }
-        .btn-submit { width: 100%; background: linear-gradient(135deg, #059669, #10b981); color: white; padding: 12px; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; }
-        .banner { background: #eff6ff; border: 1px dashed #3b82f6; padding: 10px; border-radius: 6px; font-size: 12px; text-align: center; margin-bottom: 15px; color: #1e40af; }
-    </style>
-</head>
-<body>
-<div class="card">
-    <h2>⚔️ श्रीगुरु करिअर अकॅडमी, आडूर</h2>
-    <p class="sub">पोलीस व सैन्य भरती पूर्व प्रशिक्षण केंद्र (जि. कोल्हापूर)<br><b>मोफत प्रवेश व हॉस्टेल माहिती अर्ज</b></p>
-    <div class="banner">✨ फिजिकल ग्राउंड + डिजिटल पॅनेल क्लास + हॉस्टेल व मेस सोय</div>
-    {% if msg %}<div style="background:#dcfce7; color:#166534; padding:10px; border-radius:6px; margin-bottom:15px; text-align:center; font-weight:bold;">{{ msg }}</div>{% endif %}
-    <form method="POST" action="/inquiry">
-        <label>विद्यार्थ्याचे पूर्ण नाव *:</label>
-        <input type="text" name="student_name" placeholder="उदा. सचिन दत्तात्रय चौगले" required>
-        
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-            <div>
-                <label>जिल्हा *:</label>
-                <input type="text" name="district" placeholder="उदा. कोल्हापूर / सातारा" required>
-            </div>
-            <div>
-                <label>तालुका:</label>
-                <input type="text" name="taluka" placeholder="उदा. करवीर">
-            </div>
-        </div>
-
-        <label>व्हॉट्सॲप / संपर्क मोबाईल *:</label>
-        <input type="tel" name="phone" placeholder="१० अंकी मोबाईल नंबर" pattern="[0-9]{10}" required>
-
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-            <div>
-                <label>कोणत्या भरतीसाठी? *:</label>
-                <select name="course">
-                    <option value="महाराष्ट्र पोलीस भरती">महाराष्ट्र पोलीस भरती</option>
-                    <option value="आर्मी भरती (अग्निवीर)">आर्मी भरती (अग्निवीर)</option>
-                    <option value="SSC GD भरती">SSC GD भरती</option>
-                    <option value="वनरक्षक / इतर भरती">वनरक्षक / इतर भरती</option>
-                </select>
-            </div>
-            <div>
-                <label>हॉस्टेल/मेस हवी का?:</label>
-                <select name="hostel_interest">
-                    <option value="होय (हॉस्टेल आवश्यक)">होय (हॉस्टेल आवश्यक)</option>
-                    <option value="नाही (फक्त ग्राउंड व क्लास)">नाही (फक्त ग्राउंड व क्लास)</option>
-                </select>
-            </div>
-        </div>
-
-        <button type="submit" class="btn-submit">📲 मोफत माहिती मिळवा / नोंदणी करा</button>
-    </form>
-    <div style="text-align:center; margin-top:15px; font-size:12px; color:#64748b;">
-        संपर्क: ९९२११११९६० | आडूर, ता. करवीर, जि. कोल्हापूर
-    </div>
-</div>
-</body>
-</html>'''
-
-@app.route('/toggle_lang')
-def toggle_lang():
-    cur = session.get('site_lang', 'mr')
-    session['site_lang'] = 'en' if cur == 'mr' else 'mr'
-    return redirect(request.referrer or '/')
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    error = None
-    lang = session.get('site_lang', 'mr')
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT * FROM users")
-            users_list = cur.fetchall()
-    if request.method == 'POST':
-        role = request.form.get('role')
-        pwd = request.form.get('password')
-        with get_db() as conn:
-            with conn.cursor() as cur:
-                cur.execute("SELECT * FROM users WHERE role=%s AND password=%s", (role, pwd))
-                user = cur.fetchone()
-        if user:
-            session['user_role'] = role
-            session['role'] = role
-            if role == 'Manager': return redirect('/manager')
-            elif role == 'Trainer': return redirect('/trainer')
-            elif role == 'Clerk': return redirect('/clerk')
-            else: return redirect('/admin')
-        else:
-            error = "Invalid Password!" if lang == 'en' else "चुकीचा पासवर्ड! पुन्हा प्रयत्न करा."
-    return render_template_string(LOGIN_HTML, error=error, lang=lang, users_list=users_list)
-
-@app.route('/logout')
-def logout():
-    session.clear()
-    return redirect(url_for('login'))
-
-@app.route('/')
-def root():
-    role = session.get('user_role')
-    if not role: return redirect(url_for('login'))
-    if role == 'Manager': return redirect('/manager')
-    elif role == 'Trainer': return redirect('/trainer')
-    elif role == 'Clerk': return redirect('/clerk')
-    else: return redirect('/admin')
-
-@app.route('/manager')
-def manager_view():
-    if session.get('user_role') != 'Manager': return redirect(url_for('login'))
-    return render_template_string(MANAGER_LAYOUT, grocery_items=GROCERY_MASTER_500)
-
-@app.route('/trainer')
-def trainer_view():
-    if session.get('user_role') != 'Trainer': return redirect(url_for('login'))
-    return "Trainer Dashboard Active"
-
-@app.route('/clerk')
-def clerk_view():
-    if session.get('user_role') != 'Clerk': return redirect(url_for('login'))
-    return render_template_string(CLERK_LAYOUT, grocery_items=GROCERY_MASTER_500)
-
-@app.route('/admin')
-def admin_view():
-    if session.get('user_role') != 'Admin': return redirect(url_for('login'))
-    curr_tab = request.args.get('tab', 'students')
-    today_date = date.today().strftime("%Y-%m-%d")
-    lang = session.get('site_lang', 'mr')
-    
-    current_test_id = safe_int(request.args.get('test_id', 1), 1)
-    
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT value FROM settings WHERE key='test_launched'")
-            res_launch = cur.fetchone()
-            test_launched = res_launch['value'] if res_launch else 'no'
-
-            cur.execute("SELECT value FROM settings WHERE key='upi_id'")
-            res_upi = cur.fetchone()
-            upi_id = res_upi['value'] if res_upi else '9921111960@ybl'
-
-            cur.execute("SELECT value FROM settings WHERE key='qr_image_url'")
-            res_qr = cur.fetchone()
-            qr_image_url = res_qr['value'] if res_qr else ''
-
-            cur.execute("SELECT * FROM test_papers ORDER BY id ASC")
-            all_test_papers = cur.fetchall()
-
-            cur.execute("SELECT * FROM questions WHERE test_id=%s ORDER BY id DESC", (current_test_id,))
-            questions = cur.fetchall()
-
-            cur.execute("SELECT * FROM students")
-            students = cur.fetchall()
-            cur.execute("SELECT * FROM expenses ORDER BY id DESC")
-            expenses_list = cur.fetchall()
-            cur.execute("SELECT * FROM users")
-            users_list = cur.fetchall()
-            cur.execute("SELECT * FROM mess_diet")
-            diet_list = cur.fetchall()
-            cur.execute("SELECT * FROM staff")
-            staff_members = cur.fetchall()
-            cur.execute("SELECT * FROM staff_tasks ORDER BY id DESC")
-            staff_tasks = cur.fetchall()
-            cur.execute("SELECT * FROM staff_requests ORDER BY id DESC")
-            all_requests = cur.fetchall()
-            cur.execute("SELECT * FROM staff_activity_log ORDER BY id DESC LIMIT 40")
-            all_staff_logs = cur.fetchall()
-            cur.execute("SELECT d.*, s.name FROM discipline_records d JOIN students s ON d.student_id = s.id ORDER BY d.id DESC")
-            discipline_logs = cur.fetchall()
-            cur.execute("SELECT h.*, s.name FROM hostel_mess_fees h JOIN students s ON h.student_id = s.id ORDER BY h.id DESC")
-            hostel_logs = cur.fetchall()
-            cur.execute("SELECT pt.*, s.name, s.course FROM physical_tests pt JOIN students s ON pt.student_id = s.id ORDER BY pt.id DESC")
-            physical_records = cur.fetchall()
-            cur.execute("SELECT wt.*, s.name FROM written_tests wt JOIN students s ON wt.student_id = s.id ORDER BY wt.id DESC")
-            written_records = cur.fetchall()
-            cur.execute("SELECT * FROM mock_test_leads ORDER BY id DESC")
-            pending_payments = cur.fetchall()
-            cur.execute("SELECT * FROM admission_inquiries ORDER BY id DESC")
-            inquiries = cur.fetchall()
-
-    total_paid = sum(safe_float(s['paid_fees']) for s in students)
-    total_pending = sum(safe_float(s['total_fees']) - safe_float(s['paid_fees']) for s in students)
-    total_expenses = sum(safe_float(ex['amount']) for ex in expenses_list)
-
-    current_test_title = next((tp['test_title'] for tp in all_test_papers if tp['id'] == current_test_id), "मुख्य टेस्ट")
-    test_fee = next((tp['test_fee'] for tp in all_test_papers if tp['id'] == current_test_id), 0)
-
-    return render_template_string(ADMIN_DASHBOARD_LAYOUT, curr_tab=curr_tab, students=students, expenses_list=expenses_list, users_list=users_list, diet_list=diet_list, staff_members=staff_members, staff_tasks=staff_tasks, all_requests=all_requests, all_staff_logs=all_staff_logs, discipline_logs=discipline_logs, hostel_logs=hostel_logs, physical_records=physical_records, written_records=written_records, questions=questions, pending_payments=pending_payments, inquiries=inquiries, all_test_papers=all_test_papers, current_test_id=current_test_id, current_test_title=current_test_title, test_fee=test_fee, total_paid=total_paid, total_pending=total_pending, total_expenses=total_expenses, today_date=today_date, lang=lang, test_launched=test_launched, upi_id=upi_id, qr_image_url=qr_image_url)
-
+# ----------------- OTHER HELPER ROUTES -----------------
 @app.route('/toggle_test_launch', methods=['POST'])
 def toggle_test_launch():
     if session.get('user_role') != 'Admin': return "Unauthorized", 403
@@ -1654,7 +1293,6 @@ def delete_inquiry(id):
             conn.commit()
     return redirect('/inquiries')
 
-# ----------------- QUESTION MANAGEMENT ROUTES -----------------
 @app.route('/add_single_question', methods=['POST'])
 def add_single_question():
     if session.get('user_role') not in ['Admin', 'Clerk']: return "Unauthorized", 403
@@ -1702,7 +1340,7 @@ def delete_question(id):
             conn.commit()
     return redirect(f'/admin?tab=questions&test_id={t_id}')
 
-# ----------------- PUBLIC INQUIRY & REVIEW ROUTES -----------------
+# ----------------- PUBLIC ROUTES -----------------
 @app.route('/inquiry', methods=['GET', 'POST'])
 def public_inquiry():
     msg = None
