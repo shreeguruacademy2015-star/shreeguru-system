@@ -10,7 +10,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
-app.secret_key = "shreeguru_complete_bulletproof_v49_final_perfect"
+app.secret_key = "shreeguru_complete_bulletproof_v50_final_restored"
 
 # --- NEON CLOUD DATABASE CONNECTION ---
 DATABASE_URL = os.environ.get("DATABASE_URL")
@@ -374,37 +374,28 @@ def init_db():
 
 init_db()
 
-# ----------------- EXACT 500 GROCERY MASTER ITEMS (1-100 Pulses, Fruits, Veggies, Spices First) -----------------
+# ----------------- 500 GROCERY MASTER ITEMS -----------------
 GROCERY_MASTER_500 = [
-    # १ ते २५: कडधान्ये व डाळी
     "तूर डाळ (पिवळी)", "मूग डाळ (सालीसहित)", "मूग डाळ (मऊ डाळ)", "मसूर डाळ (लाल मसूर)", "हरभरा डाळ (चणा डाळ)",
     "उडीद डाळ (पांढरी)", "उडीद डाळ (सालीसहित)", "मटकी डाळ", "पांढरी मटकी", "मटकी (हिरवी/तपकिरी)",
     "मूग (अखंड हिरवे मूग)", "चवळी (लाल व पांढरी)", "काळे वाटाणे", "पांढरे वाटाणे", "काळे चणे (देशी)",
     "काबुली चणे (छोले)", "राजमा (लाल)", "राजमा (चित्रा)", "हरभरा (भिजवण्यासाठी)", "हुलगा (कुळीथ)",
     "मसुरी उसळ", "सोणा मसूर तांदूळ", "बासमती तांदूळ", "उत्तम प्रतीचे गहू", "साबुदाणा (मध्यम व बारीक)",
-    
-    # २६ ते ५०: ताजी फळे व सुकामेवा
     "केळी (ताजी डाएट)", "संत्री (रसदार)", "मोसंबी", "डाळिंब", "पपई",
     "कलिंगड", "खरबूज", "सफरचंद (Apple)", "हिरवी व काळी द्राक्षे", "आंबा (सिझननुसार)",
     "लिंबू (रसदार पिवळी)", "काजू तुकडे / अखंड", "बदाम (किरमिजी)", "मनुका (काळी/पिवळी)", "अक्रोड गिरी (Walnut)",
     "पिस्ता तुकडे", "खजूर (बिया काढलेले)", "अंजीर (सुके)", "टरबूज बिया (मगज)", "किसलेले खोबरे (सुके)",
     "ओले नारळ", "सीताफळ", "अननस (Pineapple)", "पेरू (Guava)", "चिकू",
-    
-    # ५१ ते ७५: ताजी भाजी व पालेभाज्या
     "कांदा (नवीन व जुना)", "बटाटा (मध्यम साईज)", "लसूण (देशी व चायनीज)", "आले (ताजे कंद)", "टोमॅटो (लाल व रसरशीत)",
     "हिरवी मिरची", "कढीपत्ता", "कोथिंबीर", "पुदिना", "मेथी भाजी",
     "पालक भाजी", "शेपू भाजी", "कांदापात", "मुळा व मुळ्याची पाने", "भेंडी",
     "गवार शेंगा", "कोवळी वांगी", "कोबी (Band Gobhi)", "फ्लॉवर (Cauliflower)", "सिमला मिरची (Capsicum)",
     "दुधी भोपळा (लौकी)", "पडवळ", "कारले", "शेवग्याची शेंग", "मटार दाणे (हिरवे)",
-    
-    # ७६ ते १००: रोजच्या जेवणातील मसाले व खडे मसाले
     "मोहरी (राई)", "जिरे (साधे)", "शाहजिरे", "काळे मिरे (अखंड)", "लवंग",
     "वेलची (हिरवी)", "दालचिनी (टुकडे)", "तमालपत्र", "चक्रफूल (बडियन)", "जायफळ",
     "कसुरी मेथी", "हळद पावडर (शुद्ध)", "लाल मिरची पावडर", "लाल तिखट (तूरट)", "धना पावडर",
     "जिरा पावडर", "गोडा मसाला", "गरम मसाला पावडर", "किचन किंग मसाला", "सांबर मसाला",
     "पावभाजी मसाला", "काळा मसाला (कोल्हापुरी)", "हिंग (पावडर व खडा)", "पांढरे मीठ", "खडे मीठ (शेल मीठ)",
-    
-    # १०१ ते १५०: नाश्ता व फराळ प्रकार
     "कांदा पोहे", "बटाटा पोहे", "मटार पोहे", "रवा उपमा", "शेवया उपमा",
     "मूग डाळ खिचडी", "मसाला तांदूळ भात", "साबुदाणा खिचडी", "साबुदाणा वडा", "बटाटा भजी",
     "कांदा भजी (पकोडा)", "पालक भजी", "मिरची भजी", "ब्रेड पकोडा", "वडा पाव",
@@ -415,8 +406,6 @@ GROCERY_MASTER_500 = [
     "बेसन धिरडे", "मूग डाळ धिरडे", "तांदळाचे घावणे", "आंबोळी", "रवा आप्पे",
     "अळू वडी (पात्रा)", "कोथिंबीर वडी", "थालीपीठ भाजणी", "उपवासाची थालिपिथ", "मक्का लाटलेली रोटी",
     "व्हेज सँडविच", "ग्रील सँडविच", "मॅगी नूडल्स", "व्हाइट सॉस पास्ता", "रेड सॉस पास्ता",
-
-    # १५१ ते २५०: मुख्य जेवण, चपात्या, भाकरी व भात प्रकार
     "साधी मऊ चपाती", "फुलकी चपाती", "तेल घातलेली चपाती", "रुमाली रोटी", "तंदूरी रोटी",
     "बटर नान", "लसूणी नान", "मिस्सी रोटी", "ज्वारीची भाकरी", "बाजरीची भाकरी",
     "नाचणीची भाकरी", "मक्याची भाकरी", "तांदळाची भाकरी (अभाकरी)", "सादा पांढरा भात", "जिरा राइस",
@@ -436,8 +425,6 @@ GROCERY_MASTER_500 = [
     "गुरुवार स्पेशल भाजी", "शुक्रवार स्पेशल भाजी", "शनिवार स्पेशल भाजी", "रविवार स्पेशल भाजी", "मेस स्पेशल मिक्स भाजी",
     "आलू जिरा", "आलू मेथी", "आलू पालक", "आलू मटर", "मिक्स व्हेज",
     "कॉर्न पालक", "मेथी मलाई मटर", "मालवणी उसळ", "खास कोल्हापुरी उसळ", "विशेष पालेभाजी आमटी",
-
-    # २५१ ते ३००: मिष्टान्न व गोड पदार्थ
     "पुरणपोळी", "गुळाची पोळी", "श्रीखंड", "आम्रखंड", "बासुंदी",
     "रसमलाई", "गुलाब जामुन", "काजू कतली", "बेसन लाडू", "रवा लाडू",
     "मुगाचा हलवा", "गाजर हलवा", "दुधी भोपळा हलवा", "शेवया खीर", "तांदळाची खीर",
@@ -448,8 +435,6 @@ GROCERY_MASTER_500 = [
     "मैसूर पाक", "जलेबी रबडी", "रसमलाई केक", "शाही टुकडा", "गुलाब जामुन विथ आईस्क्रीम",
     "ड्राईफ्रूट खीर", "अंजीर हलवा", "बादाम हलवा", "आटवलेले दूध", "खव्याची बर्फी",
     "नारळी भात", "मोतीचूर लाडू", "बेसन बर्फी", "कोकोनट बर्फी", "स्पेशल पुरणपोळी थाळी",
-
-    # ३०१ ते ५००: इतर किराणा, कॅन्टीन, स्वच्छता, भांडी व पॅकिंग साहित्य
     "जाड पोहे (बल्क साठा)", "पातळ पोहे (बल्क)", "रवा बारीक (बल्क)", "रवा मोठा (बल्क)", "मैदा (बल्क साठा)",
     "बेसन पीठ (बल्क)", "गहू पीठ (आटा बोरा)", "ज्वारी पीठ (बल्क)", "बाजरी पीठ (बल्क)", "साबुदाणा (बल्क)",
     "शेंगदाणा तेल (डबा)", "सोयाबीन तेल (डबा)", "सूर्यफूल तेल (डबा)", "शुद्ध साजूक तूप (डबा)", "वनस्पती तूप (डबा)",
@@ -603,7 +588,20 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
 
     {% if curr_tab == 'questions' %}
     <div class="admin-tab">
-        <h3 style="color:#7c3aed; margin-top:0;">❓ ऑनलाइन टेस्ट प्रश्न व्यवस्थापन (Question Management)</h3>
+        <h3 style="color:#7c3aed; margin-top:0;">❓ ऑनलाइन टेस्ट प्रश्न व्यवस्थापन व लिंक शेअरिंग</h3>
+        
+        <!-- Direct Link Copy Box -->
+        <div style="background:#fefce8; border:2px dashed #ca8a04; padding:15px; border-radius:8px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div>
+                <b style="color:#854d0e; font-size:14px;">🔗 विद्यार्थ्यांसाठी ऑनलाईन टेस्टची थेट लिंक:</b><br>
+                <code style="font-size:14px; color:#1e293b; background:white; padding:4px 8px; border:1px solid #fde047; border-radius:4px; display:inline-block; margin-top:4px;" id="testLinkText">https://shreeguru-academy.onrender.com/test</code>
+            </div>
+            <div>
+                <a href="/test" target="_blank" class="btn-act" style="background:#0284c7; padding:8px 12px; font-size:12px; margin-right:5px;">🌐 टेस्ट पेज उघडा</a>
+                <button onclick="navigator.clipboard.writeText(document.getElementById('testLinkText').innerText); alert('टेस्टची लिंक कॉपी झाली!');" class="btn-act" style="background:#16a34a; padding:8px 12px; font-size:12px;">📋 लिंक कॉपी करा</button>
+            </div>
+        </div>
+
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
             <div style="background:#f8fafc; padding:15px; border-radius:6px; border:1px solid #cbd5e1;">
                 <h4 style="margin-top:0; color:#0b3c5d;">१. नवीन प्रश्न मॅन्युअल टाईप करा:</h4>
@@ -886,7 +884,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
 </body>
 </html>'''
 
-# ----------------- MANAGER & CLERK LAYOUTS (WITH SELECT ALL & COMPACT PRINT 50+ PER PAGE) -----------------
+# ----------------- MANAGER & CLERK LAYOUTS -----------------
 MANAGER_LAYOUT = '''<!DOCTYPE html>
 <html lang="mr">
 <head>
@@ -1080,7 +1078,7 @@ MOCK_TEST_HTML = '''<!DOCTYPE html>
             प्रमाणपत्र देण्यात येते की, श्री/सौ/कुमार <b>{{ name }}</b> (जिल्हा: {{ district }}) यांनी श्रीगुरु करिअर अकॅडमीतर्फे आयोजित राज्यस्तरीय पोलीस भरती सराव टेस्टमध्ये सहभाग घेऊन <b>{{ score }} / {{ total }}</b> गुण प्राप्त केले आहेत.
         </p>
         <p style="font-size:13px; color:#92400e; font-weight:bold; margin-top:15px; line-height:1.5;">
-            मा. सचिन चौगले सर तसेच श्रीगुरु करिअर अकॅडमी परिवारातर्फे घेण्यात आलेल्या या राज्यस्तरीय लेखी स्पर्धेमध्ये सहभागी झाल्याबद्दल खूप खूप अभिनंदन! आपले पोलीस बनण्याचे व इतर शासकीय सेवांमध्ये जाण्याचे स्वप्न लवकरच पूर्ण होवो, अशा सदिच्छा! 🌟
+            मा. सचिन चौगले सर तसेच श्रीगुरु करिअर अकॅडमी परिवारातर्फे घेण्यात आलेल्या या राज्यस्तरीय लेखी स्पर्धेमध्ये सहभागी झाल्याबद्दल खूप खूब अभिनंदन! आपले पोलीस बनण्याचे व इतर शासकीय सेवांमध्ये जाण्याचे स्वप्न लवकरच पूर्ण होवो, अशा सदिच्छा! 🌟
         </p>
         <div style="margin-top:20px; display:flex; justify-content:space-between; font-size:12px; font-weight:bold; color:#78350f;">
             <div>दिनांक: {{ today_date }}</div>
@@ -1093,7 +1091,7 @@ MOCK_TEST_HTML = '''<!DOCTYPE html>
     {% else %}
     <form method="POST" action="/test">
         <div style="background:#f8fafc; padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid #cbd5e1; border-left:4px solid #b45309;">
-            <b style="color:#b45309; display:block; margin-bottom:8px;">⚠️ सूचना: निकाल पाहण्यासाठी व प्रमाणपत्र मिळवण्यासाठी खालील माहिती भरणे अनिवार्य आहे:</b>
+            <b style="color:#b45309; display:block; margin-bottom:8px;">⚠️️ सूचना: निकाल पाहण्यासाठी व प्रमाणपत्र मिळवण्यासाठी खालील माहिती भरणे अनिवार्य आहे:</b>
             <label style="font-weight:bold; font-size:13px;">विद्यार्थ्याचे पूर्ण नाव *:</label>
             <input type="text" name="student_name" placeholder="उदा. गणेश पाटील" required>
             
@@ -1126,7 +1124,7 @@ MOCK_TEST_HTML = '''<!DOCTYPE html>
 </body>
 </html>'''
 
-# ----------------- FLASK ROUTING & CONTROLLERS -----------------
+# ----------------- PUBLIC INQUIRY & INQUIRIES DESK -----------------
 PUBLIC_INQUIRY_HTML = '''<!DOCTYPE html>
 <html lang="mr">
 <head>
@@ -1416,19 +1414,107 @@ def mock_test():
 def inquiry_desk():
     if session.get('user_role') not in ['Admin', 'Clerk', 'Manager']:
         return redirect(url_for('login'))
+    
     with get_db() as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT * FROM admission_inquiries ORDER BY id DESC")
             inquiries = cur.fetchall()
             cur.execute("SELECT * FROM mock_test_leads ORDER BY id DESC LIMIT 50")
             test_leads = cur.fetchall()
-    return f"Inquiries Desk: {len(inquiries)} records."
+    
+    html = '''<!DOCTYPE html>
+    <html lang="mr"><head><meta charset="UTF-8"><title>प्रवेश चौकशी व कॉलिंग डेस्क</title>
+    <style>
+        body { font-family:'Segoe UI',sans-serif; background:#f8fafc; padding:15px; color:#1e293b; margin:0; }
+        .header { background:#0b3c5d; color:white; padding:12px 20px; display:flex; justify-content:space-between; align-items:center; border-radius:8px; margin-bottom:20px; }
+        table { width:100%; border-collapse:collapse; background:white; font-size:13px; margin-top:10px; border-radius:6px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.1); }
+        th, td { border:1px solid #cbd5e1; padding:8px 10px; text-align:left; }
+        th { background:#1e293b; color:white; font-weight:600; }
+        .btn-wa { background:#25D366; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-weight:bold; font-size:12px; }
+        .btn-call { background:#0284c7; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-weight:bold; font-size:12px; margin-right:4px; }
+    </style></head><body>
 
-# ----------------- COMPACT MULTI-COLUMN PRINT GROCERY SLIP ROUTE (50+ PER PAGE) -----------------
+    <div class="header">
+        <h3 style="margin:0;">📞 श्रीगुरु ॲडमिशन कॉलिंग डेस्क (एकूण अर्ज: {{ inquiries|length }})</h3>
+        <div>
+            <a href="/" style="color:white; text-decoration:none; font-weight:bold; margin-right:15px;">🏠 मुख्य डॅशबोर्ड</a>
+            <a href="/inquiry" target="_blank" style="color:#fde047; text-decoration:none; font-weight:bold; margin-right:15px;">🌐 प्रवेश अर्ज उघडा</a>
+            <a href="/test" target="_blank" style="color:#67e8f9; text-decoration:none; font-weight:bold;">📝 मोफत टेस्ट उघडा</a>
+        </div>
+    </div>
+
+    <h4 style="color:#0b3c5d; margin:15px 0 5px;">📋 थेट प्रवेश चौकशी अर्ज (Admission Inquiries):</h4>
+    <table>
+        <thead><tr><th>तारीख</th><th>नाव</th><th>जिल्हा (तालुका)</th><th>कोर्स</th><th>हॉस्टेल</th><th>१-क्लिक संपर्क</th><th>स्थिती / शेरा</th><th>बदल</th></tr></thead>
+        <tbody>
+            {% for inq in inquiries %}
+            <form action="/update_inquiry/{{ inq.id }}" method="POST">
+            <tr>
+                <td>{{ inq.inquiry_date }}</td>
+                <td><b>{{ inq.student_name }}</b></td>
+                <td>{{ inq.district }} ({{ inq.taluka or '-' }})</td>
+                <td><span style="background:#e0f2fe; padding:2px 6px; border-radius:4px;">{{ inq.course }}</span></td>
+                <td>{{ inq.hostel_interest }}</td>
+                <td>
+                    <a href="tel:{{ inq.phone }}" class="btn-call">📞 कॉल</a>
+                    <a href="https://wa.me/91{{ inq.phone }}?text=नमस्कार%20{{ inq.student_name }},%20श्रीगुरु%20करिअर%20अकॅडमी%20आडूर%20मध्ये%20आपली%20चौकशी%20प्राप्त%20झाली.%20नवीन%20बॅचची%20माहिती%20खालीलप्रमाणे:" target="_blank" class="btn-wa">📲 WA</a>
+                </td>
+                <td>
+                    <select name="call_status" style="padding:3px; border-radius:4px; font-size:12px;">
+                        <option value="नवीन चौकशी (New)" {% if inq.call_status=='नवीन चौकशी (New)' %}selected{% endif %}>नवीन चौकशी</option>
+                        <option value="कॉल झाला - विचारून सांगणार" {% if inq.call_status=='कॉल झाला - विचारून सांगणार' %}selected{% endif %}>विचारून सांगणार</option>
+                        <option value="भेट देणार (Visiting)" {% if inq.call_status=='भेट देणार (Visiting)' %}selected{% endif %}>भेट देणार</option>
+                        <option value="प्रवेश निश्चित (Admitted)" {% if inq.call_status=='प्रवेश निश्चित (Admitted)' %}selected{% endif %}>प्रवेश निश्चित</option>
+                    </select><br>
+                    <input type="text" name="staff_note" value="{{ inq.staff_note or '' }}" placeholder="कॉल शेरा..." style="width:90%; margin-top:4px; padding:3px; font-size:12px;">
+                </td>
+                <td><button type="submit" style="background:#059669; color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer;">💾</button></td>
+            </tr>
+            </form>
+            {% else %}
+            <tr><td colspan="8" style="text-align:center; color:#64748b;">अद्याप कोणतीही चौकशी आलेली नाही.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h4 style="color:#0b3c5d; margin:25px 0 5px;">📝 मोफत ऑनलाइन टेस्ट लीड्स व निकाल (Mock Test Leads):</h4>
+    <table>
+        <thead><tr><th>तारीख</th><th>नाव</th><th>जिल्हा</th><th>मोबाईल</th><th>मिळालेले गुण</th><th>१-क्लिक संपर्क</th></tr></thead>
+        <tbody>
+            {% for t in test_leads %}
+            <tr>
+                <td>{{ t.test_date }}</td>
+                <td><b>{{ t.student_name }}</b></td>
+                <td>{{ t.district }}</td>
+                <td>{{ t.phone }}</td>
+                <td><b style="color:#059669;">{{ t.score }} / {{ t.total_marks }}</b></td>
+                <td>
+                    <a href="tel:{{ t.phone }}" class="btn-call">📞 कॉल</a>
+                    <a href="https://wa.me/91{{ t.phone }}?text=नमस्कार%20{{ t.student_name }},%20श्रीगुरु%20अकॅडमीच्या%20टेस्टमध्ये%20तुम्हाला%20{{ t.score }}/{{ t.total_marks }}%20गुण%20मिळाले!%20प्रवेशासाठी%20आमच्याशी%20जोडले%20रहा." target="_blank" class="btn-wa">📲 WA निकाल</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" style="text-align:center; color:#64748b;">अद्याप कोणीही ऑनलाइन टेस्ट सोडवलेली नाही.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </body></html>'''
+    return render_template_string(html, inquiries=inquiries, test_leads=test_leads)
+
+@app.route('/update_inquiry/<int:id>', methods=['POST'])
+def update_inquiry(id):
+    c_status = request.form.get('call_status')
+    note = request.form.get('staff_note')
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE admission_inquiries SET call_status=%s, staff_note=%s WHERE id=%s", (c_status, note, id))
+            conn.commit()
+    return redirect('/inquiries')
+
+# ----------------- COMPACT MULTI-COLUMN PRINT GROCERY SLIP ROUTE -----------------
 @app.route('/print_grocery_slip', methods=['POST'])
 def print_grocery_slip():
     items = request.form.getlist('items')
-    # Compact layout with multiple items per row/page to ensure 50+ items easily fit and print compactly
     rows = "".join([f"<tr><td style='padding:3px 6px; border:1px solid #333; text-align:center;'>{loop_idx+1}</td><td style='padding:3px 6px; border:1px solid #333; font-weight:600;'>{itm}</td><td style='padding:3px 6px; border:1px solid #333;'>{request.form.get('qty_'+itm, 'लागेल तेवढे')}</td><td style='padding:3px 6px; border:1px solid #333; text-align:center;'>[  ]</td></tr>" for loop_idx, itm in enumerate(items)])
     html = f'''<!DOCTYPE html><html><head><title>कॅन्टीन व मेस खरेदी पावती - श्रीगुरु अकॅडमी</title>
     <style>
