@@ -11,7 +11,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
-app.secret_key = "shreeguru_complete_bulletproof_ultimate_stable_v71"
+app.secret_key = "shreeguru_complete_original_2600_plus_lines_master_v73"
 
 # --- NEON CLOUD DATABASE CONNECTION ---
 DATABASE_URL = os.environ.get("DATABASE_URL")
@@ -546,7 +546,7 @@ LOGIN_HTML = '''<!DOCTYPE html>
 <body>
 <div class="login-box">
     <a href="/toggle_lang" class="lang-btn">🌐 {{ 'MR' if lang == 'en' else 'EN' }}</a>
-    <span class="insignia">⚔️️ POLICE & DEFENCE ACADEMY</span>
+    <span class="insignia">⚔️ POLICE & DEFENCE ACADEMY</span>
     <h2 class="title">श्रीगुरु करिअर अकॅडमी</h2>
     <div class="subtitle">पोलीस व सैन्य भरती पूर्व प्रशिक्षण केंद्र<br>आडूर, ता. करवीर, जि. कोल्हापूर</div>
     {% if error %}<div style="color:#dc2626; font-size:12px; font-weight:bold; margin-bottom:12px;">{{ error }}</div>{% endif %}
@@ -1159,6 +1159,78 @@ CLERK_LAYOUT = '''<!DOCTYPE html>
 </body>
 </html>'''
 
+# ----------------- PHYSICAL TRAINER DASHBOARD LAYOUT -----------------
+TRAINER_LAYOUT = '''<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8"><title>फिजिकल ट्रेनर डॅशबोर्ड - श्रीगुरु अकॅडमी</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { margin: 0; background: #f8fafc; color: #1e293b; }
+        .header { background: #0284c7; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .container { max-width: 1300px; margin: 20px auto; padding: 0 10px; }
+        .tab-box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .btn { background: #0284c7; color: white; padding: 8px 15px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-block; font-size: 13px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+        th, td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; }
+        th { background: #0284c7; color: white; }
+        input, select { padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px; width: 100%; }
+    </style>
+</head>
+<body>
+<div class="header">
+    <h2 style="margin:0;">🏃‍♂️️ फिजिकल ट्रेनर पोर्टल (ग्राउंड आणि प्रॅक्टिस रेकॉर्ड)</h2>
+    <div>
+        <a href="/logout" style="background:#ef4444; color:white; padding:6px 12px; border-radius:4px; text-decoration:none; font-weight:bold; font-size:12px;">Logout</a>
+    </div>
+</div>
+<div class="container">
+    <div class="tab-box">
+        <h3 style="color:#0284c7; margin-top:0;">⚡ विद्यार्थ्यांची फिजिकल टेस्ट गुण नोंदणी (1600m, 100m, गोळाफेक, पुल-अप्स)</h3>
+        <form action="/trainer_save_physical" method="POST">
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:10px;">
+                <div>
+                    <label style="font-weight:bold; font-size:12px;">विद्यार्थी निवडा *:</label>
+                    <select name="student_id" required>
+                        <option value="">-- विद्यार्थी निवडा --</option>
+                        {% for s in students %}
+                        <option value="{{ s.id }}">{{ s.name }} ({{ s.course }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label style="font-weight:bold; font-size:12px;">तारीख *:</label>
+                    <input type="date" name="test_date" value="{{ today_date }}" required>
+                </div>
+                <div>
+                    <label style="font-weight:bold; font-size:12px;">1600 मीटर रनिंग वेळ (उदा. 4 min 50 sec):</label>
+                    <input type="text" name="run_time" placeholder="4:50">
+                </div>
+                <div>
+                    <label style="font-weight:bold; font-size:12px;">100 मीटर धावणे वेळ:</label>
+                    <input type="text" name="sprint_time" placeholder="11.5 sec">
+                </div>
+                <div>
+                    <label style="font-weight:bold; font-size:12px;">गोळा फेक अंतर (मीटर मध्ये):</label>
+                    <input type="text" name="shot_put_dist" placeholder="28.5 ft">
+                </div>
+                <div>
+                    <label style="font-weight:bold; font-size:12px;">पुल-अप्स (संख्या):</label>
+                    <input type="number" name="pullups" value="0" min="0" max="10">
+                </div>
+                <div>
+                    <label style="font-weight:bold; font-size:12px;">एकूण गुण (Out of 50):</label>
+                    <input type="number" step="0.5" name="total_obtained" value="40" required>
+                </div>
+            </div>
+            <br>
+            <button type="submit" class="btn">💾 फिजिकल रेकॉर्ड सेव्ह करा</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>'''
+
 # ----------------- STUDY LAB / LIBRARY VIEW ROUTE -----------------
 @app.route('/library')
 def library_view():
@@ -1208,7 +1280,159 @@ def library_view():
     </body></html>'''
     return render_template_string(html, books=books, seats=seats)
 
-# ----------------- OTHER HELPER ROUTES -----------------
+# ----------------- ROUTE CONTROLLERS -----------------
+@app.route('/toggle_lang')
+def toggle_lang():
+    cur = session.get('site_lang', 'mr')
+    session['site_lang'] = 'en' if cur == 'mr' else 'mr'
+    return redirect(request.referrer or '/')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    error = None
+    lang = session.get('site_lang', 'mr')
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM users")
+            users_list = cur.fetchall()
+    if request.method == 'POST':
+        role = request.form.get('role')
+        pwd = request.form.get('password')
+        with get_db() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT * FROM users WHERE role=%s AND password=%s", (role, pwd))
+                user = cur.fetchone()
+        if user:
+            session['user_role'] = role
+            session['role'] = role
+            if role == 'Manager': return redirect('/manager')
+            elif role == 'Trainer': return redirect('/trainer')
+            elif role == 'Clerk': return redirect('/clerk')
+            else: return redirect('/admin')
+        else:
+            error = "Invalid Password!" if lang == 'en' else "चुकीचा पासवर्ड! पुन्हा प्रयत्न करा."
+    return render_template_string(LOGIN_HTML, error=error, lang=lang, users_list=users_list)
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
+
+@app.route('/')
+def root():
+    role = session.get('user_role')
+    if not role: return redirect(url_for('login'))
+    if role == 'Manager': return redirect('/manager')
+    elif role == 'Trainer': return redirect('/trainer')
+    elif role == 'Clerk': return redirect('/clerk')
+    else: return redirect('/admin')
+
+@app.route('/manager')
+def manager_view():
+    if session.get('user_role') != 'Manager': return redirect(url_for('login'))
+    return render_template_string(MANAGER_LAYOUT, grocery_items=GROCERY_MASTER_500)
+
+@app.route('/trainer')
+def trainer_view():
+    if session.get('user_role') != 'Trainer': return redirect(url_for('login'))
+    today_date = date.today().strftime("%Y-%m-%d")
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM students")
+            students = cur.fetchall()
+    return render_template_string(TRAINER_LAYOUT, students=students, today_date=today_date)
+
+@app.route('/trainer_save_physical', methods=['POST'])
+def trainer_save_physical():
+    if session.get('user_role') != 'Trainer': return "Unauthorized", 403
+    s_id = request.form.get('student_id')
+    t_date = request.form.get('test_date')
+    run = request.form.get('run_time')
+    sprint = request.form.get('sprint_time')
+    shot = request.form.get('shot_put_dist')
+    pullups = safe_int(request.form.get('pullups', 0))
+    tot = safe_float(request.form.get('total_obtained', 0))
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO physical_tests (student_id, test_date, run_time, sprint_time, shot_put_dist, pullups, total_obtained, logged_by)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, 'Trainer')
+            """, (s_id, t_date, run, sprint, shot, pullups, tot))
+            conn.commit()
+    return redirect('/trainer')
+
+@app.route('/clerk')
+def clerk_view():
+    if session.get('user_role') != 'Clerk': return redirect(url_for('login'))
+    return render_template_string(CLERK_LAYOUT, grocery_items=GROCERY_MASTER_500)
+
+@app.route('/admin')
+def admin_view():
+    if session.get('user_role') != 'Admin': return redirect(url_for('login'))
+    curr_tab = request.args.get('tab', 'students')
+    today_date = date.today().strftime("%Y-%m-%d")
+    lang = session.get('site_lang', 'mr')
+    
+    current_test_id = safe_int(request.args.get('test_id', 1), 1)
+    
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT value FROM settings WHERE key='test_launched'")
+            res_launch = cur.fetchone()
+            test_launched = res_launch['value'] if res_launch else 'no'
+
+            cur.execute("SELECT value FROM settings WHERE key='upi_id'")
+            res_upi = cur.fetchone()
+            upi_id = res_upi['value'] if res_upi else '9921111960@ybl'
+
+            cur.execute("SELECT value FROM settings WHERE key='qr_image_url'")
+            res_qr = cur.fetchone()
+            qr_image_url = res_qr['value'] if res_qr else ''
+
+            cur.execute("SELECT * FROM test_papers ORDER BY id ASC")
+            all_test_papers = cur.fetchall()
+
+            cur.execute("SELECT * FROM questions WHERE test_id=%s ORDER BY id DESC", (current_test_id,))
+            questions = cur.fetchall()
+
+            cur.execute("SELECT * FROM students")
+            students = cur.fetchall()
+            cur.execute("SELECT * FROM expenses ORDER BY id DESC")
+            expenses_list = cur.fetchall()
+            cur.execute("SELECT * FROM users")
+            users_list = cur.fetchall()
+            cur.execute("SELECT * FROM mess_diet")
+            diet_list = cur.fetchall()
+            cur.execute("SELECT * FROM staff")
+            staff_members = cur.fetchall()
+            cur.execute("SELECT * FROM staff_tasks ORDER BY id DESC")
+            staff_tasks = cur.fetchall()
+            cur.execute("SELECT * FROM staff_requests ORDER BY id DESC")
+            all_requests = cur.fetchall()
+            cur.execute("SELECT * FROM staff_activity_log ORDER BY id DESC LIMIT 40")
+            all_staff_logs = cur.fetchall()
+            cur.execute("SELECT d.*, s.name FROM discipline_records d JOIN students s ON d.student_id = s.id ORDER BY d.id DESC")
+            discipline_logs = cur.fetchall()
+            cur.execute("SELECT h.*, s.name FROM hostel_mess_fees h JOIN students s ON h.student_id = s.id ORDER BY h.id DESC")
+            hostel_logs = cur.fetchall()
+            cur.execute("SELECT pt.*, s.name, s.course FROM physical_tests pt JOIN students s ON pt.student_id = s.id ORDER BY pt.id DESC")
+            physical_records = cur.fetchall()
+            cur.execute("SELECT wt.*, s.name FROM written_tests wt JOIN students s ON wt.student_id = s.id ORDER BY wt.id DESC")
+            written_records = cur.fetchall()
+            cur.execute("SELECT * FROM mock_test_leads ORDER BY id DESC")
+            pending_payments = cur.fetchall()
+            cur.execute("SELECT * FROM admission_inquiries ORDER BY id DESC")
+            inquiries = cur.fetchall()
+
+    total_paid = sum(safe_float(s['paid_fees']) for s in students)
+    total_pending = sum(safe_float(s['total_fees']) - safe_float(s['paid_fees']) for s in students)
+    total_expenses = sum(safe_float(ex['amount']) for ex in expenses_list)
+
+    current_test_title = next((tp['test_title'] for tp in all_test_papers if tp['id'] == current_test_id), "मुख्य टेस्ट")
+    test_fee = next((tp['test_fee'] for tp in all_test_papers if tp['id'] == current_test_id), 0)
+
+    return render_template_string(ADMIN_DASHBOARD_LAYOUT, curr_tab=curr_tab, students=students, expenses_list=expenses_list, users_list=users_list, diet_list=diet_list, staff_members=staff_members, staff_tasks=staff_tasks, all_requests=all_requests, all_staff_logs=all_staff_logs, discipline_logs=discipline_logs, hostel_logs=hostel_logs, physical_records=physical_records, written_records=written_records, questions=questions, pending_payments=pending_payments, inquiries=inquiries, all_test_papers=all_test_papers, current_test_id=current_test_id, current_test_title=current_test_title, test_fee=test_fee, total_paid=total_paid, total_pending=total_pending, total_expenses=total_expenses, today_date=today_date, lang=lang, test_launched=test_launched, upi_id=upi_id, qr_image_url=qr_image_url)
+
 @app.route('/toggle_test_launch', methods=['POST'])
 def toggle_test_launch():
     if session.get('user_role') != 'Admin': return "Unauthorized", 403
