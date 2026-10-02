@@ -11,7 +11,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
-app.secret_key = "shreeguru_complete_bulletproof_v59_qr_payment"
+app.secret_key = "shreeguru_complete_bulletproof_v61_smart_fee_flow"
 
 # --- NEON CLOUD DATABASE CONNECTION ---
 DATABASE_URL = os.environ.get("DATABASE_URL")
@@ -69,7 +69,6 @@ def init_db():
             cur.execute("INSERT INTO users (role, password) VALUES ('Clerk', 'clerk123') ON CONFLICT (role) DO NOTHING")
             cur.execute("INSERT INTO users (role, password) VALUES ('Trainer', 'trainer123') ON CONFLICT (role) DO NOTHING")
 
-            # ॲडमिन कंट्रोलसाठी सेटिंग्स टेबल (Launch Status, Test Fee, UPI & QR Code)
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS settings (
                     key TEXT PRIMARY KEY,
@@ -454,21 +453,7 @@ GROCERY_MASTER_500 = [
     "ताजे दूध (कॅन/पॅकेट)", "दही (मोठे कमर्शियल टब)", "छास / ताक (पॅकेट्स)", "पनीर (बल्क ब्लॉक)", "खवा / मावा (बल्क)",
     "अंडी (मोठे ट्रे)", "सोयाबीन वड्या (बल्क)", "मोड आलेले मूग (बल्क)", "मोड आलेली मटकी (बल्क)", "ओट्स (बल्क पॅक)",
     "डिशवॉश लिक्विड (कॅन)", "डिशवॉश बार (साबण)", "स्टील स्क्रबर जाळी", "घासणीचा ब्रश", "फ्लॉवर क्लिनर (फिनाइल)",
-    "टॉयलेट क्लिनर (हार्पिक)", "काच पुसण्याचा लिक्विड", "हॅन्ड वॉश लिक्विड रिफिल", "नॅप्थालीन बॉल्स (फिनाइल गोळ्या)", "कचऱ्याच्या मोठ्या पिशव्या",
-    "सुती कापडी नॅपकिन्स", "पोळे पुसण्याचे मॉप", "झोपडी झाडू (सॉफ्ट)", "रफ झाडू (बाहेरसाठी)", "फ्लोअर वायपर",
-    "एल्युमिनियम फॉइल पेपर", "बटर पेपर रोल", "प्लास्टिक फूड रॅप", "कागदी पत्रावळी (Eco)", "द्रोण (कागदी)",
-    "डिस्पोजेबल पाण्याचे ग्लास", "चहाचे पेपर कप", "प्लास्टिक चमचे", "झिपर पिशव्या", "प्लास्टिक बरण्या/डबे",
-    "एल्युमिनियम पार्सल बॉक्स", "ताट झाकण्याच्या जाळ्या", "कमर्शियल गॅस सिलिंडर", "गॅस लायटर", "काडेपेटी बॉक्स",
-    "पिण्याच्या पाचे जार", "स्टील ताटे (मेस)", "स्टील वाट्या", "स्टील ग्लास", "स्टील चमचे",
-    "चपाती हॉट केस / कॅसरोल", "मोठे एल्युमिनियम हंडे", "भाजीचे मोठे उलथणे", "स्टील चाळणी", "प्लास्टिक बाल्टी व मग",
-    "उंदराचे औषध / स्प्रे", "मच्छर रिपेलेंट कॉइल", "फर्स्ट एड बॉक्स (मेस)", "अग्निशामक यंत्र (Fire Ext.)", "डायनिंग टेबल कव्हर",
-    "हँडवॉश पेपर सोप", "टूथपिक बॉक्स", "बडीशेप व खडीसाखर जार", "तिश्यू पेपर नॅपकिन्स", "कचराकुंडी (Dustbins)",
-    "मीठ (अतिरिक्त साठा)", "साखर (अतिरिक्त साठा)", "चहा पत्ती (बल्क)", "कॉफी पावडर (बल्क)", "लोणचे जार (मोठे)",
-    "टोमॅटो सॉस (मोठी बॉटल)", "ग्रीन चिली सॉस", "सोया सॉस (बल्क)", "विनेगर (Sirka)", "शेजवान चटणी (जार)",
-    "टोमॅटो प्युरी टिन", "गुलाब जामुन मिक्स", "कस्टर्ड पावडर (बल्क)", "पास्ता मसाला प्युरी", "मध (Honey Jar)",
-    "ग्लुकोज डी पावडर", "ओआरएस पॅकेट्स", "ग्रीन टी बॅग्ज", "पीनट बटर जार", "डार्क चॉकलेट्स",
-    "राजगिरा लाडू", "शेंगदाणा चिक्की", "खोबरे-गूळ वडी", "मेसचे अतिरिक्त कापड", "कॅन्टीन स्टेशनरी",
-    "अतिरिक्त कॅन्टीन साहित्य #496", "अतिरिक्त कॅन्टीन साहित्य #497", "अतिरिक्त कॅन्टीन साहित्य #498", "अतिरिक्त कॅन्टीन साहित्य #499", "अतिरिक्त कॅन्टीन साहित्य #500"
+    "टॉयलेट क्लिनर (हार्पिक)", "काच पुसण्याचा लिक्विड", "हॅन्ड वॉश लिक्विड रिफिल", "नॅप्थालीन गोळ्या", "कचऱ्याच्या मोठ्या पिशव्या"
 ]
 
 # ----------------- LOGIN HTML -----------------
@@ -603,7 +588,6 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
     <div class="admin-tab">
         <h3 style="color:#7c3aed; margin-top:0;">❓ ऑनलाइन टेस्ट प्रश्न व्यवस्थापन व लॉन्च कंट्रोल (Admin Only)</h3>
         
-        <!-- Test Launch, Fee & Payment QR Settings Control Box -->
         <div style="background:#f0fdf4; border:2px solid #15803d; padding:15px; border-radius:8px; margin-bottom:20px;">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px;">
                 <div>
@@ -628,7 +612,6 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
                 </div>
             </div>
 
-            <!-- Dynamic Fee & Payment Details Form -->
             <form action="/update_test_settings" method="POST" style="background:white; padding:12px; border-radius:6px; border:1px solid #bbf7d0;">
                 <h4 style="margin:0 0 10px; color:#166534; font-size:14px;">⚙️ टेस्ट फी आणि पेमेंट QR कोड सेटिंग्ज:</h4>
                 <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:10px; margin-bottom:10px;">
@@ -644,7 +627,6 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
                 <div>
                     <label style="font-weight:bold; font-size:12px;">QR कोड इमेजची लिंक (QR Code Image URL):</label>
                     <input type="text" name="qr_image_url" value="{{ qr_image_url }}" style="width:100%; padding:6px;" placeholder="तुमच्या QR कोडची इमेज लिंक इथे टाका" required>
-                    <span style="font-size:11px; color:#64748b;">(टीप: तुम्ही तुमच्या फोनमधील QR कोड इमेज अपलोड करून त्याची लिंक इथे टाकू शकता)</span>
                 </div>
                 <br>
                 <button type="submit" class="btn-act" style="background:#15803d; padding:8px 16px; font-size:13px;">💾 सर्व पेमेंट सेटिंग्ज सेव्ह करा</button>
@@ -1066,7 +1048,7 @@ CLERK_LAYOUT = '''<!DOCTYPE html>
 </body>
 </html>'''
 
-# ----------------- DYNAMIC QR & FEE TEST TEMPLATE -----------------
+# ----------------- SMART LOCKED TEST TEMPLATE (FREE & PAID FLOW) -----------------
 MOCK_TEST_HTML = '''<!DOCTYPE html>
 <html lang="mr">
 <head>
@@ -1089,19 +1071,6 @@ MOCK_TEST_HTML = '''<!DOCTYPE html>
 <div class="box">
     <h2>🎯 श्रीगुरु राज्यस्तरीय महासराव टेस्ट</h2>
     <p style="text-align:center; color:#64748b; font-size:13px; margin-bottom:10px;">पोलीस व सैन्य भरती विशेष सराव परीक्षा</p>
-    
-    {% if test_fee|int > 0 %}
-    <div style="background:#fefce8; border:2px solid #facc15; padding:12px; border-radius:8px; text-align:center; margin-bottom:15px;">
-        <b style="color:#854d0e; font-size:15px;">💰 या टेस्टची परीक्षा फी: ₹{{ test_fee }}</b><br>
-        <p style="font-size:12px; color:#78350f; margin:5px 0 10px;">खालील QR कोड स्कॅन करून किंवा UPI द्वारे फी भरून खालील माहिती भरा:</p>
-        <img src="{{ qr_image_url }}" alt="Payment QR Code" width="150" height="150" style="border:1px solid #ccc; border-radius:6px; background:white; padding:4px;"><br>
-        <span style="font-size:12px; font-weight:bold; color:#1e293b;">UPI ID: {{ upi_id }}</span>
-    </div>
-    {% else %}
-    <div style="background:#f0fdf4; border:1px solid #86efac; padding:8px; border-radius:6px; text-align:center; font-size:13px; color:#166534; margin-bottom:15px; font-weight:bold;">
-        ✨ ही राज्यस्तरीय सराव टेस्ट पूर्णपणे **मोफत (Free)** आहे!
-    </div>
-    {% endif %}
 
     {% if not launched %}
     <div style="background:#fef2f2; border:2px solid #f87171; border-radius:8px; padding:25px; text-align:center;">
@@ -1110,8 +1079,63 @@ MOCK_TEST_HTML = '''<!DOCTYPE html>
             श्रीगुरु करिअर अकॅडमीतर्फे नवीन सराव टेस्ट लवकरच लॉन्च केली जाईल. कृपया ॲडमिनने टेस्ट लाईव्ह (Launch) केल्यावर पुन्हा भेट द्या!
         </p>
     </div>
+    {% elif step == 'start' %}
+    <!-- Step 1: Locked Initial Box (Shows QR only if Fee > 0) -->
+    <div style="background:#f8fafc; padding:20px; border-radius:8px; border:1px solid #cbd5e1;">
+        {% if test_fee|int > 0 %}
+        <div style="background:#fefce8; border:2px solid #facc15; padding:15px; border-radius:8px; text-align:center; margin-bottom:15px;">
+            <b style="color:#854d0e; font-size:16px;">💰 या टेस्टची परीक्षा फी: ₹{{ test_fee }}</b><br>
+            <p style="font-size:13px; color:#78350f; margin:8px 0;">खालील QR कोड स्कॅन करून आधी फी भरा, त्यानंतर खालील माहिती व ट्रान्झॅक्शन नंबर भरून टेस्ट सुरू करा:</p>
+            <img src="{{ qr_image_url }}" alt="Payment QR Code" width="160" height="160" style="border:1px solid #ccc; border-radius:6px; background:white; padding:4px;"><br>
+            <span style="font-size:13px; font-weight:bold; color:#1e293b;">UPI ID: {{ upi_id }}</span>
+        </div>
+        {% else %}
+        <div style="background:#f0fdf4; border:1px solid #86efac; padding:10px; border-radius:6px; text-align:center; font-size:13px; color:#166534; margin-bottom:15px; font-weight:bold;">
+            ✨ ही राज्यस्तरीय सराव टेस्ट पूर्णपणे **मोफत (Free)** आहे! कोणतीही फी नाही.
+        </div>
+        {% endif %}
+
+        <form method="POST" action="/test">
+            <input type="hidden" name="action_type" value="unlock_test">
+            <label style="font-weight:bold; font-size:13px;">विद्यार्थ्याचे पूर्ण नाव *:</label>
+            <input type="text" name="student_name" placeholder="उदा. राहुल पाटील" required>
+
+            <label style="font-weight:bold; font-size:13px;">जिल्हा *:</label>
+            <input type="text" name="district" placeholder="उदा. कोल्हापूर" required>
+
+            {% if test_fee|int > 0 %}
+            <label style="font-weight:bold; font-size:13px;">UPI ट्रान्झॅक्शन / युनिक रेफरन्स नंबर (UPI Ref No) *:</label>
+            <input type="text" name="upi_ref" placeholder="उदा. 4235xxxxxxxx (पैसे भरल्याचा नंबर)" required>
+            {% endif %}
+
+            <button type="submit" class="btn-submit" style="background:#0284c7; margin-top:10px;">🔓 प्रश्नपत्रिका ओपन करा व टेस्ट सोडवा</button>
+        </form>
+    </div>
+
+    {% elif step == 'exam' %}
+    <!-- Step 2: Question Paper (Shown ONLY after unlocking) -->
+    <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:10px; border-radius:6px; margin-bottom:15px; font-size:13px; color:#166534; display:flex; justify-content:space-between; align-items:center;">
+        <div>👤 सोडवणारे विद्यार्थी: <b>{{ session.get('exam_name') }}</b> (जिल्हा: {{ session.get('exam_district') }})</div>
+        <a href="/test" style="color:red; font-size:11px; text-decoration:none; font-weight:bold;">[ रद्द् करा ]</a>
+    </div>
+
+    <form method="POST" action="/test">
+        <input type="hidden" name="action_type" value="submit_test">
+        {% for q in questions %}
+        <div class="q-item">
+            <div class="q-text">प्र. {{ loop.index }}. {{ q.question }}</div>
+            <label class="opt-label"><input type="radio" name="q_{{ q.id }}" value="A" required> A) {{ q.opt_a }}</label>
+            <label class="opt-label"><input type="radio" name="q_{{ q.id }}" value="B"> B) {{ q.opt_b }}</label>
+            <label class="opt-label"><input type="radio" name="q_{{ q.id }}" value="C"> C) {{ q.opt_c }}</label>
+            <label class="opt-label"><input type="radio" name="q_{{ q.id }}" value="D"> D) {{ q.opt_d }}</label>
+        </div>
+        {% endfor %}
+
+        <button type="submit" class="btn-submit">✅ टेस्ट सबमिट करा व प्रशस्तीपत्र पहा</button>
+    </form>
+
     {% elif submitted %}
-    <!-- Certificate shown immediately -->
+    <!-- Step 3: Certificate shown immediately -->
     <div style="background:#f0fdf4; border:2px solid #86efac; border-radius:8px; padding:20px; text-align:center; margin-bottom:20px;">
         <h3 style="margin:0 0 5px; color:#166534;">टेस्ट यशस्वीरीत्या पूर्ण झाली आहे! 🎉</h3>
         <p style="color:#475569; font-size:14px; margin:5px 0;">खाली तुमचे सहभाग घेतल्याबद्दलचे डिजिटल प्रशस्तीपत्र दिले आहे.</p>
@@ -1166,32 +1190,6 @@ MOCK_TEST_HTML = '''<!DOCTYPE html>
         </a>
         <br><br>
         <div style="margin-top:15px;"><a href="/test" style="color:#0284c7; font-weight:bold; text-decoration:none;">🔄 नवीन टेस्ट सोडवा</a></div>
-    </div>
-
-    {% else %}
-    <!-- Question Paper Form -->
-    <div style="background:#f8fafc; padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid #cbd5e1; border-left:4px solid #0284c7;">
-        <form method="POST" action="/test">
-            <input type="hidden" name="action_type" value="start_test">
-            <label style="font-weight:bold; font-size:13px;">विद्यार्थ्याचे पूर्ण नाव *:</label>
-            <input type="text" name="student_name" placeholder="उदा. राहुल पाटील" required>
-
-            <label style="font-weight:bold; font-size:13px;">जिल्हा *:</label>
-            <input type="text" name="district" placeholder="उदा. कोल्हापूर" required>
-
-            <h4 style="margin:15px 0 10px; color:#0b3c5d;">📝 खालील प्रश्न सोडवा:</h4>
-            {% for q in questions %}
-            <div class="q-item">
-                <div class="q-text">प्र. {{ loop.index }}. {{ q.question }}</div>
-                <label class="opt-label"><input type="radio" name="q_{{ q.id }}" value="A" required> A) {{ q.opt_a }}</label>
-                <label class="opt-label"><input type="radio" name="q_{{ q.id }}" value="B"> B) {{ q.opt_b }}</label>
-                <label class="opt-label"><input type="radio" name="q_{{ q.id }}" value="C"> C) {{ q.opt_c }}</label>
-                <label class="opt-label"><input type="radio" name="q_{{ q.id }}" value="D"> D) {{ q.opt_d }}</label>
-            </div>
-            {% endfor %}
-
-            <button type="submit" class="btn-submit">✅ टेस्ट सबमिट करा व प्रशस्तीपत्र पहा</button>
-        </form>
     </div>
     {% endif %}
 </div>
@@ -1454,7 +1452,7 @@ def delete_question(id):
             conn.commit()
     return redirect('/admin?tab=questions')
 
-# ----------------- PUBLIC INQUIRY & DYNAMIC QR TEST ROUTES -----------------
+# ----------------- PUBLIC INQUIRY & SMART LOCKED TEST ROUTES -----------------
 @app.route('/inquiry', methods=['GET', 'POST'])
 def public_inquiry():
     msg = None
@@ -1511,12 +1509,31 @@ def mock_test():
     wa_link = ""
     step = "start"
 
+    if session.get('exam_unlocked') == True:
+        step = "exam"
+
     if request.method == 'POST' and launched:
         action = request.form.get('action_type')
 
-        if action == 'start_test':
+        if action == 'unlock_test':
             name = request.form.get('student_name')
             district = request.form.get('district')
+            
+            # If fee is greater than 0, ensure UPI Ref is provided
+            if safe_int(test_fee) > 0:
+                upi_ref = request.form.get('upi_ref', '').strip()
+                if not upi_ref:
+                    return render_template_string(MOCK_TEST_HTML, questions=questions, submitted=submitted, score=score, total=total, name=name, district=district, phone=phone, today_date=today_date, launched=launched, wa_link=wa_link, step="start", test_fee=test_fee, upi_id=upi_id, qr_image_url=qr_image_url, error_msg="कृपया पेमेंट भरल्याचा UPI ट्रान्झॅक्शन नंबर टाका!")
+
+            # Unlock the exam session
+            session['exam_unlocked'] = True
+            session['exam_name'] = name
+            session['exam_district'] = district
+            step = "exam"
+
+        elif action == 'submit_test' and session.get('exam_unlocked') == True:
+            name = session.get('exam_name')
+            district = session.get('exam_district')
             
             current_score = 0
             for q in questions:
@@ -1527,6 +1544,8 @@ def mock_test():
             score = current_score
             submitted = True
             step = "certificate_view"
+            
+            session.pop('exam_unlocked', None)
 
         elif action == 'send_whatsapp_score':
             submitted = True
@@ -1693,6 +1712,6 @@ def print_grocery_slip():
     </body></html>'''
     return render_template_string(html)
 
-if __name__ == '__main__':
+if __name__ == 'main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
 
