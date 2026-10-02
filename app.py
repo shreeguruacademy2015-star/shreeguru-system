@@ -11,7 +11,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
-app.secret_key = "shreeguru_complete_bulletproof_v68_detailed_review_link"
+app.secret_key = "shreeguru_complete_bulletproof_v69_all_roles_restored"
 
 # --- NEON CLOUD DATABASE CONNECTION ---
 DATABASE_URL = os.environ.get("DATABASE_URL")
@@ -658,7 +658,6 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
     <div class="admin-tab">
         <h3 style="color:#7c3aed; margin-top:0;">❓ ऑनलाइन टेस्ट प्रश्न व्यवस्थापन व लॉन्च कंट्रोल (Admin Only)</h3>
         
-        <!-- Multiple Test Papers Management Section -->
         <div style="background:#faf5ff; border:2px solid #7c3aed; padding:15px; border-radius:8px; margin-bottom:20px;">
             <h4 style="margin:0 0 10px; color:#5b21b6; font-size:15px;">📚 नवीन टेस्ट पेपर तयार करा (Multiple Test Papers):</h4>
             <form action="/add_test_paper" method="POST" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:15px;">
@@ -722,7 +721,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
 
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
             <div style="background:#f8fafc; padding:15px; border-radius:6px; border:1px solid #cbd5e1;">
-                <h4 style="margin-top:0; color:#0b3c5d;">१. या टेस्टसाठी नवीन प्रश्न व स्पष्टीकरण टाईप करा:</h4>
+                <h4 style="margin-top:0; color:#0b3c5d;">१. नवीन प्रश्न व स्पष्टीकरण टाईप करा:</h4>
                 <form action="/add_single_question" method="POST">
                     <input type="hidden" name="test_id" value="{{ current_test_id }}">
                     <label>प्रश्न:</label>
@@ -738,8 +737,8 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
                     <select name="correct" style="width:100%; padding:5px;">
                         <option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option>
                     </select>
-                    <label>स्पष्टीकरण (Explanation - विद्यार्थ्यासाठी सविस्तर उत्तर):</label>
-                    <textarea name="explanation" style="width:100%; height:40px;" placeholder="प्रश्नाचे स्पष्टीकरण इथे लिहा..."></textarea><br>
+                    <label>स्पष्टीकरण (Explanation):</label>
+                    <textarea name="explanation" style="width:100%; height:40px;" placeholder="प्रश्नाचे स्पष्टीकरण..."></textarea><br>
                     <button type="submit" class="btn-act" style="background:#7c3aed; width:100%; padding:8px;">+ प्रश्न सेव्ह करा</button>
                 </form>
             </div>
@@ -749,7 +748,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
                 <p style="font-size:12px; color:#475569;">एका ओळीत: <br><code>प्रश्न | पर्यायA | पर्यायB | पर्यायC | पर्यायD | अचूक | स्पष्टीकरण</code></p>
                 <form action="/add_bulk_questions" method="POST">
                     <input type="hidden" name="test_id" value="{{ current_test_id }}">
-                    <textarea name="bulk_text" rows="8" placeholder="महाराष्ट्राची राजधानी कोणती? | पुणे | मुंबई | नागपूर | नाशिक | B | मुंबई ही राजधानी आहे" style="width:100%;" required></textarea><br>
+                    <textarea name="bulk_text" rows="8" placeholder="महाराष्ट्राची राजधानी कोणती? | पुणे | मुंबई | नागपूर | नाशिक | B | स्पष्टीकरण इथे" style="width:100%;" required></textarea><br>
                     <button type="submit" class="btn-act" style="background:#15803d; width:100%; padding:8px;">📥 सर्व प्रश्न बल्कमध्ये अपलोड करा</button>
                 </form>
             </div>
@@ -768,7 +767,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
                     </td>
                     <td>A) {{ q.opt_a }}<br>B) {{ q.opt_b }}<br>C) {{ q.opt_c }}<br>D) {{ q.opt_d }}</td>
                     <td><b style="color:green;">{{ q.correct }}</b></td>
-                    <td><a href="/delete_question/{{ q.id }}" onclick="return confirm('हा प्रश्न हटवायचा?')" class="btn-del">🗑️️ डिलीट</a></td>
+                    <td><a href="/delete_question/{{ q.id }}" onclick="return confirm('हा प्रश्न हटवायचा?')" class="btn-del">🗑️ डिलीट</a></td>
                 </tr>
                 {% else %}
                 <tr><td colspan="5" style="text-align:center; color:#64748b;">या टेस्टसाठी कोणतेही प्रश्न उपलब्ध नाहीत.</td></tr>
@@ -1009,7 +1008,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
 </body>
 </html>'''
 
-# ----------------- MANAGER & CLERK LAYOUTS -----------------
+# ----------------- MANAGER PORTAL LAYOUT -----------------
 MANAGER_LAYOUT = '''<!DOCTYPE html>
 <html lang="mr">
 <head>
@@ -1045,18 +1044,18 @@ MANAGER_LAYOUT = '''<!DOCTYPE html>
 <div class="container">
     <div class="tab-box">
         <h3 style="color:#065f46; margin-top:0;">🛒 कॅन्टीन व मेस किराणा, भाजीपाला आणि खाद्यसाहित्य खरेदी यादी</h3>
-        <p style="font-size:13px; color:#475569;">१ ते १०० क्रमांकांवर कडधान्ये, फळे, भाजीपाला आणि मसाले दिले आहेत. खालील बटणांचा वापर करून हवे ते साहित्य निवडा किंवा प्रिंट काढा:</p>
+        <p style="font-size:13px; color:#475569;">१ ते ५०० क्रमांकांवर कडधान्ये, फळे, भाजीपाला आणि मसाले दिले आहेत. हवे ते साहित्य निवडा किंवा प्रिंट काढा:</p>
         
         <form action="/print_grocery_slip" method="POST" target="_blank">
             <div style="margin-bottom:15px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
                 <button type="submit" class="btn">🖨️ निवडलेल्या साहित्याची पावती प्रिंट करा (Compact 50+ per page)</button>
-                <button type="button" class="btn-alt" onclick="document.getElementById('selectAllBox').checked = true; toggleAll(document.getElementById('selectAllBox'));">✅ सर्व निवडा (Select All)</button>
-                <button type="button" class="btn-alt" onclick="document.getElementById('selectAllBox').checked = false; toggleAll(document.getElementById('selectAllBox'));">❌ सर्व काढा (Deselect All)</button>
+                <button type="button" class="btn-alt" onclick="document.getElementById('selectAllBox').checked = true; toggleAll(document.getElementById('selectAllBox'));">✅ सर्व निवडा</button>
+                <button type="button" class="btn-alt" onclick="document.getElementById('selectAllBox').checked = false; toggleAll(document.getElementById('selectAllBox'));">❌ सर्व काढा</button>
                 <label style="font-size:12px; font-weight:bold; margin-left:10px;"><input type="checkbox" id="selectAllBox" onchange="toggleAll(this)"> सर्व ऑन/ऑफ करा</label>
             </div>
             <table>
                 <thead>
-                    <tr><th style="width:40px; text-align:center;">निवड</th><th style="width:50px;">क्र.</th><th>साहित्याचे अचूक नाव (भाजीपाला, कडधान्य, मसाले व ५०० मेनू)</th><th style="width:130px;">वजन / प्रमाण</th></tr>
+                    <tr><th style="width:40px; text-align:center;">निवड</th><th style="width:50px;">क्र.</th><th>साहित्याचे अचूक नाव</th><th style="width:130px;">वजन / प्रमाण</th></tr>
                 </thead>
                 <tbody>
                     {% for item in grocery_items %}
@@ -1076,6 +1075,7 @@ MANAGER_LAYOUT = '''<!DOCTYPE html>
 </body>
 </html>'''
 
+# ----------------- CLERK PORTAL LAYOUT -----------------
 CLERK_LAYOUT = '''<!DOCTYPE html>
 <html lang="mr">
 <head>
@@ -1111,18 +1111,18 @@ CLERK_LAYOUT = '''<!DOCTYPE html>
 <div class="container">
     <div class="tab-box">
         <h3 style="color:#1e40af; margin-top:0;">🛒 मेस व कॅन्टीन खरेदी मास्टर यादी (५०० वस्तू)</h3>
-        <p style="font-size:13px; color:#475569;">भाजीपाला, कडधान्य, फळे आणि रोजचे मसाले सुरुवातीला दिले आहेत. हवे ते साहित्य निवडून प्रिंट काढा:</p>
+        <p style="font-size:13px; color:#475569;">भाजीपाला, कडधान्य, फळे आणि ५०० मास्टर वस्तू उपलब्ध आहेत:</p>
         
         <form action="/print_grocery_slip" method="POST" target="_blank">
             <div style="margin-bottom:15px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                <button type="submit" class="btn">🖨️ निवडलेल्या साहित्याची पावती प्रिंट करा (Compact 50+ per page)</button>
-                <button type="button" class="btn-alt" onclick="document.getElementById('selectAllBoxClerk').checked = true; toggleAll(document.getElementById('selectAllBoxClerk'));">✅ सर्व निवडा (Select All)</button>
-                <button type="button" class="btn-alt" onclick="document.getElementById('selectAllBoxClerk').checked = false; toggleAll(document.getElementById('selectAllBoxClerk'));">❌ सर्व काढा (Deselect All)</button>
+                <button type="submit" class="btn">🖨️ निवडलेल्या साहित्याची पावती प्रिंट करा</button>
+                <button type="button" class="btn-alt" onclick="document.getElementById('selectAllBoxClerk').checked = true; toggleAll(document.getElementById('selectAllBoxClerk'));">✅ सर्व निवडा</button>
+                <button type="button" class="btn-alt" onclick="document.getElementById('selectAllBoxClerk').checked = false; toggleAll(document.getElementById('selectAllBoxClerk'));">❌ सर्व काढा</button>
                 <label style="font-size:12px; font-weight:bold; margin-left:10px;"><input type="checkbox" id="selectAllBoxClerk" onchange="toggleAll(this)"> सर्व ऑन/ऑफ करा</label>
             </div>
             <table>
                 <thead>
-                    <tr><th style="width:40px; text-align:center;">निवड</th><th style="width:50px;">क्र.</th><th>साहित्याचे अचूक नाव (भाजीपाला, कडधान्य, मसाले व ५०० मेनू)</th><th style="width:130px;">वजन / प्रमाण</th></tr>
+                    <tr><th style="width:40px; text-align:center;">निवड</th><th style="width:50px;">क्र.</th><th>साहित्याचे अचूक नाव</th><th style="width:130px;">वजन / प्रमाण</th></tr>
                 </thead>
                 <tbody>
                     {% for item in grocery_items %}
@@ -1982,7 +1982,7 @@ def inquiry_desk():
                 <td><code>{{ t.upi_ref }}</code></td>
                 <td><b style="color:{{ 'green' if t.payment_status=='Approved' else 'orange' }};">{{ t.payment_status }}</b></td>
                 <td>
-                    <a href="https://wa.me/91{{ t.phone }}?text=नमस्कार%20{{ t.student_name }},%20श्रीगुरु%20अकॅडमीच्या%20({% raw %}{{ t.test_name }}{% endraw %}) टेस्टमध्ये%20तुम्हाला%20{{ t.score }}/{{ t.total_marks }}%20गुण%20मिळाले!" target="_blank" class="btn-wa">📲 WA</a>
+                    <a href="https://wa.me/91{{ t.phone }}?text=नमस्कार%20{{ t.student_name }},%20श्रीगुरु%20अकॅडमीच्या%20टेस्टमध्ये%20तुम्हाला%20{{ t.score }}/{{ t.total_marks }}%20गुण%20मिळाले!" target="_blank" class="btn-wa">📲 WA</a>
                     <a href="/delete_test_lead/{{ t.id }}" onclick="return confirm('ही टेस्ट लीड डिलीट करायची?')" class="btn-del">🗑️ डिलीट</a>
                 </td>
             </tr>
