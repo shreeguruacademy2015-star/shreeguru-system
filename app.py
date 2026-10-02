@@ -11,7 +11,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
-app.secret_key = "shreeguru_complete_bulletproof_v67_multiple_tests_and_delete"
+app.secret_key = "shreeguru_complete_bulletproof_v68_detailed_review_link"
 
 # --- NEON CLOUD DATABASE CONNECTION ---
 DATABASE_URL = os.environ.get("DATABASE_URL")
@@ -80,7 +80,6 @@ def init_db():
             cur.execute("INSERT INTO settings (key, value) VALUES ('upi_id', '9921111960@ybl') ON CONFLICT (key) DO NOTHING")
             cur.execute("INSERT INTO settings (key, value) VALUES ('qr_image_url', 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=9921111960@ybl&pn=ShreeguruCareerAcademy') ON CONFLICT (key) DO NOTHING")
 
-            # बहुविध टेस्ट पेपर्स टेबल (Multiple Test Papers Table)
             cur.execute('''CREATE TABLE IF NOT EXISTS test_papers (
                 id SERIAL PRIMARY KEY,
                 test_title TEXT NOT NULL,
@@ -96,10 +95,10 @@ def init_db():
                 opt_b TEXT NOT NULL,
                 opt_c TEXT NOT NULL,
                 opt_d TEXT NOT NULL,
-                correct TEXT NOT NULL
+                correct TEXT NOT NULL,
+                explanation TEXT DEFAULT ''
             )''')
 
-            # Default test paper if none exists
             cur.execute('SELECT COUNT(*) as count FROM test_papers')
             if cur.fetchone()['count'] == 0:
                 cur.execute("INSERT INTO test_papers (id, test_title, test_fee, status) VALUES (1, 'राज्यस्तरीय पोलीस भरती महासराव टेस्ट #१', 0, 'Active')")
@@ -109,13 +108,13 @@ def init_db():
             res = cur.fetchone()
             if res['count'] == 0:
                 default_qs = [
-                    (1, "महाराष्ट्राची राजधानी कोणती?", "पुणे", "मुंबई", "नागपूर", "नाशिक", "B"),
-                    (1, "क्षेत्रफळाच्या दृष्टीने महाराष्ट्रातील सर्वात मोठा जिल्हा कोणता?", "अहमदनगर", "पुणे", "नाशिक", "सोलापूर", "A"),
-                    (1, "स्वराज्य स्थापना कोणी केली?", "छत्रपती संभाजी महाराज", "छत्रपती शिवाजी महाराज", "महात्मा ज्योतिराव फुले", "संत ज्ञानेश्वर", "B"),
-                    (1, "भारताचे राष्ट्रगीत 'जन गण मन' कोणी लिहिले?", "बंकिमचंद्र चटर्जी", "रविंद्रनाथ टागोर", "महात्मा गांधी", "लोकमान्य टिळक", "B"),
-                    (1, "महाराष्ट्रात एकूण किती जिल्हे आहेत?", "३४", "३५", "३६", "३७", "C")
+                    (1, "महाराष्ट्राची राजधानी कोणती?", "पुणे", "मुंबई", "नागपूर", "नाशिक", "B", "मुंबई ही महाराष्ट्राची आर्थिक व प्रशासकीय राजधानी आहे."),
+                    (1, "क्षेत्रफळाच्या दृष्टीने महाराष्ट्रातील सर्वात मोठा जिल्हा कोणता?", "अहमदनगर", "पुणे", "नाशिक", "सोलापूर", "A", "अहमदनगर हा क्षेत्रफळाच्या दृष्टीने महाराष्ट्रातील सर्वात मोठा जिल्हा आहे."),
+                    (1, "स्वराज्य स्थापना कोणी केली?", "छत्रपती संभाजी महाराज", "छत्रपती शिवाजी महाराज", "महात्मा ज्योतिराव फुले", "संत ज्ञानेश्वर", "B", "छत्रपती शिवाजी महाराजांनी रयतेच्या राज्याची (स्वराज्य) स्थापना केली."),
+                    (1, "भारताचे राष्ट्रगीत 'जन गण मन' कोणी लिहिले?", "बंकिमचंद्र चटर्जी", "रविंद्रनाथ टागोर", "महात्मा गांधी", "लोकमान्य टिळक", "B", "रविंद्रनाथ टागोर यांनी जन गण मन हे राष्ट्रगीत लिहिले."),
+                    (1, "महाराष्ट्रात एकूण किती जिल्हे आहेत?", "३४", "३५", "३६", "३७", "C", "महाराष्ट्रात सध्या प्रशासकीयदृष्ट्या एकूण ३६ जिल्हे आहेत.")
                 ]
-                cur.executemany('INSERT INTO questions (test_id, question, opt_a, opt_b, opt_c, opt_d, correct) VALUES (%s, %s, %s, %s, %s, %s, %s)', default_qs)
+                cur.executemany('INSERT INTO questions (test_id, question, opt_a, opt_b, opt_c, opt_d, correct, explanation) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)', default_qs)
                 conn.commit()
 
             cur.execute('''CREATE TABLE IF NOT EXISTS books (
@@ -391,16 +390,19 @@ def init_db():
                     staff_note TEXT DEFAULT '',
                     upi_ref TEXT DEFAULT 'Free',
                     payment_status TEXT DEFAULT 'Approved',
-                    valid_till TEXT DEFAULT ''
+                    valid_till TEXT DEFAULT '',
+                    answers_json TEXT DEFAULT ''
                 )
             """)
 
             # Safe column migrations
             try:
                 cur.execute("ALTER TABLE questions ADD COLUMN IF NOT EXISTS test_id INTEGER DEFAULT 1")
+                cur.execute("ALTER TABLE questions ADD COLUMN IF NOT EXISTS explanation TEXT DEFAULT ''")
                 cur.execute("ALTER TABLE mock_test_leads ADD COLUMN IF NOT EXISTS upi_ref TEXT DEFAULT 'Free'")
                 cur.execute("ALTER TABLE mock_test_leads ADD COLUMN IF NOT EXISTS payment_status TEXT DEFAULT 'Approved'")
                 cur.execute("ALTER TABLE mock_test_leads ADD COLUMN IF NOT EXISTS valid_till TEXT DEFAULT ''")
+                cur.execute("ALTER TABLE mock_test_leads ADD COLUMN IF NOT EXISTS answers_json TEXT DEFAULT ''")
                 conn.commit()
             except Exception as ex:
                 print(f"Migration Info: {ex}")
@@ -567,6 +569,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
         th { background: #0b3c5d; color: white; }
         input, select, textarea { padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; }
         .btn-act { padding: 4px 7px; border-radius: 3px; color: white; text-decoration: none; font-size: 11px; font-weight: bold; display: inline-block; cursor: pointer; border: none; }
+        .btn-del { background: #dc2626; color: white; padding: 4px 8px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 11px; display: inline-block; }
     </style>
 </head>
 <body>
@@ -618,7 +621,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
         <h3 style="color:#059669; margin-top:0;">💳 पेमेंट व विद्यार्थी वैधता (Validity) अप्रूवल डेस्क</h3>
         <p style="font-size:13px; color:#475569;">विद्यार्थ्यांचे ट्रान्झॅक्शन तपासा, पेमेंट 'Approved' करा, वैधता तारीख सेट करा किंवा चुकीची नोंद डिलीट करा:</p>
         <table>
-            <thead><tr><th>तारीख</th><th>विद्यार्थ्याचे नाव</th><th>जिल्हा</th><th>मोबाईल</th><th>गुण</th><th>UPI Ref No</th><th>स्थिती</th><th>वैधता तारीख (Valid Till)</th><th>कृती</th></tr></thead>
+            <thead><tr><th>तारीख</th><th>विद्यार्थ्याचे नाव</th><th>जिल्हा</th><th>मोबाईल</th><th>टेस्ट नाव</th><th>गुण</th><th>UPI Ref No</th><th>स्थिती</th><th>वैधता (Valid Till)</th><th>कृती</th></tr></thead>
             <tbody>
                 {% for p in pending_payments %}
                 <tr>
@@ -626,6 +629,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
                     <td><b>{{ p.student_name }}</b></td>
                     <td>{{ p.district }}</td>
                     <td>{{ p.phone }}</td>
+                    <td><span style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-weight:bold;">{{ p.test_name }}</span></td>
                     <td><b>{{ p.score }} / {{ p.total_marks }}</b></td>
                     <td><code style="background:#fef08a; padding:3px 6px; font-weight:bold;">{{ p.upi_ref }}</code></td>
                     <td><b style="color:{{ 'green' if p.payment_status=='Approved' else 'orange' }};">{{ p.payment_status }}</b></td>
@@ -639,11 +643,11 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
                         {% if p.payment_status != 'Approved' %}
                         <a href="/approve_payment/{{ p.id }}" class="btn-act" style="background:#16a34a; margin-bottom:3px; display:inline-block;">✅ अप्रूव</a>
                         {% endif %}
-                        <a href="/delete_test_lead/{{ p.id }}" onclick="return confirm('ही टेस्ट नोंद डिलीट करायची?')" class="btn-act" style="background:#dc2626; display:inline-block;">🗑️ डिलीट</a>
+                        <a href="/delete_test_lead/{{ p.id }}" onclick="return confirm('ही टेस्ट नोंद डिलीट करायची?')" class="btn-del">🗑️ डिलीट</a>
                     </td>
                 </tr>
                 {% else %}
-                <tr><td colspan="9" style="text-align:center; color:#64748b;">कोणतेही पेमेंट्स तपासणीसाठी प्रलंबित नाहीत.</td></tr>
+                <tr><td colspan="10" style="text-align:center; color:#64748b;">कोणतेही पेमेंट्स तपासणीसाठी प्रलंबित नाहीत.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -671,7 +675,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
                         <b>{{ tp.test_title }}</b> (फी: ₹{{ tp.test_fee }})
                     </div>
                     <a href="/admin?tab=questions&test_id={{ tp.id }}" class="btn-act" style="background:{{ '#16a34a' if current_test_id == tp.id else '#0284c7' }};">
-                        {{ '🟢 निवडली आहे' if current_test_id == tp.id else '✏️ प्रश्न पहा/संपादित करा' }}
+                        {{ '🟢 निवडली आहे' if current_test_id == tp.id else '✏️ प्रश्न पहा' }}
                     </a>
                     {% if tp.id != 1 %}
                     <a href="/delete_test_paper/{{ tp.id }}" onclick="return confirm('हा टेस्ट पेपर व त्यातील सर्व प्रश्न डिलीट करायचे?')" style="color:red; font-weight:bold; text-decoration:none; font-size:14px;">🗑️</a>
@@ -718,32 +722,34 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
 
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
             <div style="background:#f8fafc; padding:15px; border-radius:6px; border:1px solid #cbd5e1;">
-                <h4 style="margin-top:0; color:#0b3c5d;">१. या टेस्टसाठी नवीन प्रश्न टाईप करा:</h4>
+                <h4 style="margin-top:0; color:#0b3c5d;">१. या टेस्टसाठी नवीन प्रश्न व स्पष्टीकरण टाईप करा:</h4>
                 <form action="/add_single_question" method="POST">
                     <input type="hidden" name="test_id" value="{{ current_test_id }}">
                     <label>प्रश्न:</label>
-                    <textarea name="question" required style="width:100%; height:60px;" placeholder="प्रश्नाचा मजकूर..."></textarea>
+                    <textarea name="question" required style="width:100%; height:50px;" placeholder="प्रश्नाचा मजकूर..."></textarea>
                     
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
                         <div> पर्याय A: <input type="text" name="opt_a" required style="width:100%;"></div>
                         <div> पर्याय B: <input type="text" name="opt_b" required style="width:100%;"></div>
                         <div> पर्याय C: <input type="text" name="opt_c" required style="width:100%;"></div>
                         <div> पर्याय D: <input type="text" name="opt_d" required style="width:100%;"></div>
-                    </div><br>
-                    <label>अचूक पर्याय (Correct Option):</label>
-                    <select name="correct" style="width:100%; padding:6px;">
+                    </div>
+                    <label>अचूक पर्याय (A/B/C/D):</label>
+                    <select name="correct" style="width:100%; padding:5px;">
                         <option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option>
-                    </select><br><br>
+                    </select>
+                    <label>स्पष्टीकरण (Explanation - विद्यार्थ्यासाठी सविस्तर उत्तर):</label>
+                    <textarea name="explanation" style="width:100%; height:40px;" placeholder="प्रश्नाचे स्पष्टीकरण इथे लिहा..."></textarea><br>
                     <button type="submit" class="btn-act" style="background:#7c3aed; width:100%; padding:8px;">+ प्रश्न सेव्ह करा</button>
                 </form>
             </div>
 
             <div style="background:#f0fdf4; padding:15px; border-radius:6px; border:1px solid #bbf7d0;">
                 <h4 style="margin-top:0; color:#15803d;">२. बल्क प्रश्न (Bulk Copy-Paste):</h4>
-                <p style="font-size:12px; color:#475569;">एका ओळीत: <br><code>प्रश्न | पर्यायA | पर्यायB | पर्यायC | पर्यायD | अचूक (A/B/C/D)</code></p>
+                <p style="font-size:12px; color:#475569;">एका ओळीत: <br><code>प्रश्न | पर्यायA | पर्यायB | पर्यायC | पर्यायD | अचूक | स्पष्टीकरण</code></p>
                 <form action="/add_bulk_questions" method="POST">
                     <input type="hidden" name="test_id" value="{{ current_test_id }}">
-                    <textarea name="bulk_text" rows="8" placeholder="महाराष्ट्राची राजधानी कोणती? | पुणे | मुंबई | नागपूर | नाशिक | B" style="width:100%;" required></textarea><br>
+                    <textarea name="bulk_text" rows="8" placeholder="महाराष्ट्राची राजधानी कोणती? | पुणे | मुंबई | नागपूर | नाशिक | B | मुंबई ही राजधानी आहे" style="width:100%;" required></textarea><br>
                     <button type="submit" class="btn-act" style="background:#15803d; width:100%; padding:8px;">📥 सर्व प्रश्न बल्कमध्ये अपलोड करा</button>
                 </form>
             </div>
@@ -751,15 +757,18 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
 
         <h4 style="margin-top:25px;">📋 सध्याच्या टेस्टमधील प्रश्न यादी ({{ questions|length }} प्रश्न):</h4>
         <table>
-            <thead><tr><th>क्र.</th><th>प्रश्न</th><th>पर्याय A, B, C, D</th><th>अचूक</th><th>कृती</th></tr></thead>
+            <thead><tr><th>क्र.</th><th>प्रश्न व स्पष्टीकरण</th><th>पर्याय A, B, C, D</th><th>अचूक</th><th>कृती</th></tr></thead>
             <tbody>
                 {% for q in questions %}
                 <tr>
                     <td>{{ loop.index }}</td>
-                    <td><b>{{ q.question }}</b></td>
+                    <td>
+                        <b>{{ q.question }}</b><br>
+                        {% if q.explanation %}<span style="color:#047857; font-size:12px;">💡 स्पष्टीकरण: {{ q.explanation }}</span>{% else %}<span style="color:#94a3b8; font-size:11px;">[स्पष्टीकरण नाही]</span>{% endif %}
+                    </td>
                     <td>A) {{ q.opt_a }}<br>B) {{ q.opt_b }}<br>C) {{ q.opt_c }}<br>D) {{ q.opt_d }}</td>
                     <td><b style="color:green;">{{ q.correct }}</b></td>
-                    <td><a href="/delete_question/{{ q.id }}" onclick="return confirm('हा प्रश्न हटवायचा?')" class="btn-act" style="background:red;">🗑️ डिलीट</a></td>
+                    <td><a href="/delete_question/{{ q.id }}" onclick="return confirm('हा प्रश्न हटवायचा?')" class="btn-del">🗑️️ डिलीट</a></td>
                 </tr>
                 {% else %}
                 <tr><td colspan="5" style="text-align:center; color:#64748b;">या टेस्टसाठी कोणतेही प्रश्न उपलब्ध नाहीत.</td></tr>
@@ -1133,7 +1142,70 @@ CLERK_LAYOUT = '''<!DOCTYPE html>
 </body>
 </html>'''
 
-# ----------------- MULTIPLE TESTS & VALIDITY TEMPLATE -----------------
+# ----------------- DETAILED REVIEW TEMPLATE -----------------
+REVIEW_HTML = '''<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>टेस्ट सविस्तर उत्तरपत्रिका व विश्लेषण - श्रीगुरु अकॅडमी</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f8fafc; color: #1e293b; padding: 20px; margin: 0; }
+        .container { max-width: 750px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); border-top: 6px solid #059669; }
+        h2 { margin: 0 0 5px; color: #0b2545; text-align: center; }
+        .score-card { background: #f0fdf4; border: 2px solid #86efac; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 25px; }
+        .q-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        .ans-tag { display: inline-block; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; margin-top: 5px; }
+        .correct-ans { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+        .wrong-ans { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+        .exp-box { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 10px; margin-top: 10px; font-size: 13px; color: #1e40af; border-radius: 0 6px 6px 0; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>🎯 श्रीगुरु करिअर अकॅडमी - टेस्ट विश्लेषण (Answer Key & Review)</h2>
+    <p style="text-align:center; color:#64748b; font-size:13px;">विद्यार्थ्याचे नाव: <b>{{ lead.student_name }}</b> | जिल्हा: <b>{{ lead.district }}</b> | टेस्ट: <b>{{ lead.test_name }}</b></p>
+    
+    <div class="score-card">
+        <h3 style="margin:0; color:#166534; font-size:22px;">प्राप्त गुण: {{ lead.score }} / {{ lead.total_marks }}</h3>
+        <p style="margin:5px 0 0; font-size:13px; color:#475569;">दिनांक: {{ lead.test_date }} | स्थिती: {{ lead.payment_status }}</p>
+    </div>
+
+    <h3 style="color:#0b3c5d; border-bottom:2px solid #cbd5e1; padding-bottom:5px;">📋 प्रश्न व स्पष्टीकरण तक्ता:</h3>
+    
+    {% for item in review_data %}
+    <div class="q-box">
+        <div style="font-weight:bold; font-size:15px; margin-bottom:8px;">प्र. {{ loop.index }}. {{ item.question }}</div>
+        <div style="font-size:13px; color:#334155; line-height:1.5; margin-bottom:8px;">
+            A) {{ item.opt_a }}<br>
+            B) {{ item.opt_b }}<br>
+            C) {{ item.opt_c }}<br>
+            D) {{ item.opt_d }}
+        </div>
+        <div>
+            <span style="font-size:12px; font-weight:bold;">विद्यार्थ्याचे उत्तर: </span>
+            <span class="ans-tag {{ 'correct-ans' if item.is_correct else 'wrong-ans' }}">
+                {{ item.user_ans or 'सोडवले नाही' }}
+            </span>
+            &nbsp;&nbsp;|&nbsp;&nbsp;
+            <span style="font-size:12px; font-weight:bold;">अचूक उत्तर: </span>
+            <span class="ans-tag correct-ans">{{ item.correct }}</span>
+        </div>
+
+        {% if item.explanation %}
+        <div class="exp-box">
+            <b>💡 स्पष्टीकरण (Explanation):</b> {{ item.explanation }}
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+
+    <div style="text-align:center; margin-top:25px;">
+        <a href="/test" style="background:#0284c7; color:white; padding:10px 20px; border-radius:6px; text-decoration:none; font-weight:bold; font-size:14px;">🔄 नवीन टेस्ट पेजवर जा</a>
+    </div>
+</div>
+</body>
+</html>'''
+
 MOCK_TEST_HTML = '''<!DOCTYPE html>
 <html lang="mr">
 <head>
@@ -1222,6 +1294,7 @@ MOCK_TEST_HTML = '''<!DOCTYPE html>
 
     <form method="POST" action="/test">
         <input type="hidden" name="action_type" value="submit_test">
+        <input type="hidden" name="test_id" value="{{ current_test_id }}">
         {% for q in questions %}
         <div class="q-item">
             <div class="q-text">प्र. {{ loop.index }}. {{ q.question }}</div>
@@ -1258,11 +1331,11 @@ MOCK_TEST_HTML = '''<!DOCTYPE html>
         </div>
     </div>
 
-    <!-- WhatsApp Number Box to get Score & Review -->
+    <!-- WhatsApp Number Box to get Score & Review Link -->
     <div style="background:#fffbeb; border:2px dashed #f59e0b; padding:20px; border-radius:8px; margin-top:20px; text-align:center;">
-        <h4 style="margin-top:0; color:#b45309; font-size:16px;">📊 तुमचे अचूक गुण (Score) व प्रश्न रिव्ह्यू हवेत का?</h4>
+        <h4 style="margin-top:0; color:#b45309; font-size:16px;">📊 तुमचे अचूक गुण (Score) व सविस्तर स्पष्टीकरण लिंक हवी का?</h4>
         <p style="font-size:13px; color:#78350f; margin-bottom:15px;">
-            तुमचा निकाल आणि सविस्तर रिव्ह्यू थेट तुमच्या **WhatsApp** वर मिळवण्यासाठी खाली नंबर टाका:
+            तुमचा निकाल, गुण आणि सर्व प्रश्नांची बरोबर उत्तरे व स्पष्टीकरण असणारी **रिव्ह्यू लिंक** थेट तुमच्या **WhatsApp** वर मिळवण्यासाठी खाली नंबर टाका:
         </p>
         <form method="POST" action="/test">
             <input type="hidden" name="action_type" value="send_whatsapp_score">
@@ -1275,7 +1348,7 @@ MOCK_TEST_HTML = '''<!DOCTYPE html>
             
             <input type="tel" name="whatsapp_phone" placeholder="१० अंकी ओरिजनल WhatsApp नंबर (उदा. ९९२११११९६०)" pattern="[6-9][0-9]{9}" required style="max-width:350px; margin:0 auto 10px; display:block; text-align:center; font-weight:bold;">
             <button type="submit" style="background:#25D366; color:white; border:none; padding:10px 20px; border-radius:6px; font-weight:bold; font-size:14px; cursor:pointer;">
-                📲 WhatsApp वर निकाल मिळवा
+                📲 WhatsApp वर निकाल व स्पष्टीकरण लिंक मिळवा
             </button>
         </form>
     </div>
@@ -1286,7 +1359,7 @@ MOCK_TEST_HTML = '''<!DOCTYPE html>
     <div style="background:#f0fdf4; border:2px solid #86efac; border-radius:8px; padding:25px; text-align:center;">
         <h3 style="margin:0 0 10px; color:#166534;">निकालाची लिंक तयार आहे! 🎉</h3>
         <p style="color:#475569; font-size:14px; line-height:1.6; margin-bottom:20px;">
-            खालील बटणावर क्लिक करून तुमचा निकाल, गुण आणि प्रशस्तीपत्र थेट तुमच्या WhatsApp वर पाठवा:
+            खालील बटणावर क्लिक करून तुमचा निकाल, गुण आणि सविस्तर स्पष्टीकरणाची लिंक थेट तुमच्या WhatsApp वर पाठवा:
         </p>
         <a href="{{ wa_link }}" target="_blank" style="display:inline-block; background:#25D366; color:white; padding:12px 25px; border-radius:6px; text-decoration:none; font-weight:bold; font-size:15px;">
             📲 WhatsApp वर निकाल उघडा व पाठवा
@@ -1592,9 +1665,11 @@ def add_single_question():
     c = request.form.get('opt_c')
     d = request.form.get('opt_d')
     corr = request.form.get('correct')
+    expl = request.form.get('explanation', '')
     with get_db() as conn:
         with conn.cursor() as cur:
-            cur.execute("INSERT INTO questions (test_id, question, opt_a, opt_b, opt_c, opt_d, correct) VALUES (%s, %s, %s, %s, %s, %s, %s)", (test_id, q, a, b, c, d, corr))
+            cur.execute("INSERT INTO questions (test_id, question, opt_a, opt_b, opt_c, opt_d, correct, explanation) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", 
+                        (test_id, q, a, b, c, d, corr, expl))
             conn.commit()
     return redirect(f'/admin?tab=questions&test_id={test_id}')
 
@@ -1608,9 +1683,10 @@ def add_bulk_questions():
         with conn.cursor() as cur:
             for line in lines:
                 parts = [p.strip() for p in line.split('|')]
-                if len(parts) == 6:
-                    cur.execute("INSERT INTO questions (test_id, question, opt_a, opt_b, opt_c, opt_d, correct) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
-                                (test_id, parts[0], parts[1], parts[2], parts[3], parts[4], parts[5].upper()))
+                if len(parts) >= 6:
+                    expl = parts[6] if len(parts) > 6 else ''
+                    cur.execute("INSERT INTO questions (test_id, question, opt_a, opt_b, opt_c, opt_d, correct, explanation) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", 
+                                (test_id, parts[0], parts[1], parts[2], parts[3], parts[4], parts[5].upper(), expl))
             conn.commit()
     return redirect(f'/admin?tab=questions&test_id={test_id}')
 
@@ -1626,7 +1702,7 @@ def delete_question(id):
             conn.commit()
     return redirect(f'/admin?tab=questions&test_id={t_id}')
 
-# ----------------- PUBLIC INQUIRY & MULTI-TEST ROUTES -----------------
+# ----------------- PUBLIC INQUIRY & REVIEW ROUTES -----------------
 @app.route('/inquiry', methods=['GET', 'POST'])
 def public_inquiry():
     msg = None
@@ -1688,6 +1764,7 @@ def mock_test():
     step = "start"
     error_msg = ""
     upi_ref = "Free"
+    user_answers = {}
 
     if session.get('exam_unlocked') == True and session.get('exam_test_id') == current_test_id:
         step = "exam"
@@ -1718,12 +1795,16 @@ def mock_test():
             current_score = 0
             for q in questions:
                 user_ans = request.form.get(f"q_{q['id']}")
+                user_answers[str(q['id'])] = user_ans
                 if user_ans and user_ans == q['correct']:
                     current_score += 1
 
             score = current_score
             submitted = True
             step = "certificate_view"
+            session['last_score'] = score
+            session['last_total'] = total
+            session['last_answers'] = user_answers
             
             session.pop('exam_unlocked', None)
 
@@ -1737,29 +1818,83 @@ def mock_test():
             upi_ref = request.form.get('saved_upi_ref', 'Free')
             t_name = request.form.get('saved_test_name', current_test_title)
             phone = request.form.get('whatsapp_phone', '').strip()
+            ans_dict = session.get('last_answers', {})
 
             if phone and re.match(r'^[6-9]\d{9}$', phone):
                 pay_stat = 'Pending Verification' if safe_int(current_test_fee) > 0 else 'Approved'
                 default_valid = (date.today() + timedelta(days=30)).strftime("%Y-%m-%d") if safe_int(current_test_fee) > 0 else ""
                 
+                lead_id = 0
                 try:
+                    import json
+                    ans_json_str = json.dumps(ans_dict)
                     with get_db() as conn:
                         with conn.cursor() as cur:
                             t_date = date.today().strftime("%Y-%m-%d")
                             cur.execute("""
-                                INSERT INTO mock_test_leads (test_date, student_name, district, phone, score, total_marks, test_name, upi_ref, payment_status, valid_till)
-                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                            """, (t_date, name, district, phone, score, total, t_name, upi_ref, pay_stat, default_valid))
+                                INSERT INTO mock_test_leads (test_date, student_name, district, phone, score, total_marks, test_name, upi_ref, payment_status, valid_till, answers_json)
+                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
+                            """, (t_date, name, district, phone, score, total, t_name, upi_ref, pay_stat, default_valid, ans_json_str))
+                            row = cur.fetchone()
+                            lead_id = row['id'] if row else 0
                             conn.commit()
                 except Exception as db_err:
                     print(f"DB Insert Error: {db_err}")
 
-                wa_text = f"नमस्कार {name} जी,%0Aश्रीगुरु करिअर अकॅडमी ({t_name}) चा निकाल:%0Aप्राप्त गुण: *{score}/{total}*%0Aजिल्हा: {district}%0Aप्रशासनकीय सेवेत अधिकारी होण्यासाठी आपणास खूप खूप शुभेच्छा! संपर्क: ९९२११११९६०"
+                base_url = request.host_url.rstrip('/')
+                review_link = f"{base_url}/view_result/{lead_id}" if lead_id > 0 else f"{base_url}/test"
+
+                wa_text = f"नमस्कार {name} जी,%0Aश्रीगुरु करिअर अकॅडमी ({t_name}) चा निकाल:%0Aप्राप्त गुण: *{score}/{total}*%0Aजिल्हा: {district}%0Aचूक-बरोबर उत्तरे व स्पष्टीकरण पाहण्यासाठी लिंक उघडा:%0A{review_link}%0Aप्रशासनकीय सेवेत अधिकारी होण्यासाठी खूप खूप शुभेच्छा! संपर्क: ९९२११११९६०"
                 wa_link = f"https://wa.me/91{phone}?text={wa_text}"
             else:
                 step = "certificate_view"
 
     return render_template_string(MOCK_TEST_HTML, questions=questions, submitted=submitted, score=score, total=total, name=name, district=district, phone=phone, today_date=today_date, launched=launched, wa_link=wa_link, step=step, all_test_papers=all_test_papers, current_test_id=current_test_id, current_test_title=current_test_title, current_test_fee=current_test_fee, upi_id=upi_id, qr_image_url=qr_image_url, error_msg=error_msg, upi_ref=session.get('exam_upi_ref', 'Free'))
+
+@app.route('/view_result/<int:lead_id>')
+def view_result(lead_id):
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM mock_test_leads WHERE id=%s", (lead_id,))
+            lead = cur.fetchone()
+    
+    if not lead:
+        return "<h2 style='text-align:center; margin-top:50px;'>निकाल सापडला नाही किंवा लिंक जुनी झाली आहे.</h2>"
+
+    import json
+    ans_dict = {}
+    try:
+        if lead['answers_json']:
+            ans_dict = json.loads(lead['answers_json'])
+    except:
+        pass
+
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT tp.id FROM test_papers tp WHERE tp.test_title=%s", (lead['test_name'],))
+            tp_row = cur.fetchone()
+            t_id = tp_row['id'] if tp_row else 1
+            cur.execute("SELECT * FROM questions WHERE test_id=%s ORDER BY id ASC", (t_id,))
+            questions = cur.fetchall()
+
+    review_data = []
+    for q in questions:
+        q_id_str = str(q['id'])
+        u_ans = ans_dict.get(q_id_str, '-')
+        is_corr = (u_ans == q['correct'])
+        review_data.append({
+            'question': q['question'],
+            'opt_a': q['opt_a'],
+            'opt_b': q['opt_b'],
+            'opt_c': q['opt_c'],
+            'opt_d': q['opt_d'],
+            'correct': q['correct'],
+            'explanation': q['explanation'],
+            'user_ans': u_ans,
+            'is_correct': is_corr
+        })
+
+    return render_template_string(REVIEW_HTML, lead=lead, review_data=review_data)
 
 @app.route('/inquiries')
 def inquiry_desk():
@@ -1847,8 +1982,8 @@ def inquiry_desk():
                 <td><code>{{ t.upi_ref }}</code></td>
                 <td><b style="color:{{ 'green' if t.payment_status=='Approved' else 'orange' }};">{{ t.payment_status }}</b></td>
                 <td>
-                    <a href="https://wa.me/91{{ t.phone }}?text=नमस्कार%20{{ t.student_name }},%20श्रीगुरु%20अकॅडमीच्या%20टेस्टमध्ये%20तुम्हाला%20{{ t.score }}/{{ t.total_marks }}%20गुण%20मिळाले!" target="_blank" class="btn-wa">📲 WA</a>
-                    <a href="/delete_test_lead/{{ t.id }}" onclick="return confirm('ही टेस्ट लीड डिलीट करायची?')" class="btn-del">🗑️</a>
+                    <a href="https://wa.me/91{{ t.phone }}?text=नमस्कार%20{{ t.student_name }},%20श्रीगुरु%20अकॅडमीच्या%20({% raw %}{{ t.test_name }}{% endraw %}) टेस्टमध्ये%20तुम्हाला%20{{ t.score }}/{{ t.total_marks }}%20गुण%20मिळाले!" target="_blank" class="btn-wa">📲 WA</a>
+                    <a href="/delete_test_lead/{{ t.id }}" onclick="return confirm('ही टेस्ट लीड डिलीट करायची?')" class="btn-del">🗑️ डिलीट</a>
                 </td>
             </tr>
             {% else %}
