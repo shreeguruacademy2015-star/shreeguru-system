@@ -10,9 +10,9 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
-app.secret_key = "shreeguru_complete_bulletproof_v43_neon_cloud"
+app.secret_key = "shreeguru_complete_bulletproof_v45_cloud_neon"
 
-# --- NEON POSTGRESQL DATABASE CONNECTION ---
+# --- NEON CLOUD DATABASE CONNECTION ---
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
 DESKTOP_PATH = os.path.join(os.path.expanduser("~"), "Desktop")
@@ -67,6 +67,30 @@ def init_db():
             cur.execute("INSERT INTO users (role, password) VALUES ('Manager', 'manager123') ON CONFLICT (role) DO NOTHING")
             cur.execute("INSERT INTO users (role, password) VALUES ('Clerk', 'clerk123') ON CONFLICT (role) DO NOTHING")
             cur.execute("INSERT INTO users (role, password) VALUES ('Trainer', 'trainer123') ON CONFLICT (role) DO NOTHING")
+
+            # प्रश्न व्यवस्थापन टेबल (Question Management)
+            cur.execute('''CREATE TABLE IF NOT EXISTS questions (
+                id SERIAL PRIMARY KEY,
+                question TEXT NOT NULL,
+                opt_a TEXT NOT NULL,
+                opt_b TEXT NOT NULL,
+                opt_c TEXT NOT NULL,
+                opt_d TEXT NOT NULL,
+                correct TEXT NOT NULL
+            )''')
+
+            cur.execute('SELECT COUNT(*) as count FROM questions')
+            res = cur.fetchone()
+            if res['count'] == 0:
+                default_qs = [
+                    ("महाराष्ट्राची राजधानी कोणती?", "पुणे", "मुंबई", "नागपूर", "नाशिक", "B"),
+                    ("क्षेत्रफळाच्या दृष्टीने महाराष्ट्रातील सर्वात मोठा जिल्हा कोणता?", "अहमदनगर", "पुणे", "नाशिक", "सोलापूर", "A"),
+                    ("स्वराज्य स्थापना कोणी केली?", "छत्रपती संभाजी महाराज", "छत्रपती शिवाजी महाराज", "महात्मा ज्योतिराव फुले", "संत ज्ञानेश्वर", "B"),
+                    ("भारताचे राष्ट्रगीत 'जन गण मन' कोणी लिहिले?", "बंकिमचंद्र चटर्जी", "रविंद्रनाथ टागोर", "महात्मा गांधी", "लोकमान्य टिळक", "B"),
+                    ("महाराष्ट्रात एकूण किती जिल्हे आहेत?", "३४", "३५", "३६", "३७", "C")
+                ]
+                cur.executemany('INSERT INTO questions (question, opt_a, opt_b, opt_c, opt_d, correct) VALUES (%s, %s, %s, %s, %s, %s)', default_qs)
+                conn.commit()
 
             cur.execute('''CREATE TABLE IF NOT EXISTS books (
                 id SERIAL PRIMARY KEY,
@@ -347,6 +371,38 @@ def init_db():
                 )
             """)
 
+            # प्रवेश चौकशी टेबल (Admission Inquiries)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS admission_inquiries (
+                    id SERIAL PRIMARY KEY,
+                    inquiry_date TEXT NOT NULL,
+                    student_name TEXT NOT NULL,
+                    district TEXT NOT NULL,
+                    taluka TEXT,
+                    phone TEXT NOT NULL,
+                    course TEXT NOT NULL,
+                    hostel_interest TEXT DEFAULT 'होय',
+                    call_status TEXT DEFAULT 'नवीन चौकशी (New)',
+                    staff_note TEXT DEFAULT ''
+                )
+            """)
+
+            # ऑनलाइन टेस्ट लीड्स टेबल (Mock Test Leads)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS mock_test_leads (
+                    id SERIAL PRIMARY KEY,
+                    test_date TEXT NOT NULL,
+                    student_name TEXT NOT NULL,
+                    district TEXT NOT NULL,
+                    phone TEXT NOT NULL,
+                    score INTEGER NOT NULL,
+                    total_marks INTEGER NOT NULL,
+                    test_name TEXT NOT NULL,
+                    call_status TEXT DEFAULT 'नवीन टेस्ट निकाल',
+                    staff_note TEXT DEFAULT ''
+                )
+            """)
+
             conn.commit()
 
             days = ['सोमवार', 'मंगळवार', 'बुधवार', 'गुरुवार', 'शुक्रवार', 'शनिवार', 'रविवार']
@@ -356,7 +412,7 @@ def init_db():
 
 init_db()
 
-# ----------------- POLICE & DEFENCE HD THEME LOGIN HTML -----------------
+# ----------------- LOGIN HTML -----------------
 LOGIN_HTML = '''<!DOCTYPE html>
 <html lang="{{ lang }}">
 <head>
@@ -452,6 +508,7 @@ MANAGER_LAYOUT = '''<!DOCTYPE html>
 </div>
 
 <div class="nav-bar">
+    <a href="/inquiries" class="mgr-btn" style="background:#b45309; color:white;">📞 चौकशी व टेस्ट डेस्क</a>
     <a href="/manager?tab=grocery" class="mgr-btn {% if curr_tab == 'grocery' %}active{% endif %}">🛒 {{ 'Grocery Slip' if lang == 'en' else '१-क्लिक किराणा स्लिप' }}</a>
     <a href="/library" target="_blank" class="mgr-btn" style="background: linear-gradient(135deg, #0284c7, #06b6d4); color: white;">📚 स्टडी लॅब / लायब्ररी</a>
     <a href="/manager?tab=diet" class="mgr-btn {% if curr_tab == 'diet' %}active{% endif %}">🍱 {{ 'Food Menu' if lang == 'en' else 'शाकाहारी डाएट शेड्युल' }}</a>
@@ -566,7 +623,7 @@ MANAGER_LAYOUT = '''<!DOCTYPE html>
                             <label><input type="radio" name="status_{{ cs.id }}" value="हजर" checked> P</label>
                             <label style="margin-left:10px; color:red;"><input type="radio" name="status_{{ cs.id }}" value="रजा"> A</label>
                         </td>
-                        <td><a href="/delete_canteen_staff/{{ cs.id }}" onclick="return confirm('हटवायचे?')" style="color:red; font-weight:bold;">🗑️️</a></td>
+                        <td><a href="/delete_canteen_staff/{{ cs.id }}" onclick="return confirm('हटवायचे?')" style="color:red; font-weight:bold;">🗑️</a></td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -694,6 +751,7 @@ TRAINER_LAYOUT = '''<!DOCTYPE html>
     </div>
 </div>
 <div class="nav-bar">
+    <a href="/inquiries" class="nav-btn" style="background:#b45309; color:white;">📞 चौकशी व टेस्ट डेस्क</a>
     <a href="/trainer?tab=practice" class="nav-btn {% if curr_tab == 'practice' %}active{% endif %}">🏃‍♂️ {{ 'Practice' if lang == 'en' else 'आजचा सराव' }}</a>
     <a href="/trainer?tab=stopwatch" class="nav-btn {% if curr_tab == 'stopwatch' %}active{% endif %}" style="background:#f59e0b; color:#111;">⏱️ {{ 'Stopwatch' if lang == 'en' else 'स्टॉपवॉच' }}</a>
     <a href="/trainer?tab=physical" class="nav-btn {% if curr_tab == 'physical' %}active{% endif %}">🏃‍♂️ {{ 'Physical Test' if lang == 'en' else 'फिजिकल रेकॉर्ड नोंद' }}</a>
@@ -771,7 +829,7 @@ TRAINER_LAYOUT = '''<!DOCTYPE html>
 
     {% if curr_tab == 'physical' %}
     <div class="card">
-        <h3 style="color:#0284c7; margin-top:0;">🏃‍♂️️ फिजिकल चाचणी गुण भरणे व तक्ता</h3>
+        <h3 style="color:#0284c7; margin-top:0;">🏃‍♂ फिजिकल चाचणी गुण भरणे व तक्ता</h3>
         <form action="/add_physical_record" method="POST" style="background:#f0f9ff; padding:12px; border-radius:6px; margin-bottom:15px;">
             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:8px;">
                 <div>विद्यार्थी: <select name="student_id" required><option value="">-- निवडा --</option>{% for s in students %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}</select></div>
@@ -947,6 +1005,7 @@ CLERK_LAYOUT = '''<!DOCTYPE html>
     </div>
 </div>
 <div class="nav-bar"> 
+    <a href="/inquiries" class="clk-btn" style="background:#b45309;">📞 चौकशी व टेस्ट डेस्क</a>
     <a href="/clerk?tab=stud" class="clk-btn {% if curr_tab == 'stud' %}active{% endif %}">👥 {{ 'Students List' if lang == 'en' else 'विद्यार्थी यादी' }}</a>
     <a href="/clerk?tab=adm" class="clk-btn {% if curr_tab == 'adm' %}active{% endif %}">📝 {{ 'New Admission' if lang == 'en' else 'नवीन प्रवेश' }}</a>
     <a href="/clerk?tab=fee" class="clk-btn {% if curr_tab == 'fee' %}active{% endif %}">💰 {{ 'Collect Fee' if lang == 'en' else 'फी जमा' }}</a>
@@ -1196,6 +1255,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
 </div>
 
 <div class="menu-bar">
+    <a href="/inquiries" class="menu-btn" style="background:#b45309; border:2px solid #fde047;">📞 चौकशी व टेस्ट डेस्क</a>
     <a href="/admin?tab=students" class="menu-btn {% if curr_tab == 'students' %}active{% endif %}" style="background:#2563eb;">👥 {{ 'All Students' if lang == 'en' else 'सर्व विद्यार्थी' }}</a>
     <a href="/admin?tab=admission" class="menu-btn {% if curr_tab == 'admission' %}active{% endif %}" style="background:#2563eb;">📝 {{ 'New Admission' if lang == 'en' else 'नवीन प्रवेश' }}</a>
     <a href="/admin?tab=physical" class="menu-btn {% if curr_tab == 'physical' %}active{% endif %}" style="background:#0284c7;">🏃‍♂️ {{ 'Physical Test' if lang == 'en' else 'फिजिकल रेकॉर्ड' }}</a>
@@ -1599,18 +1659,8 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
     {% if curr_tab == 'bak' %}
     <div class="admin-tab">
         <h3 style="color:#0b3c5d;">💾 डेटाबेस बॅकअप व रिस्टोअर व्यवस्थापन</h3>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
-            <div style="background:#f8fafc; padding:15px; border:1px solid #cbd5e1; border-radius:6px;">
-                <h4 style="margin:0 0 10px; color:#2563eb;">१. चालू डेटाबेस डाऊनलोड करा (Backup)</h4>
-                <a href="/download_backup" class="btn-act" style="background:#2563eb; padding:8px 15px;">📥 डाऊनलोड बॅकअप (.db)</a>
-            </div>
-            <div style="background:#fffbeb; padding:15px; border:1px solid #fde68a; border-radius:6px;">
-                <h4 style="margin:0 0 10px; color:#b45309;">२. जुना डेटाबेस अपलोड करा (Restore)</h4>
-                <form action="/upload_restore_backup" method="POST" enctype="multipart/form-data">
-                    <input type="file" name="backup_file" accept=".db" required style="margin-bottom:10px;"><br>
-                    <button type="submit" onclick="return confirm('सावधान! जुना बॅकअप अपलोड केल्याने सध्याचा डेटा बदलला जाईल. पुढे जायचे का?')" class="btn-act" style="background:#b45309; padding:8px 15px;">📤 अपलोड व रिस्टोअर करा</button>
-                </form>
-            </div>
+        <div style="background:#f8fafc; padding:15px; border:1px solid #cbd5e1; border-radius:6px;">
+            <h4 style="margin:0 0 10px; color:#2563eb;">क्लाउड डेटाबेस (Neon PostgreSQL) कार्यरत आहे. तुमचा सर्व डेटा क्लाउडवर सुरक्षितपणे सेव्ह होत आहे.</h4>
         </div>
     </div>
     {% endif %}
@@ -1625,6 +1675,160 @@ function updateClock() {
 }
 setInterval(updateClock, 1000); updateClock();
 </script>
+</body>
+</html>'''
+
+# ----------------- PUBLIC ADMISSION & TEST ROUTES -----------------
+PUBLIC_INQUIRY_HTML = '''<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>प्रवेश चौकशी - श्रीगुरु करिअर अकॅडमी</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { margin: 0; background: linear-gradient(135deg, #0b2545, #134e4a); color: #1e293b; min-height: 100vh; padding: 20px 10px; display: flex; align-items: center; justify-content: center; }
+        .card { background: white; max-width: 520px; width: 100%; border-radius: 12px; padding: 25px; box-shadow: 0 15px 30px rgba(0,0,0,0.3); border-top: 5px solid #d97706; }
+        h2 { margin: 0 0 5px; color: #0b2545; font-size: 22px; text-align: center; }
+        p.sub { margin: 0 0 20px; text-align: center; font-size: 13px; color: #64748b; line-height: 1.5; }
+        label { font-size: 13px; font-weight: bold; margin-bottom: 4px; display: block; color: #334155; }
+        input, select { width: 100%; padding: 10px; border: 1.5px solid #cbd5e1; border-radius: 6px; margin-bottom: 14px; font-size: 14px; }
+        .btn-submit { width: 100%; background: linear-gradient(135deg, #059669, #10b981); color: white; padding: 12px; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; }
+        .banner { background: #eff6ff; border: 1px dashed #3b82f6; padding: 10px; border-radius: 6px; font-size: 12px; text-align: center; margin-bottom: 15px; color: #1e40af; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h2>⚔️ श्रीगुरु करिअर अकॅडमी, आडूर</h2>
+    <p class="sub">पोलीस व सैन्य भरती पूर्व प्रशिक्षण केंद्र (जि. कोल्हापूर)<br><b>मोफत प्रवेश व हॉस्टेल माहिती अर्ज</b></p>
+    <div class="banner">✨ फिजिकल ग्राउंड + डिजिटल पॅनेल क्लास + हॉस्टेल व मेस सोय</div>
+    {% if msg %}<div style="background:#dcfce7; color:#166534; padding:10px; border-radius:6px; margin-bottom:15px; text-align:center; font-weight:bold;">{{ msg }}</div>{% endif %}
+    <form method="POST" action="/inquiry">
+        <label>विद्यार्थ्याचे पूर्ण नाव *:</label>
+        <input type="text" name="student_name" placeholder="उदा. सचिन दत्तात्रय चौगले" required>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+            <div>
+                <label>जिल्हा *:</label>
+                <input type="text" name="district" placeholder="उदा. कोल्हापूर / सातारा" required>
+            </div>
+            <div>
+                <label>तालुका:</label>
+                <input type="text" name="taluka" placeholder="उदा. करवीर">
+            </div>
+        </div>
+
+        <label>व्हॉट्सॲप / संपर्क मोबाईल *:</label>
+        <input type="tel" name="phone" placeholder="१० अंकी मोबाईल नंबर" pattern="[0-9]{10}" required>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+            <div>
+                <label>कोणत्या भरतीसाठी? *:</label>
+                <select name="course">
+                    <option value="महाराष्ट्र पोलीस भरती">महाराष्ट्र पोलीस भरती</option>
+                    <option value="आर्मी भरती (अग्निवीर)">आर्मी भरती (अग्निवीर)</option>
+                    <option value="SSC GD भरती">SSC GD भरती</option>
+                    <option value="वनरक्षक / इतर भरती">वनरक्षक / इतर भरती</option>
+                </select>
+            </div>
+            <div>
+                <label>हॉस्टेल/मेस हवी का?:</label>
+                <select name="hostel_interest">
+                    <option value="होय (हॉस्टेल आवश्यक)">होय (हॉस्टेल आवश्यक)</option>
+                    <option value="नाही (फक्त ग्राउंड व क्लास)">नाही (फक्त ग्राउंड व क्लास)</option>
+                </select>
+            </div>
+        </div>
+
+        <button type="submit" class="btn-submit">📲 मोफत माहिती मिळवा / नोंदणी करा</button>
+    </form>
+    <div style="text-align:center; margin-top:15px; font-size:12px; color:#64748b;">
+        संपर्क: ९९२११११९६० | आडूर, ता. करवीर, जि. कोल्हापूर
+    </div>
+</div>
+</body>
+</html>'''
+
+MOCK_TEST_HTML = '''<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>महाराष्ट्र पोलीस भरती - मोफत ऑनलाइन सराव टेस्ट</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { margin: 0; background: #f1f5f9; color: #1e293b; padding: 15px; }
+        .box { max-width: 650px; margin: 0 auto; background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-top: 5px solid #0284c7; }
+        h2 { margin: 0 0 5px; color: #0b2545; text-align: center; }
+        .q-item { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e2e8f0; }
+        .q-text { font-weight: bold; margin-bottom: 8px; font-size: 15px; color: #0f172a; }
+        .opt-label { display: block; margin-bottom: 6px; font-size: 14px; cursor: pointer; }
+        input[type="text"], input[type="tel"] { width: 100%; padding: 9px; border: 1.5px solid #cbd5e1; border-radius: 6px; margin-bottom: 10px; }
+        .btn-submit { width: 100%; background: #059669; color: white; padding: 12px; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+<div class="box">
+    <h2>🎯 श्रीगुरु राज्यस्तरीय महासराव टेस्ट</h2>
+    <p style="text-align:center; color:#64748b; font-size:13px; margin-bottom:20px;">पोलीस व सैन्य भरती विशेष सराव परीक्षा</p>
+
+    {% if score is not none %}
+    <div style="background:#f0fdf4; border:2px solid #86efac; border-radius:8px; padding:20px; text-align:center; margin-bottom:20px;">
+        <h3 style="margin:0 0 10px; color:#166534;">अभिनंदन, {{ name }}! 🎉</h3>
+        <p style="font-size:18px; margin:5px 0;">तुमचा स्कोअर: <b style="color:#059669; font-size:24px;">{{ score }} / {{ total }}</b></p>
+        <p style="color:#475569; font-size:14px; margin-top:10px;">
+            लेखी परीक्षेत आउट ऑफ गुण मिळवण्यासाठी आणि प्रत्यक्ष फिजिकल सरावासाठी<br>
+            <b>श्रीगुरु करिअर अकॅडमी, आडूर (जि. कोल्हापूर)</b> मध्ये आजच संपर्क साधा!
+        </p>
+        <a href="https://wa.me/919921111960?text=नमस्कार%20सर,%20मी%20ऑनलाइन%20टेस्ट%20दिली.%20माझा%20स्कोअर%20{{ score }}/{{ total }}%20आहे.%20मला%20ॲडमिशनची%20माहिती%20हवी%20आहे." 
+           style="display:inline-block; background:#25D366; color:white; padding:10px 20px; border-radius:6px; text-decoration:none; font-weight:bold; margin-top:10px;">
+            📲 ॲडमिशन माहितीसाठी WhatsApp करा
+        </a>
+    </div>
+    {% endif %}
+
+    <form method="POST" action="/test">
+        <div style="background:#f8fafc; padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid #cbd5e1;">
+            <label style="font-weight:bold; font-size:13px;">विद्यार्थ्याचे नाव *:</label>
+            <input type="text" name="student_name" placeholder="उदा. गणेश पाटील" required>
+            
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <div>
+                    <label style="font-weight:bold; font-size:13px;">जिल्हा *:</label>
+                    <input type="text" name="district" placeholder="उदा. सातारा / सांगली" required>
+                </div>
+                <div>
+                    <label style="font-weight:bold; font-size:13px;">मोबाईल नंबर *:</label>
+                    <input type="tel" name="phone" placeholder="१० अंकी नंबर" pattern="[0-9]{10}" required>
+                </div>
+            </div>
+        </div>
+
+        <div class="q-item">
+            <div class="q-text">१. महाराष्ट्राची ऐतिहासिक राजधानी कोणती?</div>
+            <label class="opt-label"><input type="radio" name="q1" value="A" required> A) पुणे</label>
+            <label class="opt-label"><input type="radio" name="q1" value="B"> B) कोल्हापूर</label>
+            <label class="opt-label"><input type="radio" name="q1" value="C"> C) सातारा</label>
+            <label class="opt-label"><input type="radio" name="q1" value="D"> D) नागपूर</label>
+        </div>
+
+        <div class="q-item">
+            <div class="q-text">२. पोलीस पाटलाची नेमणूक कोण करतो?</div>
+            <label class="opt-label"><input type="radio" name="q2" value="A" required> A) पोलीस अधीक्षक</label>
+            <label class="opt-label"><input type="radio" name="q2" value="B"> B) तहसीलदार</label>
+            <label class="opt-label"><input type="radio" name="q2" value="C"> C) उपविभागीय दंडाधिकारी (प्रांत)</label>
+            <label class="opt-label"><input type="radio" name="q2" value="D"> D) सरपंच</label>
+        </div>
+
+        <div class="q-item">
+            <div class="q-text">३. एका रांगेत सचिनचा क्रमांक दोन्ही बाजूंनी १५ वा असल्यास रांगेत एकूण मुले किती?</div>
+            <label class="opt-label"><input type="radio" name="q3" value="A" required> A) ३०</label>
+            <label class="opt-label"><input type="radio" name="q3" value="B"> B) २९</label>
+            <label class="opt-label"><input type="radio" name="q3" value="C"> C) ३१</label>
+            <label class="opt-label"><input type="radio" name="q3" value="D"> D) २८</label>
+        </div>
+
+        <button type="submit" class="btn-submit">✅ टेस्ट सबमिट करा व निकाल पहा</button>
+    </form>
+</div>
 </body>
 </html>'''
 
@@ -1788,11 +1992,163 @@ def admin_view():
 
     return render_template_string(ADMIN_DASHBOARD_LAYOUT, curr_tab=curr_tab, students=students, expenses_list=expenses_list, users_list=users_list, diet_list=diet_list, staff_members=staff_members, staff_tasks=staff_tasks, all_requests=all_requests, all_staff_logs=all_staff_logs, discipline_logs=discipline_logs, hostel_logs=hostel_logs, physical_records=physical_records, written_records=written_records, total_paid=total_paid, total_pending=total_pending, total_expenses=total_expenses, today_date=today_date, lang=lang)
 
+# ----------------- INQUIRY & TEST DESK ROUTES -----------------
+@app.route('/inquiry', methods=['GET', 'POST'])
+def public_inquiry():
+    msg = None
+    if request.method == 'POST':
+        s_name = request.form.get('student_name')
+        dist = request.form.get('district')
+        tal = request.form.get('taluka', '')
+        phone = request.form.get('phone')
+        course = request.form.get('course')
+        hostel = request.form.get('hostel_interest', 'होय')
+        t_date = date.today().strftime("%Y-%m-%d")
+
+        with get_db() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO admission_inquiries (inquiry_date, student_name, district, taluka, phone, course, hostel_interest)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """, (t_date, s_name, dist, tal, phone, course, hostel))
+                conn.commit()
+        log_staff_activity("Website", f"नवीन चौकशी अर्ज: {s_name} ({dist} - {course})")
+        msg = "तुमची नोंदणी यशस्वी झाली आहे! श्रीगुरु अकॅडमीकडून तुम्हाला लवकरच सविस्तर माहितीचा कॉल येईल."
+    return render_template_string(PUBLIC_INQUIRY_HTML, msg=msg)
+
+@app.route('/test', methods=['GET', 'POST'])
+def mock_test():
+    score = None
+    total = 3
+    name = ""
+    if request.method == 'POST':
+        name = request.form.get('student_name')
+        dist = request.form.get('district')
+        phone = request.form.get('phone')
+        
+        current_score = 0
+        if request.form.get('q1') == 'B': current_score += 1
+        if request.form.get('q2') == 'C': current_score += 1
+        if request.form.get('q3') == 'B': current_score += 1
+
+        t_date = date.today().strftime("%Y-%m-%d")
+        with get_db() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO mock_test_leads (test_date, student_name, district, phone, score, total_marks, test_name)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """, (t_date, name, dist, phone, current_score, total, "पोलीस सराव टेस्ट - १"))
+                conn.commit()
+        score = current_score
+
+    return render_template_string(MOCK_TEST_HTML, score=score, total=total, name=name)
+
+@app.route('/inquiries')
+def inquiry_desk():
+    if session.get('user_role') not in ['Admin', 'Clerk', 'Manager']:
+        return redirect(url_for('login'))
+    
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM admission_inquiries ORDER BY id DESC")
+            inquiries = cur.fetchall()
+            cur.execute("SELECT * FROM mock_test_leads ORDER BY id DESC LIMIT 50")
+            test_leads = cur.fetchall()
+    
+    html = '''<!DOCTYPE html>
+    <html lang="mr"><head><meta charset="UTF-8"><title>प्रवेश चौकशी व कॉलिंग डेस्क</title>
+    <style>
+        body { font-family:'Segoe UI',sans-serif; background:#f8fafc; padding:15px; color:#1e293b; margin:0; }
+        .header { background:#0b3c5d; color:white; padding:12px 20px; display:flex; justify-content:space-between; align-items:center; border-radius:8px; margin-bottom:20px; }
+        table { width:100%; border-collapse:collapse; background:white; font-size:13px; margin-top:10px; border-radius:6px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.1); }
+        th, td { border:1px solid #cbd5e1; padding:8px 10px; text-align:left; }
+        th { background:#1e293b; color:white; font-weight:600; }
+        .btn-wa { background:#25D366; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-weight:bold; font-size:12px; }
+        .btn-call { background:#0284c7; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-weight:bold; font-size:12px; margin-right:4px; }
+    </style></head><body>
+
+    <div class="header">
+        <h3 style="margin:0;">📞 श्रीगुरु ॲडमिशन कॉलिंग डेस्क (एकूण अर्ज: {{ inquiries|length }})</h3>
+        <div>
+            <a href="/" style="color:white; text-decoration:none; font-weight:bold; margin-right:15px;">🏠 मुख्य डॅशबोर्ड</a>
+            <a href="/inquiry" target="_blank" style="color:#fde047; text-decoration:none; font-weight:bold; margin-right:15px;">🌐 प्रवेश अर्ज उघडा</a>
+            <a href="/test" target="_blank" style="color:#67e8f9; text-decoration:none; font-weight:bold;">📝 मोफत टेस्ट उघडा</a>
+        </div>
+    </div>
+
+    <h4 style="color:#0b3c5d; margin:15px 0 5px;">📋 थेट प्रवेश चौकशी अर्ज (Admission Inquiries):</h4>
+    <table>
+        <thead><tr><th>तारीख</th><th>नाव</th><th>जिल्हा (तालुका)</th><th>कोर्स</th><th>हॉस्टेल</th><th>१-क्लिक संपर्क</th><th>स्थिती / शेरा</th><th>बदल</th></tr></thead>
+        <tbody>
+            {% for inq in inquiries %}
+            <form action="/update_inquiry/{{ inq.id }}" method="POST">
+            <tr>
+                <td>{{ inq.inquiry_date }}</td>
+                <td><b>{{ inq.student_name }}</b></td>
+                <td>{{ inq.district }} ({{ inq.taluka or '-' }})</td>
+                <td><span style="background:#e0f2fe; padding:2px 6px; border-radius:4px;">{{ inq.course }}</span></td>
+                <td>{{ inq.hostel_interest }}</td>
+                <td>
+                    <a href="tel:{{ inq.phone }}" class="btn-call">📞 कॉल</a>
+                    <a href="https://wa.me/91{{ inq.phone }}?text=नमस्कार%20{{ inq.student_name }},%20श्रीगुरु%20करिअर%20अकॅडमी%20आडूर%20मध्ये%20आपली%20चौकशी%20प्राप्त%20झाली.%20नवीन%20बॅचची%20माहिती%20खालीलप्रमाणे:" target="_blank" class="btn-wa">📲 WA</a>
+                </td>
+                <td>
+                    <select name="call_status" style="padding:3px; border-radius:4px; font-size:12px;">
+                        <option value="नवीन चौकशी (New)" {% if inq.call_status=='नवीन चौकशी (New)' %}selected{% endif %}>नवीन चौकशी</option>
+                        <option value="कॉल झाला - विचारून सांगणार" {% if inq.call_status=='कॉल झाला - विचारून सांगणार' %}selected{% endif %}>विचारून सांगणार</option>
+                        <option value="भेट देणार (Visiting)" {% if inq.call_status=='भेट देणार (Visiting)' %}selected{% endif %}>भेट देणार</option>
+                        <option value="प्रवेश निश्चित (Admitted)" {% if inq.call_status=='प्रवेश निश्चित (Admitted)' %}selected{% endif %}>प्रवेश निश्चित</option>
+                    </select><br>
+                    <input type="text" name="staff_note" value="{{ inq.staff_note or '' }}" placeholder="कॉल शेरा..." style="width:90%; margin-top:4px; padding:3px; font-size:12px;">
+                </td>
+                <td><button type="submit" style="background:#059669; color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer;">💾</button></td>
+            </tr>
+            </form>
+            {% else %}
+            <tr><td colspan="8" style="text-align:center; color:#64748b;">अद्याप कोणतीही चौकशी आलेली नाही.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h4 style="color:#0b3c5d; margin:25px 0 5px;">📝 मोफत ऑनलाइन टेस्ट लीड्स व निकाल (Mock Test Leads):</h4>
+    <table>
+        <thead><tr><th>तारीख</th><th>नाव</th><th>जिल्हा</th><th>मोबाईल</th><th>मिळालेले गुण</th><th>१-क्लिक संपर्क</th></tr></thead>
+        <tbody>
+            {% for t in test_leads %}
+            <tr>
+                <td>{{ t.test_date }}</td>
+                <td><b>{{ t.student_name }}</b></td>
+                <td>{{ t.district }}</td>
+                <td>{{ t.phone }}</td>
+                <td><b style="color:#059669;">{{ t.score }} / {{ t.total_marks }}</b></td>
+                <td>
+                    <a href="tel:{{ t.phone }}" class="btn-call">📞 कॉल</a>
+                    <a href="https://wa.me/91{{ t.phone }}?text=नमस्कार%20{{ t.student_name }},%20श्रीगुरु%20अकॅडमीच्या%20टेस्टमध्ये%20तुम्हाला%20{{ t.score }}/{{ t.total_marks }}%20गुण%20मिळाले!%20प्रवेशासाठी%20आमच्याशी%20जोडले%20रहा." target="_blank" class="btn-wa">📲 WA निकाल</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" style="text-align:center; color:#64748b;">अद्याप कोणीही ऑनलाइन टेस्ट सोडवलेली नाही.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </body></html>'''
+    return render_template_string(html, inquiries=inquiries, test_leads=test_leads)
+
+@app.route('/update_inquiry/<int:id>', methods=['POST'])
+def update_inquiry(id):
+    c_status = request.form.get('call_status')
+    note = request.form.get('staff_note')
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE admission_inquiries SET call_status=%s, staff_note=%s WHERE id=%s", (c_status, note, id))
+            conn.commit()
+    return redirect('/inquiries')
+
 # ----------------- SYSTEM FUNCTIONAL HANDLERS -----------------
 @app.route('/download_backup')
 def download_backup():
     if session.get('user_role') != 'Admin': return "Unauthorized", 403
-    return "Cloud database active. Please use Neon dashboard for backups.", 200
+    return "Cloud database active.", 200
 
 @app.route('/upload_restore_backup', methods=['POST'])
 def upload_restore_backup():
