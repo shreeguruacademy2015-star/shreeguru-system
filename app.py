@@ -11,7 +11,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
-app.secret_key = "shreeguru_complete_bulletproof_v65_student_validity"
+app.secret_key = "shreeguru_complete_bulletproof_v67_multiple_tests_and_delete"
 
 # --- NEON CLOUD DATABASE CONNECTION ---
 DATABASE_URL = os.environ.get("DATABASE_URL")
@@ -80,8 +80,17 @@ def init_db():
             cur.execute("INSERT INTO settings (key, value) VALUES ('upi_id', '9921111960@ybl') ON CONFLICT (key) DO NOTHING")
             cur.execute("INSERT INTO settings (key, value) VALUES ('qr_image_url', 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=9921111960@ybl&pn=ShreeguruCareerAcademy') ON CONFLICT (key) DO NOTHING")
 
+            # बहुविध टेस्ट पेपर्स टेबल (Multiple Test Papers Table)
+            cur.execute('''CREATE TABLE IF NOT EXISTS test_papers (
+                id SERIAL PRIMARY KEY,
+                test_title TEXT NOT NULL,
+                test_fee REAL DEFAULT 0,
+                status TEXT DEFAULT 'Active'
+            )''')
+
             cur.execute('''CREATE TABLE IF NOT EXISTS questions (
                 id SERIAL PRIMARY KEY,
+                test_id INTEGER DEFAULT 1,
                 question TEXT NOT NULL,
                 opt_a TEXT NOT NULL,
                 opt_b TEXT NOT NULL,
@@ -90,17 +99,23 @@ def init_db():
                 correct TEXT NOT NULL
             )''')
 
+            # Default test paper if none exists
+            cur.execute('SELECT COUNT(*) as count FROM test_papers')
+            if cur.fetchone()['count'] == 0:
+                cur.execute("INSERT INTO test_papers (id, test_title, test_fee, status) VALUES (1, 'राज्यस्तरीय पोलीस भरती महासराव टेस्ट #१', 0, 'Active')")
+                conn.commit()
+
             cur.execute('SELECT COUNT(*) as count FROM questions')
             res = cur.fetchone()
             if res['count'] == 0:
                 default_qs = [
-                    ("महाराष्ट्राची राजधानी कोणती?", "पुणे", "मुंबई", "नागपूर", "नाशिक", "B"),
-                    ("क्षेत्रफळाच्या दृष्टीने महाराष्ट्रातील सर्वात मोठा जिल्हा कोणता?", "अहमदनगर", "पुणे", "नाशिक", "सोलापूर", "A"),
-                    ("स्वराज्य स्थापना कोणी केली?", "छत्रपती संभाजी महाराज", "छत्रपती शिवाजी महाराज", "महात्मा ज्योतिराव फुले", "संत ज्ञानेश्वर", "B"),
-                    ("भारताचे राष्ट्रगीत 'जन गण मन' कोणी लिहिले?", "बंकिमचंद्र चटर्जी", "रविंद्रनाथ टागोर", "महात्मा गांधी", "लोकमान्य टिळक", "B"),
-                    ("महाराष्ट्रात एकूण किती जिल्हे आहेत?", "३४", "३५", "३६", "३७", "C")
+                    (1, "महाराष्ट्राची राजधानी कोणती?", "पुणे", "मुंबई", "नागपूर", "नाशिक", "B"),
+                    (1, "क्षेत्रफळाच्या दृष्टीने महाराष्ट्रातील सर्वात मोठा जिल्हा कोणता?", "अहमदनगर", "पुणे", "नाशिक", "सोलापूर", "A"),
+                    (1, "स्वराज्य स्थापना कोणी केली?", "छत्रपती संभाजी महाराज", "छत्रपती शिवाजी महाराज", "महात्मा ज्योतिराव फुले", "संत ज्ञानेश्वर", "B"),
+                    (1, "भारताचे राष्ट्रगीत 'जन गण मन' कोणी लिहिले?", "बंकिमचंद्र चटर्जी", "रविंद्रनाथ टागोर", "महात्मा गांधी", "लोकमान्य टिळक", "B"),
+                    (1, "महाराष्ट्रात एकूण किती जिल्हे आहेत?", "३४", "३५", "३६", "३७", "C")
                 ]
-                cur.executemany('INSERT INTO questions (question, opt_a, opt_b, opt_c, opt_d, correct) VALUES (%s, %s, %s, %s, %s, %s)', default_qs)
+                cur.executemany('INSERT INTO questions (test_id, question, opt_a, opt_b, opt_c, opt_d, correct) VALUES (%s, %s, %s, %s, %s, %s, %s)', default_qs)
                 conn.commit()
 
             cur.execute('''CREATE TABLE IF NOT EXISTS books (
@@ -380,6 +395,16 @@ def init_db():
                 )
             """)
 
+            # Safe column migrations
+            try:
+                cur.execute("ALTER TABLE questions ADD COLUMN IF NOT EXISTS test_id INTEGER DEFAULT 1")
+                cur.execute("ALTER TABLE mock_test_leads ADD COLUMN IF NOT EXISTS upi_ref TEXT DEFAULT 'Free'")
+                cur.execute("ALTER TABLE mock_test_leads ADD COLUMN IF NOT EXISTS payment_status TEXT DEFAULT 'Approved'")
+                cur.execute("ALTER TABLE mock_test_leads ADD COLUMN IF NOT EXISTS valid_till TEXT DEFAULT ''")
+                conn.commit()
+            except Exception as ex:
+                print(f"Migration Info: {ex}")
+
             conn.commit()
 
             days = ['सोमवार', 'मंगळवार', 'बुधवार', 'गुरुवार', 'शुक्रवार', 'शनिवार', 'रविवार']
@@ -591,12 +616,11 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
     {% if curr_tab == 'payments' %}
     <div class="admin-tab">
         <h3 style="color:#059669; margin-top:0;">💳 पेमेंट व विद्यार्थी वैधता (Validity) अप्रूवल डेस्क</h3>
-        <p style="font-size:13px; color:#475569;">विद्यार्थ्यांचे ट्रान्झॅक्शन तपासा, पेमेंट 'Approved' करा आणि प्रत्येक विद्यार्थ्यासाठी टेस्ट किती तारखेपर्यंत चालू राहील (Validity Date) ते सेट करा:</p>
+        <p style="font-size:13px; color:#475569;">विद्यार्थ्यांचे ट्रान्झॅक्शन तपासा, पेमेंट 'Approved' करा, वैधता तारीख सेट करा किंवा चुकीची नोंद डिलीट करा:</p>
         <table>
             <thead><tr><th>तारीख</th><th>विद्यार्थ्याचे नाव</th><th>जिल्हा</th><th>मोबाईल</th><th>गुण</th><th>UPI Ref No</th><th>स्थिती</th><th>वैधता तारीख (Valid Till)</th><th>कृती</th></tr></thead>
             <tbody>
                 {% for p in pending_payments %}
-                <form action="/update_student_validity/{{ p.id }}" method="POST">
                 <tr>
                     <td>{{ p.test_date }}</td>
                     <td><b>{{ p.student_name }}</b></td>
@@ -606,16 +630,18 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
                     <td><code style="background:#fef08a; padding:3px 6px; font-weight:bold;">{{ p.upi_ref }}</code></td>
                     <td><b style="color:{{ 'green' if p.payment_status=='Approved' else 'orange' }};">{{ p.payment_status }}</b></td>
                     <td>
-                        <input type="date" name="valid_till" value="{{ p.valid_till or '' }}" style="padding:4px; font-size:12px;">
+                        <form action="/update_student_validity/{{ p.id }}" method="POST" style="display:flex; gap:4px;">
+                            <input type="date" name="valid_till" value="{{ p.valid_till or '' }}" style="padding:3px; font-size:11px;">
+                            <button type="submit" class="btn-act" style="background:#0284c7;">💾</button>
+                        </form>
                     </td>
                     <td>
-                        <button type="submit" class="btn-act" style="background:#0284c7; margin-bottom:3px;">💾 सेव्ह</button>
                         {% if p.payment_status != 'Approved' %}
-                        <a href="/approve_payment/{{ p.id }}" class="btn-act" style="background:#16a34a;">✅ अप्रूव</a>
+                        <a href="/approve_payment/{{ p.id }}" class="btn-act" style="background:#16a34a; margin-bottom:3px; display:inline-block;">✅ अप्रूव</a>
                         {% endif %}
+                        <a href="/delete_test_lead/{{ p.id }}" onclick="return confirm('ही टेस्ट नोंद डिलीट करायची?')" class="btn-act" style="background:#dc2626; display:inline-block;">🗑️ डिलीट</a>
                     </td>
                 </tr>
-                </form>
                 {% else %}
                 <tr><td colspan="9" style="text-align:center; color:#64748b;">कोणतेही पेमेंट्स तपासणीसाठी प्रलंबित नाहीत.</td></tr>
                 {% endfor %}
@@ -628,17 +654,38 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
     <div class="admin-tab">
         <h3 style="color:#7c3aed; margin-top:0;">❓ ऑनलाइन टेस्ट प्रश्न व्यवस्थापन व लॉन्च कंट्रोल (Admin Only)</h3>
         
+        <!-- Multiple Test Papers Management Section -->
+        <div style="background:#faf5ff; border:2px solid #7c3aed; padding:15px; border-radius:8px; margin-bottom:20px;">
+            <h4 style="margin:0 0 10px; color:#5b21b6; font-size:15px;">📚 नवीन टेस्ट पेपर तयार करा (Multiple Test Papers):</h4>
+            <form action="/add_test_paper" method="POST" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:15px;">
+                <input type="text" name="test_title" placeholder="टेस्टचे नाव (उदा. पोलीस भरती स्पेशल गणित टेस्ट)" required style="flex:2; min-width:250px;">
+                <input type="number" name="test_fee" placeholder="फी (₹)" min="0" value="0" required style="width:100px;">
+                <button type="submit" class="btn-act" style="background:#7c3aed; padding:8px 15px; font-size:13px;">+ नवीन टेस्ट जोडा</button>
+            </form>
+
+            <h5 style="margin:10px 0 5px; color:#475569;">सध्याचे उपलब्ध टेस्ट पेपर्स:</h5>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                {% for tp in all_test_papers %}
+                <div style="background:white; border:1px solid #d8b4fe; padding:8px 12px; border-radius:6px; display:flex; align-items:center; gap:10px;">
+                    <div>
+                        <b>{{ tp.test_title }}</b> (फी: ₹{{ tp.test_fee }})
+                    </div>
+                    <a href="/admin?tab=questions&test_id={{ tp.id }}" class="btn-act" style="background:{{ '#16a34a' if current_test_id == tp.id else '#0284c7' }};">
+                        {{ '🟢 निवडली आहे' if current_test_id == tp.id else '✏️ प्रश्न पहा/संपादित करा' }}
+                    </a>
+                    {% if tp.id != 1 %}
+                    <a href="/delete_test_paper/{{ tp.id }}" onclick="return confirm('हा टेस्ट पेपर व त्यातील सर्व प्रश्न डिलीट करायचे?')" style="color:red; font-weight:bold; text-decoration:none; font-size:14px;">🗑️</a>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
         <div style="background:#f0fdf4; border:2px solid #15803d; padding:15px; border-radius:8px; margin-bottom:20px;">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px;">
                 <div>
-                    <b style="color:#166534; font-size:15px;">🚀 टेस्ट ऑनलाईन लॉन्च व फी नियंत्रण (Test Launch & Fee):</b><br>
-                    <span style="font-size:13px; color:#475569;">सध्याची स्थिती: 
-                        {% if test_launched == 'yes' %}
-                            <b style="color:green; font-size:14px;">✅ टेस्ट लाईव्ह (Launched) आहे. (फी: ₹{{ test_fee }})</b>
-                        {% else %}
-                            <b style="color:red; font-size:14px;">❌ टेस्ट बंद (Unlaunched) आहे.</b>
-                        {% endif %}
-                    </span>
+                    <b style="color:#166534; font-size:15px;">🚀 निवडलेल्या टेस्टचे ऑनलाईन लॉन्च व पेमेंट सेटिंग्ज:</b><br>
+                    <span style="font-size:13px; color:#475569;">सध्या निवडलेली टेस्ट: <b style="color:#7c3aed;">{{ current_test_title }}</b></span>
                 </div>
                 <div>
                     <form action="/toggle_test_launch" method="POST" style="display:inline;">
@@ -653,12 +700,8 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
             </div>
 
             <form action="/update_test_settings" method="POST" style="background:white; padding:12px; border-radius:6px; border:1px solid #bbf7d0;">
-                <h4 style="margin:0 0 10px; color:#166534; font-size:14px;">⚙️ टेस्ट फी आणि पेमेंट QR कोड सेटिंग्ज:</h4>
+                <h4 style="margin:0 0 10px; color:#166534; font-size:14px;">⚙️ UPI ID आणि QR कोड सेटिंग्ज:</h4>
                 <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:10px; margin-bottom:10px;">
-                    <div>
-                        <label style="font-weight:bold; font-size:12px;">टेस्टची रक्कम / फी (₹):</label>
-                        <input type="number" name="test_fee" value="{{ test_fee }}" min="0" max="100" style="width:100%; padding:6px; font-weight:bold;" required>
-                    </div>
                     <div>
                         <label style="font-weight:bold; font-size:12px;">UPI ID (उदा. 9921111960@ybl):</label>
                         <input type="text" name="upi_id" value="{{ upi_id }}" style="width:100%; padding:6px;" required>
@@ -669,14 +712,15 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
                     <input type="text" name="qr_image_url" value="{{ qr_image_url }}" style="width:100%; padding:6px;" placeholder="तुमच्या QR कोडची इमेज लिंक इथे टाका" required>
                 </div>
                 <br>
-                <button type="submit" class="btn-act" style="background:#15803d; padding:8px 16px; font-size:13px;">💾 सर्व पेमेंट सेटिंग्ज सेव्ह करा</button>
+                <button type="submit" class="btn-act" style="background:#15803d; padding:8px 16px; font-size:13px;">💾 पेमेंट सेटिंग्ज सेव्ह करा</button>
             </form>
         </div>
 
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
             <div style="background:#f8fafc; padding:15px; border-radius:6px; border:1px solid #cbd5e1;">
-                <h4 style="margin-top:0; color:#0b3c5d;">१. नवीन प्रश्न मॅन्युअल टाईप करा:</h4>
+                <h4 style="margin-top:0; color:#0b3c5d;">१. या टेस्टसाठी नवीन प्रश्न टाईप करा:</h4>
                 <form action="/add_single_question" method="POST">
+                    <input type="hidden" name="test_id" value="{{ current_test_id }}">
                     <label>प्रश्न:</label>
                     <textarea name="question" required style="width:100%; height:60px;" placeholder="प्रश्नाचा मजकूर..."></textarea>
                     
@@ -698,13 +742,14 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
                 <h4 style="margin-top:0; color:#15803d;">२. बल्क प्रश्न (Bulk Copy-Paste):</h4>
                 <p style="font-size:12px; color:#475569;">एका ओळीत: <br><code>प्रश्न | पर्यायA | पर्यायB | पर्यायC | पर्यायD | अचूक (A/B/C/D)</code></p>
                 <form action="/add_bulk_questions" method="POST">
+                    <input type="hidden" name="test_id" value="{{ current_test_id }}">
                     <textarea name="bulk_text" rows="8" placeholder="महाराष्ट्राची राजधानी कोणती? | पुणे | मुंबई | नागपूर | नाशिक | B" style="width:100%;" required></textarea><br>
                     <button type="submit" class="btn-act" style="background:#15803d; width:100%; padding:8px;">📥 सर्व प्रश्न बल्कमध्ये अपलोड करा</button>
                 </form>
             </div>
         </div>
 
-        <h4 style="margin-top:25px;">📋 सद्यस्थितीतील सर्व प्रश्न यादी ({{ questions|length }} प्रश्न):</h4>
+        <h4 style="margin-top:25px;">📋 सध्याच्या टेस्टमधील प्रश्न यादी ({{ questions|length }} प्रश्न):</h4>
         <table>
             <thead><tr><th>क्र.</th><th>प्रश्न</th><th>पर्याय A, B, C, D</th><th>अचूक</th><th>कृती</th></tr></thead>
             <tbody>
@@ -714,10 +759,10 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
                     <td><b>{{ q.question }}</b></td>
                     <td>A) {{ q.opt_a }}<br>B) {{ q.opt_b }}<br>C) {{ q.opt_c }}<br>D) {{ q.opt_d }}</td>
                     <td><b style="color:green;">{{ q.correct }}</b></td>
-                    <td><a href="/delete_question/{{ q.id }}" onclick="return confirm('हा प्रश्न हटवायचा?')" class="btn-act" style="background:red;">🗑️</a></td>
+                    <td><a href="/delete_question/{{ q.id }}" onclick="return confirm('हा प्रश्न हटवायचा?')" class="btn-act" style="background:red;">🗑️ डिलीट</a></td>
                 </tr>
                 {% else %}
-                <tr><td colspan="5" style="text-align:center; color:#64748b;">कोणतेही प्रश्न उपलब्ध नाहीत.</td></tr>
+                <tr><td colspan="5" style="text-align:center; color:#64748b;">या टेस्टसाठी कोणतेही प्रश्न उपलब्ध नाहीत.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -1088,7 +1133,7 @@ CLERK_LAYOUT = '''<!DOCTYPE html>
 </body>
 </html>'''
 
-# ----------------- STUDENT VALIDITY TEST TEMPLATE -----------------
+# ----------------- MULTIPLE TESTS & VALIDITY TEMPLATE -----------------
 MOCK_TEST_HTML = '''<!DOCTYPE html>
 <html lang="mr">
 <head>
@@ -1102,7 +1147,7 @@ MOCK_TEST_HTML = '''<!DOCTYPE html>
         .q-item { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e2e8f0; }
         .q-text { font-weight: bold; margin-bottom: 8px; font-size: 15px; color: #0f172a; }
         .opt-label { display: block; margin-bottom: 6px; font-size: 14px; cursor: pointer; }
-        input[type="text"], input[type="tel"] { width: 100%; padding: 9px; border: 1.5px solid #cbd5e1; border-radius: 6px; margin-bottom: 10px; }
+        input[type="text"], input[type="tel"], select { width: 100%; padding: 9px; border: 1.5px solid #cbd5e1; border-radius: 6px; margin-bottom: 10px; }
         .btn-submit { width: 100%; background: #059669; color: white; padding: 12px; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; }
         .cert-box { border: 4px double #b45309; padding: 25px; border-radius: 10px; background: #fffbeb; text-align: center; margin-top: 20px; }
     </style>
@@ -1122,16 +1167,26 @@ MOCK_TEST_HTML = '''<!DOCTYPE html>
     {% elif step == 'start' %}
     <!-- Step 1: Locked Initial Box -->
     <div style="background:#f8fafc; padding:20px; border-radius:8px; border:1px solid #cbd5e1;">
-        {% if test_fee|int > 0 %}
+        
+        <form method="GET" action="/test" style="margin-bottom:15px;">
+            <label style="font-weight:bold; font-size:13px; color:#5b21b6;">📚 सोडवण्यासाठी टेस्ट पेपर निवडा *:</label>
+            <select name="test_id" onchange="this.form.submit()" style="font-weight:bold; background:#faf5ff;">
+                {% for tp in all_test_papers %}
+                <option value="{{ tp.id }}" {% if tp.id == current_test_id %}selected{% endif %}>{{ tp.test_title }} (फी: ₹{{ tp.test_fee }})</option>
+                {% endfor %}
+            </select>
+        </form>
+
+        {% if current_test_fee|int > 0 %}
         <div style="background:#fefce8; border:2px solid #facc15; padding:15px; border-radius:8px; text-align:center; margin-bottom:15px;">
-            <b style="color:#854d0e; font-size:16px;">💰 या टेस्टची परीक्षा फी: ₹{{ test_fee }}</b><br>
+            <b style="color:#854d0e; font-size:16px;">💰 या टेस्टची परीक्षा फी: ₹{{ current_test_fee }}</b><br>
             <p style="font-size:13px; color:#78350f; margin:8px 0;">खालील QR कोड स्कॅन करून फी भरा आणि ट्रान्झॅक्शन नंबर टाका:</p>
             <img src="{{ qr_image_url }}" alt="Payment QR Code" width="160" height="160" style="border:1px solid #ccc; border-radius:6px; background:white; padding:4px;"><br>
             <span style="font-size:13px; font-weight:bold; color:#1e293b;">UPI ID: {{ upi_id }}</span>
         </div>
         {% else %}
         <div style="background:#f0fdf4; border:1px solid #86efac; padding:10px; border-radius:6px; text-align:center; font-size:13px; color:#166534; margin-bottom:15px; font-weight:bold;">
-            ✨ ही राज्यस्तरीय सराव टेस्ट पूर्णपणे **मोफत (Free)** आहे! कोणतीही फी नाही.
+            ✨ ही निवडलेली टेस्ट पूर्णपणे **मोफत (Free)** आहे! कोणतीही फी नाही.
         </div>
         {% endif %}
 
@@ -1141,13 +1196,15 @@ MOCK_TEST_HTML = '''<!DOCTYPE html>
 
         <form method="POST" action="/test">
             <input type="hidden" name="action_type" value="unlock_test">
+            <input type="hidden" name="test_id" value="{{ current_test_id }}">
+            
             <label style="font-weight:bold; font-size:13px;">विद्यार्थ्याचे पूर्ण नाव *:</label>
             <input type="text" name="student_name" placeholder="उदा. राहुल पाटील" required>
 
             <label style="font-weight:bold; font-size:13px;">जिल्हा *:</label>
             <input type="text" name="district" placeholder="उदा. कोल्हापूर" required>
 
-            {% if test_fee|int > 0 %}
+            {% if current_test_fee|int > 0 %}
             <label style="font-weight:bold; font-size:13px;">UPI ट्रान्झॅक्शन / युनिक रेफरन्स नंबर (UPI Ref No) *:</label>
             <input type="text" name="upi_ref" placeholder="उदा. 4235xxxxxxxx (पैसे भरल्याचा नंबर)" required>
             {% endif %}
@@ -1159,7 +1216,7 @@ MOCK_TEST_HTML = '''<!DOCTYPE html>
     {% elif step == 'exam' %}
     <!-- Step 2: Question Paper -->
     <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:10px; border-radius:6px; margin-bottom:15px; font-size:13px; color:#166534; display:flex; justify-content:space-between; align-items:center;">
-        <div>👤 सोडवणारे विद्यार्थी: <b>{{ session.get('exam_name') }}</b> (जिल्हा: {{ session.get('exam_district') }})</div>
+        <div>👤 सोडवणारे विद्यार्थी: <b>{{ session.get('exam_name') }}</b> | टेस्ट: <b>{{ current_test_title }}</b></div>
         <a href="/test" style="color:red; font-size:11px; text-decoration:none; font-weight:bold;">[ रद्द् करा ]</a>
     </div>
 
@@ -1190,7 +1247,7 @@ MOCK_TEST_HTML = '''<!DOCTYPE html>
         <p style="font-size:12px; color:#78350f; margin:5px 0 15px;">श्रीगुरु करिअर अकॅडमी, आडूर (ता. करवीर, जि. कोल्हापूर)</p>
         <hr style="border:1px solid #fde68a; margin:10px 0;">
         <p style="font-size:14px; color:#1e293b; line-height:1.6;">
-            प्रमाणपत्र देण्यात येते की, श्री/सौ/कुमार <b>{{ name }}</b> (जिल्हा: {{ district }}) यांनी श्रीगुरु करिअर अकॅडमीतर्फे आयोजित राज्यस्तरीय पोलीस भरती सराव टेस्टमध्ये यशस्वी सहभाग घेतला आहे.
+            प्रमाणपत्र देण्यात येते की, श्री/सौ/कुमार <b>{{ name }}</b> (जिल्हा: {{ district }}) यांनी श्रीगुरु करिअर अकॅडमीतर्फे आयोजित <b>{{ current_test_title }}</b> मध्ये यशस्वी सहभाग घेतला आहे.
         </p>
         <p style="font-size:14px; color:#92400e; font-weight:bold; margin-top:15px; line-height:1.6; background:#fef3c7; padding:10px; border-radius:6px;">
             🌟 प्रशासकीय सेवेत (पोलीस खात्यात) अधिकारी होण्यासाठी आपणास मनापासून खूप खूप शुभेच्छा! आपले ध्येय निश्चितच पूर्ण होईल. - मा. सचिन चौगले सर व परिवार, श्रीगुरु करिअर अकॅडमी, आडूर.
@@ -1214,6 +1271,7 @@ MOCK_TEST_HTML = '''<!DOCTYPE html>
             <input type="hidden" name="saved_score" value="{{ score }}">
             <input type="hidden" name="saved_total" value="{{ total }}">
             <input type="hidden" name="saved_upi_ref" value="{{ upi_ref }}">
+            <input type="hidden" name="saved_test_name" value="{{ current_test_title }}">
             
             <input type="tel" name="whatsapp_phone" placeholder="१० अंकी ओरिजनल WhatsApp नंबर (उदा. ९९२११११९६०)" pattern="[6-9][0-9]{9}" required style="max-width:350px; margin:0 auto 10px; display:block; text-align:center; font-weight:bold;">
             <button type="submit" style="background:#25D366; color:white; border:none; padding:10px 20px; border-radius:6px; font-weight:bold; font-size:14px; cursor:pointer;">
@@ -1379,15 +1437,13 @@ def admin_view():
     today_date = date.today().strftime("%Y-%m-%d")
     lang = session.get('site_lang', 'mr')
     
+    current_test_id = safe_int(request.args.get('test_id', 1), 1)
+    
     with get_db() as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT value FROM settings WHERE key='test_launched'")
             res_launch = cur.fetchone()
             test_launched = res_launch['value'] if res_launch else 'no'
-
-            cur.execute("SELECT value FROM settings WHERE key='test_fee'")
-            res_fee = cur.fetchone()
-            test_fee = res_fee['value'] if res_fee else '0'
 
             cur.execute("SELECT value FROM settings WHERE key='upi_id'")
             res_upi = cur.fetchone()
@@ -1396,6 +1452,12 @@ def admin_view():
             cur.execute("SELECT value FROM settings WHERE key='qr_image_url'")
             res_qr = cur.fetchone()
             qr_image_url = res_qr['value'] if res_qr else ''
+
+            cur.execute("SELECT * FROM test_papers ORDER BY id ASC")
+            all_test_papers = cur.fetchall()
+
+            cur.execute("SELECT * FROM questions WHERE test_id=%s ORDER BY id DESC", (current_test_id,))
+            questions = cur.fetchall()
 
             cur.execute("SELECT * FROM students")
             students = cur.fetchall()
@@ -1421,16 +1483,19 @@ def admin_view():
             physical_records = cur.fetchall()
             cur.execute("SELECT wt.*, s.name FROM written_tests wt JOIN students s ON wt.student_id = s.id ORDER BY wt.id DESC")
             written_records = cur.fetchall()
-            cur.execute("SELECT * FROM questions ORDER BY id DESC")
-            questions = cur.fetchall()
             cur.execute("SELECT * FROM mock_test_leads ORDER BY id DESC")
             pending_payments = cur.fetchall()
+            cur.execute("SELECT * FROM admission_inquiries ORDER BY id DESC")
+            inquiries = cur.fetchall()
 
     total_paid = sum(safe_float(s['paid_fees']) for s in students)
     total_pending = sum(safe_float(s['total_fees']) - safe_float(s['paid_fees']) for s in students)
     total_expenses = sum(safe_float(ex['amount']) for ex in expenses_list)
 
-    return render_template_string(ADMIN_DASHBOARD_LAYOUT, curr_tab=curr_tab, students=students, expenses_list=expenses_list, users_list=users_list, diet_list=diet_list, staff_members=staff_members, staff_tasks=staff_tasks, all_requests=all_requests, all_staff_logs=all_staff_logs, discipline_logs=discipline_logs, hostel_logs=hostel_logs, physical_records=physical_records, written_records=written_records, questions=questions, pending_payments=pending_payments, total_paid=total_paid, total_pending=total_pending, total_expenses=total_expenses, today_date=today_date, lang=lang, test_launched=test_launched, test_fee=test_fee, upi_id=upi_id, qr_image_url=qr_image_url)
+    current_test_title = next((tp['test_title'] for tp in all_test_papers if tp['id'] == current_test_id), "मुख्य टेस्ट")
+    test_fee = next((tp['test_fee'] for tp in all_test_papers if tp['id'] == current_test_id), 0)
+
+    return render_template_string(ADMIN_DASHBOARD_LAYOUT, curr_tab=curr_tab, students=students, expenses_list=expenses_list, users_list=users_list, diet_list=diet_list, staff_members=staff_members, staff_tasks=staff_tasks, all_requests=all_requests, all_staff_logs=all_staff_logs, discipline_logs=discipline_logs, hostel_logs=hostel_logs, physical_records=physical_records, written_records=written_records, questions=questions, pending_payments=pending_payments, inquiries=inquiries, all_test_papers=all_test_papers, current_test_id=current_test_id, current_test_title=current_test_title, test_fee=test_fee, total_paid=total_paid, total_pending=total_pending, total_expenses=total_expenses, today_date=today_date, lang=lang, test_launched=test_launched, upi_id=upi_id, qr_image_url=qr_image_url)
 
 @app.route('/toggle_test_launch', methods=['POST'])
 def toggle_test_launch():
@@ -1448,14 +1513,34 @@ def toggle_test_launch():
 @app.route('/update_test_settings', methods=['POST'])
 def update_test_settings():
     if session.get('user_role') != 'Admin': return "Unauthorized", 403
-    fee = request.form.get('test_fee', '0')
     upi = request.form.get('upi_id', '9921111960@ybl')
     qr = request.form.get('qr_image_url', '')
     with get_db() as conn:
         with conn.cursor() as cur:
-            cur.execute("UPDATE settings SET value=%s WHERE key='test_fee'", (fee,))
             cur.execute("UPDATE settings SET value=%s WHERE key='upi_id'", (upi,))
             cur.execute("UPDATE settings SET value=%s WHERE key='qr_image_url'", (qr,))
+            conn.commit()
+    return redirect('/admin?tab=questions')
+
+@app.route('/add_test_paper', methods=['POST'])
+def add_test_paper():
+    if session.get('user_role') != 'Admin': return "Unauthorized", 403
+    title = request.form.get('test_title')
+    fee = safe_float(request.form.get('test_fee', 0))
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("INSERT INTO test_papers (test_title, test_fee) VALUES (%s, %s)", (title, fee))
+            conn.commit()
+    return redirect('/admin?tab=questions')
+
+@app.route('/delete_test_paper/<int:id>')
+def delete_test_paper(id):
+    if session.get('user_role') != 'Admin': return "Unauthorized", 403
+    if id == 1: return "Default test cannot be deleted", 400
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM questions WHERE test_id=%s", (id,))
+            cur.execute("DELETE FROM test_papers WHERE id=%s", (id,))
             conn.commit()
     return redirect('/admin?tab=questions')
 
@@ -1478,10 +1563,29 @@ def update_student_validity(id):
             conn.commit()
     return redirect('/admin?tab=payments')
 
+@app.route('/delete_test_lead/<int:id>')
+def delete_test_lead(id):
+    if session.get('user_role') != 'Admin': return "Unauthorized", 403
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM mock_test_leads WHERE id=%s", (id,))
+            conn.commit()
+    return redirect('/admin?tab=payments')
+
+@app.route('/delete_inquiry/<int:id>')
+def delete_inquiry(id):
+    if session.get('user_role') not in ['Admin', 'Clerk', 'Manager']: return "Unauthorized", 403
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM admission_inquiries WHERE id=%s", (id,))
+            conn.commit()
+    return redirect('/inquiries')
+
 # ----------------- QUESTION MANAGEMENT ROUTES -----------------
 @app.route('/add_single_question', methods=['POST'])
 def add_single_question():
     if session.get('user_role') not in ['Admin', 'Clerk']: return "Unauthorized", 403
+    test_id = safe_int(request.form.get('test_id', 1), 1)
     q = request.form.get('question')
     a = request.form.get('opt_a')
     b = request.form.get('opt_b')
@@ -1490,13 +1594,14 @@ def add_single_question():
     corr = request.form.get('correct')
     with get_db() as conn:
         with conn.cursor() as cur:
-            cur.execute("INSERT INTO questions (question, opt_a, opt_b, opt_c, opt_d, correct) VALUES (%s, %s, %s, %s, %s, %s)", (q, a, b, c, d, corr))
+            cur.execute("INSERT INTO questions (test_id, question, opt_a, opt_b, opt_c, opt_d, correct) VALUES (%s, %s, %s, %s, %s, %s, %s)", (test_id, q, a, b, c, d, corr))
             conn.commit()
-    return redirect('/admin?tab=questions')
+    return redirect(f'/admin?tab=questions&test_id={test_id}')
 
 @app.route('/add_bulk_questions', methods=['POST'])
 def add_bulk_questions():
     if session.get('user_role') not in ['Admin', 'Clerk']: return "Unauthorized", 403
+    test_id = safe_int(request.form.get('test_id', 1), 1)
     text = request.form.get('bulk_text', '')
     lines = text.strip().split('\n')
     with get_db() as conn:
@@ -1504,21 +1609,24 @@ def add_bulk_questions():
             for line in lines:
                 parts = [p.strip() for p in line.split('|')]
                 if len(parts) == 6:
-                    cur.execute("INSERT INTO questions (question, opt_a, opt_b, opt_c, opt_d, correct) VALUES (%s, %s, %s, %s, %s, %s)", 
-                                (parts[0], parts[1], parts[2], parts[3], parts[4], parts[5].upper()))
+                    cur.execute("INSERT INTO questions (test_id, question, opt_a, opt_b, opt_c, opt_d, correct) VALUES (%s, %s, %s, %s, %s, %s, %s)", 
+                                (test_id, parts[0], parts[1], parts[2], parts[3], parts[4], parts[5].upper()))
             conn.commit()
-    return redirect('/admin?tab=questions')
+    return redirect(f'/admin?tab=questions&test_id={test_id}')
 
 @app.route('/delete_question/<int:id>')
 def delete_question(id):
     if session.get('user_role') not in ['Admin', 'Clerk']: return "Unauthorized", 403
     with get_db() as conn:
         with conn.cursor() as cur:
+            cur.execute("SELECT test_id FROM questions WHERE id=%s", (id,))
+            res = cur.fetchone()
+            t_id = res['test_id'] if res else 1
             cur.execute("DELETE FROM questions WHERE id=%s", (id,))
             conn.commit()
-    return redirect('/admin?tab=questions')
+    return redirect(f'/admin?tab=questions&test_id={t_id}')
 
-# ----------------- PUBLIC INQUIRY & STUDENT VALIDITY TEST ROUTES -----------------
+# ----------------- PUBLIC INQUIRY & MULTI-TEST ROUTES -----------------
 @app.route('/inquiry', methods=['GET', 'POST'])
 def public_inquiry():
     msg = None
@@ -1544,15 +1652,13 @@ def public_inquiry():
 
 @app.route('/test', methods=['GET', 'POST'])
 def mock_test():
+    current_test_id = safe_int(request.args.get('test_id', request.form.get('test_id', 1)), 1)
+    
     with get_db() as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT value FROM settings WHERE key='test_launched'")
             res_launch = cur.fetchone()
             launched = (res_launch['value'] == 'yes') if res_launch else False
-
-            cur.execute("SELECT value FROM settings WHERE key='test_fee'")
-            res_fee = cur.fetchone()
-            test_fee = res_fee['value'] if res_fee else '0'
 
             cur.execute("SELECT value FROM settings WHERE key='upi_id'")
             res_upi = cur.fetchone()
@@ -1562,8 +1668,14 @@ def mock_test():
             res_qr = cur.fetchone()
             qr_image_url = res_qr['value'] if res_qr else ''
 
-            cur.execute("SELECT * FROM questions ORDER BY id ASC")
+            cur.execute("SELECT * FROM test_papers ORDER BY id ASC")
+            all_test_papers = cur.fetchall()
+
+            cur.execute("SELECT * FROM questions WHERE test_id=%s ORDER BY id ASC", (current_test_id,))
             questions = cur.fetchall()
+
+    current_test_title = next((tp['test_title'] for tp in all_test_papers if tp['id'] == current_test_id), "मुख्य टेस्ट")
+    current_test_fee = next((tp['test_fee'] for tp in all_test_papers if tp['id'] == current_test_id), 0)
 
     score = 0
     total = len(questions)
@@ -1577,7 +1689,7 @@ def mock_test():
     error_msg = ""
     upi_ref = "Free"
 
-    if session.get('exam_unlocked') == True:
+    if session.get('exam_unlocked') == True and session.get('exam_test_id') == current_test_id:
         step = "exam"
 
     if request.method == 'POST' and launched:
@@ -1587,15 +1699,16 @@ def mock_test():
             name = request.form.get('student_name')
             district = request.form.get('district')
             
-            if safe_int(test_fee) > 0:
+            if safe_int(current_test_fee) > 0:
                 upi_ref = request.form.get('upi_ref', '').strip()
                 if not upi_ref:
-                    return render_template_string(MOCK_TEST_HTML, questions=questions, submitted=submitted, score=score, total=total, name=name, district=district, phone=phone, today_date=today_date, launched=launched, wa_link=wa_link, step="start", test_fee=test_fee, upi_id=upi_id, qr_image_url=qr_image_url, error_msg="❌ कृपया पेमेंट भरल्याचा UPI ट्रान्झॅक्शन नंबर (Ref No) टाका!")
+                    return render_template_string(MOCK_TEST_HTML, questions=questions, submitted=submitted, score=score, total=total, name=name, district=district, phone=phone, today_date=today_date, launched=launched, wa_link=wa_link, step="start", all_test_papers=all_test_papers, current_test_id=current_test_id, current_test_title=current_test_title, current_test_fee=current_test_fee, upi_id=upi_id, qr_image_url=qr_image_url, error_msg="❌ कृपया पेमेंट भरल्याचा UPI ट्रान्झॅक्शन नंबर (Ref No) टाका!")
 
             session['exam_unlocked'] = True
+            session['exam_test_id'] = current_test_id
             session['exam_name'] = name
             session['exam_district'] = district
-            session['exam_upi_ref'] = upi_ref if safe_int(test_fee) > 0 else "Free"
+            session['exam_upi_ref'] = upi_ref if safe_int(current_test_fee) > 0 else "Free"
             step = "exam"
 
         elif action == 'submit_test' and session.get('exam_unlocked') == True:
@@ -1622,27 +1735,31 @@ def mock_test():
             score = safe_int(request.form.get('saved_score'))
             total = safe_int(request.form.get('saved_total'))
             upi_ref = request.form.get('saved_upi_ref', 'Free')
+            t_name = request.form.get('saved_test_name', current_test_title)
             phone = request.form.get('whatsapp_phone', '').strip()
 
             if phone and re.match(r'^[6-9]\d{9}$', phone):
-                pay_stat = 'Pending Verification' if safe_int(test_fee) > 0 else 'Approved'
-                default_valid = (date.today() + timedelta(days=30)).strftime("%Y-%m-%d") if safe_int(test_fee) > 0 else ""
+                pay_stat = 'Pending Verification' if safe_int(current_test_fee) > 0 else 'Approved'
+                default_valid = (date.today() + timedelta(days=30)).strftime("%Y-%m-%d") if safe_int(current_test_fee) > 0 else ""
                 
-                with get_db() as conn:
-                    with conn.cursor() as cur:
-                        t_date = date.today().strftime("%Y-%m-%d")
-                        cur.execute("""
-                            INSERT INTO mock_test_leads (test_date, student_name, district, phone, score, total_marks, test_name, upi_ref, payment_status, valid_till)
-                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                        """, (t_date, name, district, phone, score, total, "राज्यस्तरीय पोलीस सराव टेस्ट", upi_ref, pay_stat, default_valid))
-                        conn.commit()
+                try:
+                    with get_db() as conn:
+                        with conn.cursor() as cur:
+                            t_date = date.today().strftime("%Y-%m-%d")
+                            cur.execute("""
+                                INSERT INTO mock_test_leads (test_date, student_name, district, phone, score, total_marks, test_name, upi_ref, payment_status, valid_till)
+                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            """, (t_date, name, district, phone, score, total, t_name, upi_ref, pay_stat, default_valid))
+                            conn.commit()
+                except Exception as db_err:
+                    print(f"DB Insert Error: {db_err}")
 
-                wa_text = f"नमस्कार {name} जी,%0Aश्रीगुरु करिअर अकॅडमीच्या ऑनलाईन टेस्टचा निकाल:%0Aप्राप्त गुण: *{score}/{total}*%0Aजिल्हा: {district}%0Aप्रशासनकीय सेवेत अधिकारी होण्यासाठी आपणास खूप खूप शुभेच्छा! संपर्क: ९९२११११९६०"
+                wa_text = f"नमस्कार {name} जी,%0Aश्रीगुरु करिअर अकॅडमी ({t_name}) चा निकाल:%0Aप्राप्त गुण: *{score}/{total}*%0Aजिल्हा: {district}%0Aप्रशासनकीय सेवेत अधिकारी होण्यासाठी आपणास खूप खूप शुभेच्छा! संपर्क: ९९२११११९६०"
                 wa_link = f"https://wa.me/91{phone}?text={wa_text}"
             else:
                 step = "certificate_view"
 
-    return render_template_string(MOCK_TEST_HTML, questions=questions, submitted=submitted, score=score, total=total, name=name, district=district, phone=phone, today_date=today_date, launched=launched, wa_link=wa_link, step=step, test_fee=test_fee, upi_id=upi_id, qr_image_url=qr_image_url, error_msg=error_msg, upi_ref=session.get('exam_upi_ref', 'Free'))
+    return render_template_string(MOCK_TEST_HTML, questions=questions, submitted=submitted, score=score, total=total, name=name, district=district, phone=phone, today_date=today_date, launched=launched, wa_link=wa_link, step=step, all_test_papers=all_test_papers, current_test_id=current_test_id, current_test_title=current_test_title, current_test_fee=current_test_fee, upi_id=upi_id, qr_image_url=qr_image_url, error_msg=error_msg, upi_ref=session.get('exam_upi_ref', 'Free'))
 
 @app.route('/inquiries')
 def inquiry_desk():
@@ -1666,6 +1783,7 @@ def inquiry_desk():
         th { background:#1e293b; color:white; font-weight:600; }
         .btn-wa { background:#25D366; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-weight:bold; font-size:12px; }
         .btn-call { background:#0284c7; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-weight:bold; font-size:12px; margin-right:4px; }
+        .btn-del { background:#dc2626; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-weight:bold; font-size:11px; display:inline-block; }
     </style></head><body>
 
     <div class="header">
@@ -1673,13 +1791,13 @@ def inquiry_desk():
         <div>
             <a href="/" style="color:white; text-decoration:none; font-weight:bold; margin-right:15px;">🏠 मुख्य डॅशबोर्ड</a>
             <a href="/inquiry" target="_blank" style="color:#fde047; text-decoration:none; font-weight:bold; margin-right:15px;">🌐 प्रवेश अर्ज उघडा</a>
-            <a href="/test" target="_blank" style="color:#67e8f9; text-decoration:none; font-weight:bold;">📝 मोफत टेस्ट उघडा</a>
+            <a href="/test" target="_blank" style="color:#67e8f9; text-decoration:none; font-weight:bold;">📝 टेस्ट पेज उघडा</a>
         </div>
     </div>
 
     <h4 style="color:#0b3c5d; margin:15px 0 5px;">📋 थेट प्रवेश चौकशी अर्ज (Admission Inquiries):</h4>
     <table>
-        <thead><tr><th>तारीख</th><th>नाव</th><th>जिल्हा (तालुका)</th><th>कोर्स</th><th>हॉस्टेल</th><th>१-क्लिक संपर्क</th><th>स्थिती / शेरा</th><th>बदल</th></tr></thead>
+        <thead><tr><th>तारीख</th><th>नाव</th><th>जिल्हा (तालुका)</th><th>कोर्स</th><th>हॉस्टेल</th><th>१-क्लिक संपर्क</th><th>स्थिती / शेरा</th><th>बदल / कृती</th></tr></thead>
         <tbody>
             {% for inq in inquiries %}
             <form action="/update_inquiry/{{ inq.id }}" method="POST">
@@ -1702,7 +1820,10 @@ def inquiry_desk():
                     </select><br>
                     <input type="text" name="staff_note" value="{{ inq.staff_note or '' }}" placeholder="कॉल शेरा..." style="width:90%; margin-top:4px; padding:3px; font-size:12px;">
                 </td>
-                <td><button type="submit" style="background:#059669; color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer;">💾</button></td>
+                <td>
+                    <button type="submit" style="background:#059669; color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer;">💾</button>
+                    <a href="/delete_inquiry/{{ inq.id }}" onclick="return confirm('ही चौकशी नोंद डिलीट करायची?')" class="btn-del">🗑️</a>
+                </td>
             </tr>
             </form>
             {% else %}
@@ -1711,9 +1832,9 @@ def inquiry_desk():
         </tbody>
     </table>
 
-    <h4 style="color:#0b3c5d; margin:25px 0 5px;">📝 मोफत ऑनलाइन टेस्ट लीड्स व निकाल (Mock Test Leads):</h4>
+    <h4 style="color:#0b3c5d; margin:25px 0 5px;">📝 ऑनलाइन टेस्ट लीड्स व निकाल (Mock Test Leads):</h4>
     <table>
-        <thead><tr><th>तारीख</th><th>नाव</th><th>जिल्हा</th><th>मोबाईल</th><th>मिळालेले गुण</th><th>UPI Ref No</th><th>पेमेंट स्थिती</th><th>१-क्लिक संपर्क</th></tr></thead>
+        <thead><tr><th>तारीख</th><th>नाव</th><th>जिल्हा</th><th>मोबाईल</th><th>टेस्ट नाव</th><th>मिळालेले गुण</th><th>UPI Ref No</th><th>पेमेंट स्थिती</th><th>कृती</th></tr></thead>
         <tbody>
             {% for t in test_leads %}
             <tr>
@@ -1721,16 +1842,17 @@ def inquiry_desk():
                 <td><b>{{ t.student_name }}</b></td>
                 <td>{{ t.district }}</td>
                 <td>{{ t.phone }}</td>
+                <td>{{ t.test_name }}</td>
                 <td><b style="color:#059669;">{{ t.score }} / {{ t.total_marks }}</b></td>
                 <td><code>{{ t.upi_ref }}</code></td>
                 <td><b style="color:{{ 'green' if t.payment_status=='Approved' else 'orange' }};">{{ t.payment_status }}</b></td>
                 <td>
-                    <a href="tel:{{ t.phone }}" class="btn-call">📞 कॉल</a>
-                    <a href="https://wa.me/91{{ t.phone }}?text=नमस्कार%20{{ t.student_name }},%20श्रीगुरु%20अकॅडमीच्या%20टेस्टमध्ये%20तुम्हाला%20{{ t.score }}/{{ t.total_marks }}%20गुण%20मिळाले!%20प्रवेशासाठी%20आमच्याशी%20जोडले%20रहा." target="_blank" class="btn-wa">📲 WA निकाल</a>
+                    <a href="https://wa.me/91{{ t.phone }}?text=नमस्कार%20{{ t.student_name }},%20श्रीगुरु%20अकॅडमीच्या%20टेस्टमध्ये%20तुम्हाला%20{{ t.score }}/{{ t.total_marks }}%20गुण%20मिळाले!" target="_blank" class="btn-wa">📲 WA</a>
+                    <a href="/delete_test_lead/{{ t.id }}" onclick="return confirm('ही टेस्ट लीड डिलीट करायची?')" class="btn-del">🗑️</a>
                 </td>
             </tr>
             {% else %}
-            <tr><td colspan="6" style="text-align:center; color:#64748b;">अद्याप कोणीही ऑनलाइन टेस्ट सोडवलेली नाही.</td></tr>
+            <tr><td colspan="9" style="text-align:center; color:#64748b;">अद्याप कोणीही ऑनलाइन टेस्ट सोडवलेली नाही.</td></tr>
             {% endfor %}
         </tbody>
     </table>
