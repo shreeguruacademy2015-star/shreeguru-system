@@ -1,10 +1,87 @@
 import os
+from datetime import date
+from flask import Flask, redirect, render_template_string, request, session, jsonify
+import psycopg2
+from psycopg2.extras import RealDictCursor
+
+app = Flask(__name__)
+app.secret_key = "shreeguru_complete_fresh_master_2026"
+
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+def get_db():
+    conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+    return conn
+
+def init_db():
+    conn = get_db()
+    cur = conn.cursor()
+    # सर्व रोल आणि डॅशबोर्ड्ससाठी आवश्यक टेबल्स तयार करणारी क्वेरी
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            role TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS questions (
+            id SERIAL PRIMARY KEY,
+            question_text TEXT NOT NULL,
+            option_a TEXT,
+            option_b TEXT,
+            option_c TEXT,
+            option_d TEXT,
+            correct_option TEXT,
+            subject TEXT
+        );
+        CREATE TABLE IF NOT EXISTS enquiries (
+            id SERIAL PRIMARY KEY,
+            student_name TEXT NOT NULL,
+            contact_no TEXT,
+            course TEXT,
+            status TEXT DEFAULT 'Pending',
+            created_at DATE DEFAULT CURRENT_DATE
+        );
+    """)
+    conn.commit()
+    cur.close()
+    conn.close()
+
+# ॲप सुरू झाल्यावर टेबल्स तयार करण्यासाठी ही ओळ महत्त्वाची आहे
+with app.app_context():
+    init_db()
+
+@app.route('/')
+def index():
+    return render_template_string('''
+    <!DOCTYPE html>
+    <html lang="mr">
+    <head>
+        <meta charset="UTF-8">
+        <title>श्रीगुरु करिअर अकॅडमी</title>
+        <style>
+            body { font-family: Arial, sans-serif; background: #f4f6f9; text-align: center; padding: 50px; }
+            h1 { color: #2c3e50; }
+            .btn { display: inline-block; padding: 12px 24px; background: #3498db; color: white; text-decoration: none; border-radius: 5px; font-size: 18px; margin-top: 20px; }
+            .btn:hover { background: #2980b9; }
+        </style>
+    </head>
+    <body>
+        <h1>श्रीगुरु करिअर अकॅडमी - सिस्टीमवर आपले स्वागत आहे!</h1>
+        <p>डेटाबेस आणि सर्व डॅशबोर्ड्स यशस्वीरित्या जोडले गेले आहेत.</p>
+        <a href="/login" class="btn">लॉगिन करा</a>
+    </body>
+    </html>
+    ''')
+
+# येथे तुमचे उरलेले सर्व रूट्स (मॅनेजर, ॲडमिन, क्लर्क, ट्रेनर, प्रश्न व्यवस्थापन व चौकशी टॅब) जोडलेले असतील.import os
 from datetime import date 
 from flask import Flask, redirect, render_template_string, request, session, jsonify
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
+
 app.secret_key = "shreeguru_complete_fresh_master_2026"
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
