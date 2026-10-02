@@ -1,7 +1,7 @@
 import os
 import shutil
 import re
-from datetime import date, datetime 
+from datetime import date, datetime, timedelta 
 from flask import Flask, redirect, render_template, render_template_string, request, send_file, send_from_directory, url_for, session, Response
 from werkzeug.utils import secure_filename
 import io
@@ -11,7 +11,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
-app.secret_key = "shreeguru_complete_bulletproof_v61_smart_fee_flow"
+app.secret_key = "shreeguru_complete_bulletproof_v65_student_validity"
 
 # --- NEON CLOUD DATABASE CONNECTION ---
 DATABASE_URL = os.environ.get("DATABASE_URL")
@@ -373,7 +373,10 @@ def init_db():
                     total_marks INTEGER NOT NULL,
                     test_name TEXT NOT NULL,
                     call_status TEXT DEFAULT 'नवीन टेस्ट निकाल',
-                    staff_note TEXT DEFAULT ''
+                    staff_note TEXT DEFAULT '',
+                    upi_ref TEXT DEFAULT 'Free',
+                    payment_status TEXT DEFAULT 'Approved',
+                    valid_till TEXT DEFAULT ''
                 )
             """)
 
@@ -555,6 +558,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
 
 <div class="menu-bar">
     <a href="/inquiries" class="menu-btn" style="background:#b45309; border:2px solid #fde047;">📞 चौकशी व टेस्ट डेस्क</a>
+    <a href="/admin?tab=payments" class="menu-btn {% if curr_tab == 'payments' %}active{% endif %}" style="background:#059669; border:2px solid #ffdd59;">💳 पेमेंट व वैधता डेस्क</a>
     <a href="/admin?tab=questions" class="menu-btn {% if curr_tab == 'questions' %}active{% endif %}" style="background:#7c3aed; border:2px solid #fde047;">❓ प्रश्न व्यवस्थापन व लॉन्च</a>
     <a href="/admin?tab=students" class="menu-btn {% if curr_tab == 'students' %}active{% endif %}" style="background:#2563eb;">👥 सर्व विद्यार्थी</a>
     <a href="/admin?tab=admission" class="menu-btn {% if curr_tab == 'admission' %}active{% endif %}" style="background:#2563eb;">📝 नवीन प्रवेश</a>
@@ -583,6 +587,42 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
         <div class="kpi" style="border-color:#ef4444;"><b>शिल्लक फी:</b> <span style="color:red;">₹{{ total_pending }}</span></div>
         <div class="kpi" style="border-color:#ff416c;"><b>एकूण खर्च:</b> ₹{{ total_expenses }}</div>
     </div>
+
+    {% if curr_tab == 'payments' %}
+    <div class="admin-tab">
+        <h3 style="color:#059669; margin-top:0;">💳 पेमेंट व विद्यार्थी वैधता (Validity) अप्रूवल डेस्क</h3>
+        <p style="font-size:13px; color:#475569;">विद्यार्थ्यांचे ट्रान्झॅक्शन तपासा, पेमेंट 'Approved' करा आणि प्रत्येक विद्यार्थ्यासाठी टेस्ट किती तारखेपर्यंत चालू राहील (Validity Date) ते सेट करा:</p>
+        <table>
+            <thead><tr><th>तारीख</th><th>विद्यार्थ्याचे नाव</th><th>जिल्हा</th><th>मोबाईल</th><th>गुण</th><th>UPI Ref No</th><th>स्थिती</th><th>वैधता तारीख (Valid Till)</th><th>कृती</th></tr></thead>
+            <tbody>
+                {% for p in pending_payments %}
+                <form action="/update_student_validity/{{ p.id }}" method="POST">
+                <tr>
+                    <td>{{ p.test_date }}</td>
+                    <td><b>{{ p.student_name }}</b></td>
+                    <td>{{ p.district }}</td>
+                    <td>{{ p.phone }}</td>
+                    <td><b>{{ p.score }} / {{ p.total_marks }}</b></td>
+                    <td><code style="background:#fef08a; padding:3px 6px; font-weight:bold;">{{ p.upi_ref }}</code></td>
+                    <td><b style="color:{{ 'green' if p.payment_status=='Approved' else 'orange' }};">{{ p.payment_status }}</b></td>
+                    <td>
+                        <input type="date" name="valid_till" value="{{ p.valid_till or '' }}" style="padding:4px; font-size:12px;">
+                    </td>
+                    <td>
+                        <button type="submit" class="btn-act" style="background:#0284c7; margin-bottom:3px;">💾 सेव्ह</button>
+                        {% if p.payment_status != 'Approved' %}
+                        <a href="/approve_payment/{{ p.id }}" class="btn-act" style="background:#16a34a;">✅ अप्रूव</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                </form>
+                {% else %}
+                <tr><td colspan="9" style="text-align:center; color:#64748b;">कोणतेही पेमेंट्स तपासणीसाठी प्रलंबित नाहीत.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
 
     {% if curr_tab == 'questions' %}
     <div class="admin-tab">
@@ -1048,7 +1088,7 @@ CLERK_LAYOUT = '''<!DOCTYPE html>
 </body>
 </html>'''
 
-# ----------------- SMART LOCKED TEST TEMPLATE (FREE & PAID FLOW) -----------------
+# ----------------- STUDENT VALIDITY TEST TEMPLATE -----------------
 MOCK_TEST_HTML = '''<!DOCTYPE html>
 <html lang="mr">
 <head>
@@ -1080,12 +1120,12 @@ MOCK_TEST_HTML = '''<!DOCTYPE html>
         </p>
     </div>
     {% elif step == 'start' %}
-    <!-- Step 1: Locked Initial Box (Shows QR only if Fee > 0) -->
+    <!-- Step 1: Locked Initial Box -->
     <div style="background:#f8fafc; padding:20px; border-radius:8px; border:1px solid #cbd5e1;">
         {% if test_fee|int > 0 %}
         <div style="background:#fefce8; border:2px solid #facc15; padding:15px; border-radius:8px; text-align:center; margin-bottom:15px;">
             <b style="color:#854d0e; font-size:16px;">💰 या टेस्टची परीक्षा फी: ₹{{ test_fee }}</b><br>
-            <p style="font-size:13px; color:#78350f; margin:8px 0;">खालील QR कोड स्कॅन करून आधी फी भरा, त्यानंतर खालील माहिती व ट्रान्झॅक्शन नंबर भरून टेस्ट सुरू करा:</p>
+            <p style="font-size:13px; color:#78350f; margin:8px 0;">खालील QR कोड स्कॅन करून फी भरा आणि ट्रान्झॅक्शन नंबर टाका:</p>
             <img src="{{ qr_image_url }}" alt="Payment QR Code" width="160" height="160" style="border:1px solid #ccc; border-radius:6px; background:white; padding:4px;"><br>
             <span style="font-size:13px; font-weight:bold; color:#1e293b;">UPI ID: {{ upi_id }}</span>
         </div>
@@ -1093,6 +1133,10 @@ MOCK_TEST_HTML = '''<!DOCTYPE html>
         <div style="background:#f0fdf4; border:1px solid #86efac; padding:10px; border-radius:6px; text-align:center; font-size:13px; color:#166534; margin-bottom:15px; font-weight:bold;">
             ✨ ही राज्यस्तरीय सराव टेस्ट पूर्णपणे **मोफत (Free)** आहे! कोणतीही फी नाही.
         </div>
+        {% endif %}
+
+        {% if error_msg %}
+        <div style="background:#fee2e2; color:#991b1b; padding:8px; border-radius:4px; font-size:13px; font-weight:bold; margin-bottom:10px;">{{ error_msg }}</div>
         {% endif %}
 
         <form method="POST" action="/test">
@@ -1113,7 +1157,7 @@ MOCK_TEST_HTML = '''<!DOCTYPE html>
     </div>
 
     {% elif step == 'exam' %}
-    <!-- Step 2: Question Paper (Shown ONLY after unlocking) -->
+    <!-- Step 2: Question Paper -->
     <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:10px; border-radius:6px; margin-bottom:15px; font-size:13px; color:#166534; display:flex; justify-content:space-between; align-items:center;">
         <div>👤 सोडवणारे विद्यार्थी: <b>{{ session.get('exam_name') }}</b> (जिल्हा: {{ session.get('exam_district') }})</div>
         <a href="/test" style="color:red; font-size:11px; text-decoration:none; font-weight:bold;">[ रद्द् करा ]</a>
@@ -1135,7 +1179,7 @@ MOCK_TEST_HTML = '''<!DOCTYPE html>
     </form>
 
     {% elif submitted %}
-    <!-- Step 3: Certificate shown immediately -->
+    <!-- Step 3: Certificate shown immediately with inspiring message -->
     <div style="background:#f0fdf4; border:2px solid #86efac; border-radius:8px; padding:20px; text-align:center; margin-bottom:20px;">
         <h3 style="margin:0 0 5px; color:#166534;">टेस्ट यशस्वीरीत्या पूर्ण झाली आहे! 🎉</h3>
         <p style="color:#475569; font-size:14px; margin:5px 0;">खाली तुमचे सहभाग घेतल्याबद्दलचे डिजिटल प्रशस्तीपत्र दिले आहे.</p>
@@ -1148,8 +1192,8 @@ MOCK_TEST_HTML = '''<!DOCTYPE html>
         <p style="font-size:14px; color:#1e293b; line-height:1.6;">
             प्रमाणपत्र देण्यात येते की, श्री/सौ/कुमार <b>{{ name }}</b> (जिल्हा: {{ district }}) यांनी श्रीगुरु करिअर अकॅडमीतर्फे आयोजित राज्यस्तरीय पोलीस भरती सराव टेस्टमध्ये यशस्वी सहभाग घेतला आहे.
         </p>
-        <p style="font-size:13px; color:#92400e; font-weight:bold; margin-top:15px; line-height:1.5;">
-            मा. सचिन चौगले सर तसेच श्रीगुरु करिअर अकॅडमी परिवारातर्फे आपल्या उज्ज्वल भविष्यासाठी आणि पोलीस अधिकारी बनण्याच्या स्वप्नासाठी खूप खूप शुभेच्छा! 🌟
+        <p style="font-size:14px; color:#92400e; font-weight:bold; margin-top:15px; line-height:1.6; background:#fef3c7; padding:10px; border-radius:6px;">
+            🌟 प्रशासकीय सेवेत (पोलीस खात्यात) अधिकारी होण्यासाठी आपणास मनापासून खूप खूप शुभेच्छा! आपले ध्येय निश्चितच पूर्ण होईल. - मा. सचिन चौगले सर व परिवार, श्रीगुरु करिअर अकॅडमी, आडूर.
         </p>
         <div style="margin-top:20px; display:flex; justify-content:space-between; font-size:12px; font-weight:bold; color:#78350f;">
             <div>दिनांक: {{ today_date }}</div>
@@ -1169,6 +1213,7 @@ MOCK_TEST_HTML = '''<!DOCTYPE html>
             <input type="hidden" name="saved_district" value="{{ district }}">
             <input type="hidden" name="saved_score" value="{{ score }}">
             <input type="hidden" name="saved_total" value="{{ total }}">
+            <input type="hidden" name="saved_upi_ref" value="{{ upi_ref }}">
             
             <input type="tel" name="whatsapp_phone" placeholder="१० अंकी ओरिजनल WhatsApp नंबर (उदा. ९९२११११९६०)" pattern="[6-9][0-9]{9}" required style="max-width:350px; margin:0 auto 10px; display:block; text-align:center; font-weight:bold;">
             <button type="submit" style="background:#25D366; color:white; border:none; padding:10px 20px; border-radius:6px; font-weight:bold; font-size:14px; cursor:pointer;">
@@ -1378,12 +1423,14 @@ def admin_view():
             written_records = cur.fetchall()
             cur.execute("SELECT * FROM questions ORDER BY id DESC")
             questions = cur.fetchall()
+            cur.execute("SELECT * FROM mock_test_leads ORDER BY id DESC")
+            pending_payments = cur.fetchall()
 
     total_paid = sum(safe_float(s['paid_fees']) for s in students)
     total_pending = sum(safe_float(s['total_fees']) - safe_float(s['paid_fees']) for s in students)
     total_expenses = sum(safe_float(ex['amount']) for ex in expenses_list)
 
-    return render_template_string(ADMIN_DASHBOARD_LAYOUT, curr_tab=curr_tab, students=students, expenses_list=expenses_list, users_list=users_list, diet_list=diet_list, staff_members=staff_members, staff_tasks=staff_tasks, all_requests=all_requests, all_staff_logs=all_staff_logs, discipline_logs=discipline_logs, hostel_logs=hostel_logs, physical_records=physical_records, written_records=written_records, questions=questions, total_paid=total_paid, total_pending=total_pending, total_expenses=total_expenses, today_date=today_date, lang=lang, test_launched=test_launched, test_fee=test_fee, upi_id=upi_id, qr_image_url=qr_image_url)
+    return render_template_string(ADMIN_DASHBOARD_LAYOUT, curr_tab=curr_tab, students=students, expenses_list=expenses_list, users_list=users_list, diet_list=diet_list, staff_members=staff_members, staff_tasks=staff_tasks, all_requests=all_requests, all_staff_logs=all_staff_logs, discipline_logs=discipline_logs, hostel_logs=hostel_logs, physical_records=physical_records, written_records=written_records, questions=questions, pending_payments=pending_payments, total_paid=total_paid, total_pending=total_pending, total_expenses=total_expenses, today_date=today_date, lang=lang, test_launched=test_launched, test_fee=test_fee, upi_id=upi_id, qr_image_url=qr_image_url)
 
 @app.route('/toggle_test_launch', methods=['POST'])
 def toggle_test_launch():
@@ -1411,6 +1458,25 @@ def update_test_settings():
             cur.execute("UPDATE settings SET value=%s WHERE key='qr_image_url'", (qr,))
             conn.commit()
     return redirect('/admin?tab=questions')
+
+@app.route('/approve_payment/<int:id>')
+def approve_payment(id):
+    if session.get('user_role') != 'Admin': return "Unauthorized", 403
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE mock_test_leads SET payment_status='Approved' WHERE id=%s", (id,))
+            conn.commit()
+    return redirect('/admin?tab=payments')
+
+@app.route('/update_student_validity/<int:id>', methods=['POST'])
+def update_student_validity(id):
+    if session.get('user_role') != 'Admin': return "Unauthorized", 403
+    valid_till = request.form.get('valid_till', '')
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE mock_test_leads SET valid_till=%s, payment_status='Approved' WHERE id=%s", (valid_till, id))
+            conn.commit()
+    return redirect('/admin?tab=payments')
 
 # ----------------- QUESTION MANAGEMENT ROUTES -----------------
 @app.route('/add_single_question', methods=['POST'])
@@ -1452,7 +1518,7 @@ def delete_question(id):
             conn.commit()
     return redirect('/admin?tab=questions')
 
-# ----------------- PUBLIC INQUIRY & SMART LOCKED TEST ROUTES -----------------
+# ----------------- PUBLIC INQUIRY & STUDENT VALIDITY TEST ROUTES -----------------
 @app.route('/inquiry', methods=['GET', 'POST'])
 def public_inquiry():
     msg = None
@@ -1508,6 +1574,8 @@ def mock_test():
     today_date = date.today().strftime("%d/%m/%Y")
     wa_link = ""
     step = "start"
+    error_msg = ""
+    upi_ref = "Free"
 
     if session.get('exam_unlocked') == True:
         step = "exam"
@@ -1519,16 +1587,15 @@ def mock_test():
             name = request.form.get('student_name')
             district = request.form.get('district')
             
-            # If fee is greater than 0, ensure UPI Ref is provided
             if safe_int(test_fee) > 0:
                 upi_ref = request.form.get('upi_ref', '').strip()
                 if not upi_ref:
-                    return render_template_string(MOCK_TEST_HTML, questions=questions, submitted=submitted, score=score, total=total, name=name, district=district, phone=phone, today_date=today_date, launched=launched, wa_link=wa_link, step="start", test_fee=test_fee, upi_id=upi_id, qr_image_url=qr_image_url, error_msg="कृपया पेमेंट भरल्याचा UPI ट्रान्झॅक्शन नंबर टाका!")
+                    return render_template_string(MOCK_TEST_HTML, questions=questions, submitted=submitted, score=score, total=total, name=name, district=district, phone=phone, today_date=today_date, launched=launched, wa_link=wa_link, step="start", test_fee=test_fee, upi_id=upi_id, qr_image_url=qr_image_url, error_msg="❌ कृपया पेमेंट भरल्याचा UPI ट्रान्झॅक्शन नंबर (Ref No) टाका!")
 
-            # Unlock the exam session
             session['exam_unlocked'] = True
             session['exam_name'] = name
             session['exam_district'] = district
+            session['exam_upi_ref'] = upi_ref if safe_int(test_fee) > 0 else "Free"
             step = "exam"
 
         elif action == 'submit_test' and session.get('exam_unlocked') == True:
@@ -1554,24 +1621,28 @@ def mock_test():
             district = request.form.get('saved_district')
             score = safe_int(request.form.get('saved_score'))
             total = safe_int(request.form.get('saved_total'))
+            upi_ref = request.form.get('saved_upi_ref', 'Free')
             phone = request.form.get('whatsapp_phone', '').strip()
 
             if phone and re.match(r'^[6-9]\d{9}$', phone):
+                pay_stat = 'Pending Verification' if safe_int(test_fee) > 0 else 'Approved'
+                default_valid = (date.today() + timedelta(days=30)).strftime("%Y-%m-%d") if safe_int(test_fee) > 0 else ""
+                
                 with get_db() as conn:
                     with conn.cursor() as cur:
                         t_date = date.today().strftime("%Y-%m-%d")
                         cur.execute("""
-                            INSERT INTO mock_test_leads (test_date, student_name, district, phone, score, total_marks, test_name)
-                            VALUES (%s, %s, %s, %s, %s, %s, %s)
-                        """, (t_date, name, district, phone, score, total, "राज्यस्तरीय पोलीस सराव टेस्ट"))
+                            INSERT INTO mock_test_leads (test_date, student_name, district, phone, score, total_marks, test_name, upi_ref, payment_status, valid_till)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        """, (t_date, name, district, phone, score, total, "राज्यस्तरीय पोलीस सराव टेस्ट", upi_ref, pay_stat, default_valid))
                         conn.commit()
 
-                wa_text = f"नमस्कार {name} जी,%0Aश्रीगुरु करिअर अकॅडमीच्या ऑनलाईन टेस्टचा निकाल:%0Aप्राप्त गुण: *{score}/{total}*%0Aजिल्हा: {district}%0Aअकॅडमीतर्फे खूप खूप अभिनंदन! संपर्क: ९९२११११९६०"
+                wa_text = f"नमस्कार {name} जी,%0Aश्रीगुरु करिअर अकॅडमीच्या ऑनलाईन टेस्टचा निकाल:%0Aप्राप्त गुण: *{score}/{total}*%0Aजिल्हा: {district}%0Aप्रशासनकीय सेवेत अधिकारी होण्यासाठी आपणास खूप खूप शुभेच्छा! संपर्क: ९९२११११९६०"
                 wa_link = f"https://wa.me/91{phone}?text={wa_text}"
             else:
                 step = "certificate_view"
 
-    return render_template_string(MOCK_TEST_HTML, questions=questions, submitted=submitted, score=score, total=total, name=name, district=district, phone=phone, today_date=today_date, launched=launched, wa_link=wa_link, step=step, test_fee=test_fee, upi_id=upi_id, qr_image_url=qr_image_url)
+    return render_template_string(MOCK_TEST_HTML, questions=questions, submitted=submitted, score=score, total=total, name=name, district=district, phone=phone, today_date=today_date, launched=launched, wa_link=wa_link, step=step, test_fee=test_fee, upi_id=upi_id, qr_image_url=qr_image_url, error_msg=error_msg, upi_ref=session.get('exam_upi_ref', 'Free'))
 
 @app.route('/inquiries')
 def inquiry_desk():
@@ -1642,7 +1713,7 @@ def inquiry_desk():
 
     <h4 style="color:#0b3c5d; margin:25px 0 5px;">📝 मोफत ऑनलाइन टेस्ट लीड्स व निकाल (Mock Test Leads):</h4>
     <table>
-        <thead><tr><th>तारीख</th><th>नाव</th><th>जिल्हा</th><th>मोबाईल</th><th>मिळालेले गुण</th><th>१-क्लिक संपर्क</th></tr></thead>
+        <thead><tr><th>तारीख</th><th>नाव</th><th>जिल्हा</th><th>मोबाईल</th><th>मिळालेले गुण</th><th>UPI Ref No</th><th>पेमेंट स्थिती</th><th>१-क्लिक संपर्क</th></tr></thead>
         <tbody>
             {% for t in test_leads %}
             <tr>
@@ -1651,6 +1722,8 @@ def inquiry_desk():
                 <td>{{ t.district }}</td>
                 <td>{{ t.phone }}</td>
                 <td><b style="color:#059669;">{{ t.score }} / {{ t.total_marks }}</b></td>
+                <td><code>{{ t.upi_ref }}</code></td>
+                <td><b style="color:{{ 'green' if t.payment_status=='Approved' else 'orange' }};">{{ t.payment_status }}</b></td>
                 <td>
                     <a href="tel:{{ t.phone }}" class="btn-call">📞 कॉल</a>
                     <a href="https://wa.me/91{{ t.phone }}?text=नमस्कार%20{{ t.student_name }},%20श्रीगुरु%20अकॅडमीच्या%20टेस्टमध्ये%20तुम्हाला%20{{ t.score }}/{{ t.total_marks }}%20गुण%20मिळाले!%20प्रवेशासाठी%20आमच्याशी%20जोडले%20रहा." target="_blank" class="btn-wa">📲 WA निकाल</a>
@@ -1712,6 +1785,6 @@ def print_grocery_slip():
     </body></html>'''
     return render_template_string(html)
 
-if __name__ == 'main__':
+if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
 
