@@ -8,7 +8,9 @@ app = Flask(__name__)
 app.secret_key = "shreeguru_complete_fresh_master_2026"
 
 # Supabase PostgreSQL Database Connection URL (password madhla @ = %40)
-DATABASE_URL = "postgresql://postgres:Shreeguru%40123@db.pcwdribwbcuoxkqhozmu.supabase.co:5432/postgres"
+ import os
+
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
 def get_db():
     conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
