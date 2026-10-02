@@ -1,8 +1,10 @@
 import os
 import shutil
 from datetime import date, datetime 
-from flask import Flask, redirect, render_template_string, request, url_for, session
+from flask import Flask, redirect, render_template, render_template_string, request, send_file, send_from_directory, url_for, session, Response
 from werkzeug.utils import secure_filename
+import io
+import csv
 import urllib.parse
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -742,7 +744,7 @@ TRAINER_LAYOUT = '''<!DOCTYPE html>
 </head>
 <body>
 <div class="header">
-    <div><b style="font-size:16px;">🏃‍♂️️ {{ 'COACH / TRAINER PORTAL' if lang == 'en' else 'फिजिकल ट्रेनर पोर्टल' }}</b><br><small style="color:#e0f2fe;">श्रीगुरु करिअर अकॅडमी</small></div>
+    <div><b style="font-size:16px;">🏃‍♂️ {{ 'COACH / TRAINER PORTAL' if lang == 'en' else 'फिजिकल ट्रेनर पोर्टल' }}</b><br><small style="color:#e0f2fe;">श्रीगुरु करिअर अकॅडमी</small></div>
     <div>
         <a href="/toggle_lang" style="background:#ffdd59; color:#0284c7; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:bold; text-decoration:none; margin-right:8px;">🌐 {{ 'MR (मराठी)' if lang == 'en' else 'EN (English)' }}</a>
         <a href="/logout" style="background:#ef4444; color:white; padding:4px 10px; border-radius:4px; text-decoration:none; font-size:12px; font-weight:bold;">बाहेर पडा</a>
@@ -752,7 +754,7 @@ TRAINER_LAYOUT = '''<!DOCTYPE html>
     <a href="/inquiries" class="nav-btn" style="background:#b45309; color:white;">📞 चौकशी व टेस्ट डेस्क</a>
     <a href="/trainer?tab=practice" class="nav-btn {% if curr_tab == 'practice' %}active{% endif %}">🏃‍♂️ {{ 'Practice' if lang == 'en' else 'आजचा सराव' }}</a>
     <a href="/trainer?tab=stopwatch" class="nav-btn {% if curr_tab == 'stopwatch' %}active{% endif %}" style="background:#f59e0b; color:#111;">⏱️ {{ 'Stopwatch' if lang == 'en' else 'स्टॉपवॉच' }}</a>
-    <a href="/trainer?tab=physical" class="nav-btn {% if curr_tab == 'physical' %}active{% endif %}">🏃‍♂️️ {{ 'Physical Test' if lang == 'en' else 'फिजिकल रेकॉर्ड नोंद' }}</a>
+    <a href="/trainer?tab=physical" class="nav-btn {% if curr_tab == 'physical' %}active{% endif %}">🏃‍♂️ {{ 'Physical Test' if lang == 'en' else 'फिजिकल रेकॉर्ड नोंद' }}</a>
     <a href="/trainer?tab=student_diet" class="nav-btn {% if curr_tab == 'student_diet' %}active{% endif %}" style="background:#10b981; color:white;">🥗 {{ 'Diet Plan' if lang == 'en' else 'डाएट शिफारस' }}</a>
     <a href="/trainer?tab=att" class="nav-btn {% if curr_tab == 'att' %}active{% endif %}">📋 {{ 'Attendance' if lang == 'en' else 'मैदानी हजेरी' }}</a>
     <a href="/trainer?tab=written" class="nav-btn {% if curr_tab == 'written' %}active{% endif %}">📝 {{ 'Written Exam' if lang == 'en' else 'रिटर्न टेस्ट' }}</a>
@@ -1490,7 +1492,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
                     <td><input type="text" name="reason" value="{{ d.reason }}" style="width:90%;"></td>
                     <td>
                         <button type="submit" class="btn-act" style="background:#2563eb;">बदला 💾</button>
-                        <a href="/delete_discipline/{{ d.id }}" onclick="return confirm('गेटपास रद्द करायचा?')" class="btn-act" style="background:red;">रद्द 🗑️️</a>
+                        <a href="/delete_discipline/{{ d.id }}" onclick="return confirm('गेटपास रद्द करायचा?')" class="btn-act" style="background:red;">रद्द 🗑️</a>
                     </td>
                 </tr>
                 </form>
@@ -1778,7 +1780,7 @@ MOCK_TEST_HTML = '''<!DOCTYPE html>
         </p>
         <a href="https://wa.me/919921111960?text=नमस्कार%20सर,%20मी%20ऑनलाइन%20टेस्ट%20दिली.%20माझा%20स्कोअर%20{{ score }}/{{ total }}%20आहे.%20मला%20ॲडमिशनची%20माहिती%20हवी%20आहे." 
            style="display:inline-block; background:#25D366; color:white; padding:10px 20px; border-radius:6px; text-decoration:none; font-weight:bold; margin-top:10px;">
-           📲 ॲडमिशन माहितीसाठी WhatsApp करा
+            📲 ॲडमिशन माहितीसाठी WhatsApp करा
         </a>
     </div>
     {% endif %}
@@ -2066,7 +2068,7 @@ def inquiry_desk():
     </style></head><body>
 
     <div class="header">
-        <h3 style="margin:0;">📞 श्रीगुरु ॲडमिशन कॉलिंग डेस्क</h3>
+        <h3 style="margin:0;">📞 श्रीगुरु ॲडमिशन कॉलिंग डेस्क (एकूण अर्ज: {{ inquiries|length }})</h3>
         <div>
             <a href="/" style="color:white; text-decoration:none; font-weight:bold; margin-right:15px;">🏠 मुख्य डॅशबोर्ड</a>
             <a href="/inquiry" target="_blank" style="color:#fde047; text-decoration:none; font-weight:bold; margin-right:15px;">🌐 प्रवेश अर्ज उघडा</a>
@@ -2088,7 +2090,7 @@ def inquiry_desk():
                 <td>{{ inq.hostel_interest }}</td>
                 <td>
                     <a href="tel:{{ inq.phone }}" class="btn-call">📞 कॉल</a>
-                    <a href="https://wa.me/91{{ inq.phone }}?text=नमस्कार%20{{ inq.student_name }},%20श्रीगुरु%20करिअर%20अकॅडमी%20आडूर%20मध्ये%20आपली%20चौकशी%20प्राप्त%20झाली." target="_blank" class="btn-wa">📲 WA</a>
+                    <a href="https://wa.me/91{{ inq.phone }}?text=नमस्कार%20{{ inq.student_name }},%20श्रीगुरु%20करिअर%20अकॅडमी%20आडूर%20मध्ये%20आपली%20चौकशी%20प्राप्त%20झाली.%20नवीन%20बॅचची%20माहिती%20खालीलप्रमाणे:" target="_blank" class="btn-wa">📲 WA</a>
                 </td>
                 <td>
                     <select name="call_status" style="padding:3px; border-radius:4px; font-size:12px;">
@@ -2104,6 +2106,28 @@ def inquiry_desk():
             </form>
             {% else %}
             <tr><td colspan="8" style="text-align:center; color:#64748b;">अद्याप कोणतीही चौकशी आलेली नाही.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h4 style="color:#0b3c5d; margin:25px 0 5px;">📝 मोफत ऑनलाइन टेस्ट लीड्स व निकाल (Mock Test Leads):</h4>
+    <table>
+        <thead><tr><th>तारीख</th><th>नाव</th><th>जिल्हा</th><th>मोबाईल</th><th>मिळालेले गुण</th><th>१-क्लिक संपर्क</th></tr></thead>
+        <tbody>
+            {% for t in test_leads %}
+            <tr>
+                <td>{{ t.test_date }}</td>
+                <td><b>{{ t.student_name }}</b></td>
+                <td>{{ t.district }}</td>
+                <td>{{ t.phone }}</td>
+                <td><b style="color:#059669;">{{ t.score }} / {{ t.total_marks }}</b></td>
+                <td>
+                    <a href="tel:{{ t.phone }}" class="btn-call">📞 कॉल</a>
+                    <a href="https://wa.me/91{{ t.phone }}?text=नमस्कार%20{{ t.student_name }},%20श्रीगुरु%20अकॅडमीच्या%20टेस्टमध्ये%20तुम्हाला%20{{ t.score }}/{{ t.total_marks }}%20गुण%20मिळाले!%20प्रवेशासाठी%20आमच्याशी%20जोडले%20रहा." target="_blank" class="btn-wa">📲 WA निकाल</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" style="text-align:center; color:#64748b;">अद्याप कोणीही ऑनलाइन टेस्ट सोडवलेली नाही.</td></tr>
             {% endfor %}
         </tbody>
     </table>
@@ -2658,41 +2682,11 @@ def student_report(student_id):
             except Exception:
                 ground_records = []
 
-    report_html = f"""<!DOCTYPE html>
-    <html lang="mr">
-    <head><meta charset="UTF-8"><title>विद्यार्थी प्रगती अहवाल - {student['name']}</title>
-    <style>
-        body {{ font-family: 'Segoe UI', Tahoma, sans-serif; background: #f8fafc; padding: 20px; color: #1e293b; }}
-        .card {{ background: white; max-width: 800px; margin: auto; padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }}
-        h2 {{ color: #0b3c5d; border-bottom: 2px solid #0b3c5d; padding-bottom: 8px; }}
-        table {{ width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }}
-        th, td {{ border: 1px solid #cbd5e1; padding: 8px; text-align: left; }}
-        th {{ background: #0b3c5d; color: white; }}
-        .btn {{ background: #0b3c5d; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }}
-    </style>
-    </head>
-    <body>
-    <div class="card">
-        <h2>📋 विद्यार्थी प्रगती व परफॉर्मन्स अहवाल</h2>
-        <p><b>नाव:</b> {student['name']} | <b>कोर्स:</b> {student['course']} | <b>मोबाईल:</b> {student['phone']}</p>
-        
-        <h3>🏃‍♂️ मैदानी चाचणी रेकॉर्ड</h3>
-        <table>
-            <thead><tr><th>तारीख</th><th>इव्हेंट</th><th>वेळ/अंतर</th><th>गुण</th><th>ट्रेनर</th></tr></thead>
-            <tbody>
-                {% for g in ground_records %}
-                <tr><td>{{ g.test_date }}</td><td>{{ g.event_name }}</td><td>{{ g.raw_value }}</td><td><b>{{ g.marks }}</b></td><td>{{ g.trainer_name }}</td></tr>
-                {% else %}
-                <tr><td colspan="5">कोणतीही मैदानी नोंद नाही.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-        <br><a href="/" class="btn">⬅️ डॅशबोर्डवर जा</a>
-    </div>
-    </body>
-    </html>"""
-    return render_template_string(report_html, student=student, ground_records=ground_records)
+    return render_template('student_report.html', 
+                           student=student, 
+                           logs=staff_logs, 
+                           attendance=attendance_records, 
+                           ground_records=ground_records)
 
 # ================= PHYSICAL / GROUND FITNESS TRACKER =================
 def calculate_ground_marks(gender, event_name, val):
@@ -2802,7 +2796,7 @@ def ground_tracker():
     except Exception as e:
         return f"<h3>एरर आला आहे: {str(e)}</h3>"
 
-    student_options = "".join([f"<option value='{s['id']}'>{s['name']} (ID: {s['id']})</option>" for s in students])
+    student_options = "".join([f"<option value='{s['id']}'>{s['name']} (हजेरी क्र./ID: {s['id']})</option>" for s in students])
     
     table_rows = ""
     for r in recent_records:
@@ -2886,11 +2880,12 @@ def ground_tracker():
         <div>
           <label>कामगिरी (वेळ किंवा अंतर):</label>
           <input type="number" step="0.01" name="raw_value" placeholder="उदा. धावणे: सेकंद, गोळा: मीटर" required>
+          <small style="color:#64748b; font-size:11px;">धावण्यासाठी एकूण सेकंद (उदा. 5 मि. 10 से. = 310) व गोळ्यासाठी मीटर टाका.</small>
         </div>
       </div>
       <div style="margin-top: 15px;">
         <label>शेरा (पर्यायी):</label>
-        <input type="text" name="remark" placeholder="उदा. स्टॅमिना चांगला">
+        <input type="text" name="remark" placeholder="उदा. स्टॅमिना चांगला, सुधारणा आवश्यक">
       </div>
       <div style="margin-top: 18px;">
         <button type="submit" class="btn">💾 चाचणी व गुण सेव्ह करा</button>
@@ -2898,15 +2893,15 @@ def ground_tracker():
     </form>
   </div>
 
-  <h3>📋 मैदानी चाचणी नोंदवही</h3>
+  <h3 style="margin-bottom:8px; color:#334155;">📋 मैदानी चाचणी नोंदवही (Recent Records)</h3>
   <table>
     <thead>
       <tr>
         <th>तारीख</th>
         <th>विद्यार्थी</th>
         <th>इव्हेंट</th>
-        <th>नोंद</th>
-        <th>गुण</th>
+        <th>नोंदवलेली वेळ/अंतर</th>
+        <th>मिळालेले गुण</th>
         <th>ट्रेनर / शेरा</th>
       </tr>
     </thead>
@@ -2919,6 +2914,160 @@ def ground_tracker():
 </html>"""
     return render_template_string(html)  
 
+# ----------------- ADMIN: STAFF ACTIVITIES & STUDENT REMARKS (EDIT & DELETE) -----------------
+@app.route('/delete_staff_activity/<int:act_id>', methods=['POST', 'GET'])
+def delete_staff_activity(act_id):
+    if session.get('user_role') != 'Admin' and session.get('role') != 'admin':
+        return "अनधिकृत प्रवेश! फक्त ॲडमिन ही नोंद डिलीट करू शकतात.", 403
+
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM staff_activities WHERE id = %s", (act_id,))
+            conn.commit()
+
+    return redirect(request.referrer or url_for('admin_view'))
+
+@app.route('/edit_staff_activity/<int:act_id>', methods=['GET', 'POST'])
+def edit_staff_activity(act_id):
+    if session.get('user_role') != 'Admin' and session.get('role') != 'admin':
+        return "अनधिकृत प्रवेश! फक्त ॲडमिन ही नोंद एडिट करू शकतात.", 403
+
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            if request.method == 'POST':
+                new_date = request.form.get('activity_date')
+                new_action = request.form.get('action_text')
+                new_remark = request.form.get('remark', '')
+
+                cur.execute("""
+                    UPDATE staff_activities 
+                    SET activity_date = %s, action_text = %s, remark = %s
+                    WHERE id = %s
+                """, (new_date, new_action, new_remark, act_id))
+                conn.commit()
+                return redirect(url_for('admin_view'))
+
+            cur.execute("SELECT * FROM staff_activities WHERE id = %s", (act_id,))
+            record = cur.fetchone()
+
+    if not record:
+        return "नोंद सापडली नाही!", 404
+
+    form_html = f"""<!DOCTYPE html>
+    <html lang="mr">
+    <head>
+    <meta charset="UTF-8"><title>स्टाफ नोंद दुरुस्त करा</title>
+    <style>
+      body {{ font-family: sans-serif; background: #f1f5f9; padding: 20px; }}
+      .box {{ max-width: 500px; margin: auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }}
+      input, textarea {{ width: 100%; padding: 10px; margin: 8px 0 16px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }}
+      .btn {{ background: #065f46; color: white; border: none; padding: 10px 18px; border-radius: 5px; cursor: pointer; font-weight: bold; }}
+      .cancel {{ color: #dc2626; text-decoration: none; margin-left: 15px; }}
+    </style>
+    </head>
+    <body>
+    <div class="box">
+      <h3 style="color:#065f46; margin-top:0;">✏️ स्टाफ नोंद दुरुस्त करा</h3>
+      <p><b>कर्मचारी:</b> {record['staff_name']}</p>
+      <form method="POST">
+        <label>तारीख:</label>
+        <input type="text" name="activity_date" value="{record['activity_date']}" required>
+        
+        <label>काम / कृती:</label>
+        <textarea name="action_text" rows="3" required>{record['action_text']}</textarea>
+        
+        <label>शेरा / तपशील:</label>
+        <input type="text" name="remark" value="{record['remark'] if record['remark'] else ''}">
+        
+        <button type="submit" class="btn">बदल सेव्ह करा</button>
+        <a href="javascript:history.back()" class="cancel">रद्द करा</a>
+      </form>
+    </div>
+    </body>
+    </html>"""
+    return render_template_string(form_html)
+
+@app.route('/delete_student_remark/<int:record_id>', methods=['POST', 'GET'])
+def delete_student_remark(record_id):
+    if session.get('user_role') != 'Admin' and session.get('role') != 'admin':
+        return "फक्त ॲडमिनला ही नोंद हटवण्याची परवानगी आहे.", 403
+
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT student_id FROM student_activities WHERE id = %s", (record_id,))
+            rec = cur.fetchone()
+            student_id = rec['student_id'] if rec else None
+            
+            cur.execute("DELETE FROM student_activities WHERE id = %s", (record_id,))
+            conn.commit()
+
+    if student_id:
+        return redirect(f"/student_report/{student_id}")
+    return redirect(request.referrer or url_for('admin_view'))
+
+@app.route('/edit_student_remark/<int:record_id>', methods=['GET', 'POST'])
+def edit_student_remark(record_id):
+    if session.get('user_role') != 'Admin' and session.get('role') != 'admin':
+        return "फक्त ॲडमिनला ही नोंद दुरुस्त करण्याची परवानगी आहे.", 403
+
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            if request.method == 'POST':
+                new_date = request.form.get('activity_date')
+                new_remark = request.form.get('remark')
+                new_diet = request.form.get('diet_plan', '')
+                student_id = request.form.get('student_id')
+
+                cur.execute("""
+                    UPDATE student_activities 
+                    SET activity_date = %s, remark = %s, diet_plan = %s
+                    WHERE id = %s
+                """, (new_date, new_remark, new_diet, record_id))
+                conn.commit()
+                return redirect(f"/student_report/{student_id}")
+
+            cur.execute("SELECT * FROM student_activities WHERE id = %s", (record_id,))
+            record = cur.fetchone()
+
+    if not record:
+        return "नोंद सापडली नाही!", 404
+
+    form_html = f"""<!DOCTYPE html>
+    <html lang="mr">
+    <head>
+    <meta charset="UTF-8"><title>विद्यार्थी अहवाल नोंद दुरुस्त करा</title>
+    <style>
+      body {{ font-family: sans-serif; background: #f1f5f9; padding: 20px; }}
+      .box {{ max-width: 500px; margin: auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }}
+      label {{ font-size: 13px; font-weight: bold; margin-bottom: 5px; display: block; }}
+      input, textarea {{ width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }}
+      .btn {{ background: #065f46; color: white; border: none; padding: 10px 18px; border-radius: 5px; cursor: pointer; font-weight: bold; }}
+      .cancel {{ color: #dc2626; text-decoration: none; margin-left: 15px; }}
+    </style>
+    </head>
+    <body>
+    <div class="box">
+      <h3 style="color:#065f46; margin-top:0;">✏️ अहवाल नोंद दुरुस्त करा (Admin)</h3>
+      <form method="POST">
+        <input type="hidden" name="student_id" value="{record['student_id']}">
+        
+        <label>तारीख:</label>
+        <input type="date" name="activity_date" value="{record['activity_date']}" required>
+        
+        <label>डाएट प्लॅन व विशेष सूचना:</label>
+        <textarea name="diet_plan" rows="3">{record['diet_plan'] if 'diet_plan' in record.keys() and record['diet_plan'] else ''}</textarea>
+        
+        <label>ट्रेनरचा / विशेष शेरा:</label>
+        <textarea name="remark" rows="3" required>{record['remark'] if record['remark'] else ''}</textarea>
+        
+        <button type="submit" class="btn">💾 बदल सेव्ह करा</button>
+        <a href="javascript:history.back()" class="cancel">रद्द करा</a>
+      </form>
+    </div>
+    </body>
+    </html>"""
+    return render_template_string(form_html)
+
 # --- STUDY LAB & LIBRARY ROUTES ---
 @app.route('/library')
 def library_dashboard():
@@ -2930,38 +3079,7 @@ def library_dashboard():
             issues = cur.fetchall()
             cur.execute("SELECT * FROM study_lab_seats ORDER BY seat_number ASC")
             seats = cur.fetchall()
-    
-    lib_html = """<!DOCTYPE html>
-    <html lang="mr">
-    <head><meta charset="UTF-8"><title>लायब्ररी व स्टडी लॅब</title>
-    <style>
-        body { font-family: sans-serif; background: #f8fafc; padding: 20px; }
-        .box { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
-        th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; }
-        th { background: #0284c7; color: white; }
-    </style>
-    </head>
-    <body>
-    <div class="box">
-        <h2 style="color:#0284c7; margin-top:0;">📚 लायब्ररी व स्टडी लॅब डॅशबोर्ड</h2>
-        <a href="/" style="font-weight:bold; color:#0b3c5d;">⬅️ मुख्य डॅशबोर्डवर जा</a>
-        
-        <h3>📖 पुस्तकांची यादी (Books Available: {{ books|length }})</h3>
-        <table>
-            <thead><tr><th>पुस्तकाचे नाव</th><th>लेखक</th><th>वर्ग</th><th>एकूण प्रती</th><th>उपलब्ध प्रती</th></tr></thead>
-            <tbody>
-                {% for b in books %}
-                <tr><td><b>{{ b.title }}</b></td><td>{{ b.author }}</td><td>{{ b.category }}</td><td>{{ b.total_copies }}</td><td>{{ b.available_copies }}</td></tr>
-                {% else %}
-                <tr><td colspan="5">कोणतीही पुस्तके नाहीत.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    </body>
-    </html>"""
-    return render_template_string(lib_html, books=books, issues=issues, seats=seats)
+    return render_template('library.html', books=books, issues=issues, seats=seats)
 
 @app.route('/add_book', methods=['POST'])
 def add_book():
@@ -2973,6 +3091,29 @@ def add_book():
         with conn.cursor() as cur:
             cur.execute("INSERT INTO books (title, author, category, total_copies, available_copies) VALUES (%s, %s, %s, %s, %s)",
                          (title, author, category, copies, copies))
+            conn.commit()
+    return redirect('/library')
+
+@app.route('/issue_book', methods=['POST'])
+def issue_book():
+    book_id = request.form.get('book_id')
+    student_name = request.form.get('student_name')
+    issue_date = request.form.get('issue_date')
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("INSERT INTO book_issues (book_id, student_name, issue_date, status) VALUES (%s, %s, %s, 'Issued')",
+                         (book_id, student_name, issue_date))
+            cur.execute("UPDATE books SET available_copies = available_copies - 1 WHERE id = %s AND available_copies > 0", (book_id,))
+            conn.commit()
+    return redirect('/library')
+
+@app.route('/return_book/<int:issue_id>/<int:book_id>')
+def return_book(issue_id, book_id):
+    today = date.today().strftime('%Y-%m-%d')
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE book_issues SET return_date = %s, status = 'Returned' WHERE id = %s", (today, issue_id))
+            cur.execute("UPDATE books SET available_copies = available_copies + 1 WHERE id = %s", (book_id,))
             conn.commit()
     return redirect('/library')
 
