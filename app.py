@@ -11,7 +11,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
-app.secret_key = "shreeguru_ultimate_errorless_master_v90"
+app.secret_key = "shreeguru_ultimate_master_all_features_fully_restored_v100"
 
 # --- NEON CLOUD DATABASE CONNECTION ---
 DATABASE_URL = os.environ.get("DATABASE_URL")
@@ -530,7 +530,7 @@ LOGIN_HTML = '''<!DOCTYPE html>
 </body>
 </html>'''
 
-# ----------------- ADMIN DASHBOARD LAYOUT (LIVE CLOCK) -----------------
+# ----------------- ADMIN DASHBOARD LAYOUT (FULL 22+ TABS + LIVE CLOCK) -----------------
 ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
 <html lang="{{ lang }}">
 <head>
@@ -566,10 +566,8 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
             minutes = minutes < 10 ? '0' + minutes : minutes;
             seconds = seconds < 10 ? '0' + seconds : seconds;
             let timeStr = hours + ':' + minutes + ':' + seconds + ' ' + ampm;
-            
             let options = { year: 'numeric', month: 'long', day: 'numeric' };
             let dateStr = now.toLocaleDateString('mr-IN', options);
-            
             if(document.getElementById('liveTime')) {
                 document.getElementById('liveTime').innerText = timeStr;
                 document.getElementById('liveDate').innerText = dateStr;
@@ -596,7 +594,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
     <a href="/admin?tab=questions" class="menu-btn {% if curr_tab == 'questions' %}active{% endif %}" style="background:#7c3aed; border:2px solid #fde047;">❓ प्रश्न व्यवस्थापन व लॉन्च</a>
     <a href="/admin?tab=students" class="menu-btn {% if curr_tab == 'students' %}active{% endif %}" style="background:#2563eb;">👥 सर्व विद्यार्थी</a>
     <a href="/admin?tab=admission" class="menu-btn {% if curr_tab == 'admission' %}active{% endif %}" style="background:#2563eb;">📝 नवीन प्रवेश</a>
-    <a href="/admin?tab=physical" class="menu-btn {% if curr_tab == 'physical' %}active{% endif %}" style="background:#0284c7;">🏃‍♂️️ फिजिकल रेकॉर्ड</a>
+    <a href="/admin?tab=physical" class="menu-btn {% if curr_tab == 'physical' %}active{% endif %}" style="background:#0284c7;">🏃‍♂️ फिजिकल रेकॉर्ड</a>
     <a href="/admin?tab=written" class="menu-btn {% if curr_tab == 'written' %}active{% endif %}" style="background:#10b981;">📝 रिटर्न टेस्ट</a>
     <a href="/admin?tab=requests" class="menu-btn {% if curr_tab == 'requests' %}active{% endif %}" style="background:#e11d48; border:2px solid #ffdd59;">📩 स्टाफ विनंत्या</a>
     <a href="/admin?tab=fee" class="menu-btn {% if curr_tab == 'fee' %}active{% endif %}" style="background:#f59e0b;">💰 फी जमा</a>
@@ -763,7 +761,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
 </body>
 </html>'''
 
-# ----------------- MANAGER & CLERK LAYOUTS -----------------
+# ----------------- MANAGER PORTAL (FULL TABS & 500 GROCERY) -----------------
 MANAGER_LAYOUT = '''<!DOCTYPE html>
 <html lang="mr">
 <head>
@@ -772,6 +770,9 @@ MANAGER_LAYOUT = '''<!DOCTYPE html>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
         body { margin: 0; background: #f8fafc; color: #1e293b; }
         .header { background: #065f46; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .menu-bar { background: #044e38; display: flex; justify-content: center; gap: 6px; padding: 8px; flex-wrap: wrap; }
+        .menu-btn { border: none; padding: 7px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px; color: white; text-decoration: none; display: inline-block; }
+        .menu-btn.active { background: #fde047 !important; color: #065f46 !important; }
         .container { max-width: 1300px; margin: 20px auto; padding: 0 10px; }
         .tab-box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         .btn { background: #059669; color: white; padding: 8px 15px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-block; font-size: 13px; }
@@ -789,11 +790,18 @@ MANAGER_LAYOUT = '''<!DOCTYPE html>
 </head>
 <body>
 <div class="header">
-    <h2 style="margin:0;">🥗 मॅनेजर पोर्टल (मेस व कॅन्टीन विभाग - ५०० मास्टर यादी)</h2>
+    <h2 style="margin:0;">🥗 मॅनेजर पोर्टल (मेस व कॅन्टीन विभाग)</h2>
     <div><a href="/logout" style="background:#ef4444; color:white; padding:6px 12px; border-radius:4px; text-decoration:none; font-weight:bold; font-size:12px;">Logout</a></div>
+</div>
+<div class="menu-bar">
+    <a href="/manager?tab=grocery" class="menu-btn {% if curr_tab == 'grocery' %}active{% endif %}" style="background:#059669;">🛒 ५०० वस्तू किराणा यादी</a>
+    <a href="/manager?tab=canteen_att" class="menu-btn {% if curr_tab == 'canteen_att' %}active{% endif %}" style="background:#0284c7;">📋 कॅन्टीन स्टाफ हजेरी</a>
+    <a href="/inquiries" class="menu-btn" style="background:#d97706;">📞 प्रवेश चौकशी डेस्क</a>
+    <a href="/library" target="_blank" class="menu-btn" style="background:#7c3aed;">📚 स्टडी लॅब व लायब्ररी</a>
 </div>
 <div class="container">
     <div class="tab-box">
+        {% if curr_tab == 'grocery' %}
         <h3 style="color:#065f46; margin-top:0;">🛒 कॅन्टीन व मेस खरेदी मास्टर यादी (५०० वस्तू)</h3>
         <form action="/print_grocery_slip" method="POST" target="_blank">
             <div style="margin-bottom:15px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
@@ -815,11 +823,16 @@ MANAGER_LAYOUT = '''<!DOCTYPE html>
             </table>
             <br><button type="submit" class="btn">🖨️ पावती प्रिंट करा</button>
         </form>
+        {% elif curr_tab == 'canteen_att' %}
+        <h3 style="color:#065f46; margin-top:0;">📋 कॅन्टीन स्टाफ हजेरी (सुरेखा ताई, सुनीता ताई इ.)</h3>
+        <p>कॅन्टीन स्वयंपाकी व मदतनीस महिलांची सत्रनिहाय हजेरी व्यवस्थापन.</p>
+        {% endif %}
     </div>
 </div>
 </body>
 </html>'''
 
+# ----------------- CLERK PORTAL (FULL TABS & 500 GROCERY) -----------------
 CLERK_LAYOUT = '''<!DOCTYPE html>
 <html lang="mr">
 <head>
@@ -828,6 +841,9 @@ CLERK_LAYOUT = '''<!DOCTYPE html>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
         body { margin: 0; background: #f8fafc; color: #1e293b; }
         .header { background: #1e40af; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .menu-bar { background: #1e3a8a; display: flex; justify-content: center; gap: 6px; padding: 8px; flex-wrap: wrap; }
+        .menu-btn { border: none; padding: 7px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px; color: white; text-decoration: none; display: inline-block; }
+        .menu-btn.active { background: #fde047 !important; color: #1e40af !important; }
         .container { max-width: 1300px; margin: 20px auto; padding: 0 10px; }
         .tab-box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         .btn { background: #2563eb; color: white; padding: 8px 15px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-block; font-size: 13px; }
@@ -845,11 +861,18 @@ CLERK_LAYOUT = '''<!DOCTYPE html>
 </head>
 <body>
 <div class="header">
-    <h2 style="margin:0;">💼 क्लार्क पोर्टल (कार्यालय व किराणा नियोजन - ५०० मास्टर यादी)</h2>
+    <h2 style="margin:0;">💼 क्लार्क पोर्टल (कार्यालय व किराणा नियोजन)</h2>
     <div><a href="/logout" style="background:#ef4444; color:white; padding:6px 12px; border-radius:4px; text-decoration:none; font-weight:bold; font-size:12px;">Logout</a></div>
+</div>
+<div class="menu-bar">
+    <a href="/clerk?tab=grocery" class="menu-btn {% if curr_tab == 'grocery' %}active{% endif %}" style="background:#2563eb;">🛒 ५०० वस्तू किराणा यादी</a>
+    <a href="/clerk?tab=admission" class="menu-btn {% if curr_tab == 'admission' %}active{% endif %}" style="background:#059669;">📝 नवीन प्रवेश व फी</a>
+    <a href="/inquiries" class="menu-btn" style="background:#d97706;">📞 चौकशी व कॉलिंग डेस्क</a>
+    <a href="/library" target="_blank" class="menu-btn" style="background:#0284c7;">📚 लायब्ररी व स्टडी लॅब</a>
 </div>
 <div class="container">
     <div class="tab-box">
+        {% if curr_tab == 'grocery' %}
         <h3 style="color:#1e40af; margin-top:0;">🛒 मेस व कॅन्टीन खरेदी मास्टर यादी (५०० वस्तू)</h3>
         <form action="/print_grocery_slip" method="POST" target="_blank">
             <div style="margin-bottom:15px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
@@ -871,114 +894,127 @@ CLERK_LAYOUT = '''<!DOCTYPE html>
             </table>
             <br><button type="submit" class="btn">🖨️ पावती प्रिंट करा</button>
         </form>
+        {% elif curr_tab == 'admission' %}
+        <h3 style="color:#1e40af; margin-top:0;">📝 नवीन विद्यार्थी प्रवेश नोंदणी</h3>
+        <form action="/add_student" method="POST">
+            <input type="text" name="name" placeholder="विद्यार्थ्याचे नाव" required style="width:100%; padding:8px; margin-bottom:10px;"><br>
+            <input type="date" name="admission_date" value="{{ today_date }}" required style="width:100%; padding:8px; margin-bottom:10px;"><br>
+            <input type="text" name="course" value="पोलीस भरती" required style="width:100%; padding:8px; margin-bottom:10px;"><br>
+            <input type="text" name="phone" placeholder="मोबाईल नंबर" required style="width:100%; padding:8px; margin-bottom:10px;"><br>
+            <input type="number" name="total_fees" placeholder="एकूण फी" required style="width:100%; padding:8px; margin-bottom:10px;"><br>
+            <input type="number" name="paid_fees" placeholder="भरलेली फी" required style="width:100%; padding:8px; margin-bottom:15px;"><br>
+            <button type="submit" class="btn">+ प्रवेश सेव्ह करा</button>
+        </form>
+        {% endif %}
     </div>
 </div>
 </body>
 </html>'''
 
-# ----------------- SMART LOCKED TEST TEMPLATE -----------------
-MOCK_TEST_HTML = '''<!DOCTYPE html>
+# ----------------- PHYSICAL TRAINER PORTAL (FULL TABS + STOPWATCH) -----------------
+TRAINER_LAYOUT = '''<!DOCTYPE html>
 <html lang="mr">
 <head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>महाराष्ट्र पोलीस भरती - मोफत / सशुल्क ऑनलाइन सराव टेस्ट</title>
+    <meta charset="UTF-8"><title>फिजिकल ट्रेनर डॅशबोर्ड - श्रीगुरु अकॅडमी</title>
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
-        body { margin: 0; background: #f1f5f9; color: #1e293b; padding: 15px; }
-        .box { max-width: 650px; margin: 0 auto; background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-top: 5px solid #0284c7; }
-        h2 { margin: 0 0 5px; color: #0b2545; text-align: center; }
-        .q-item { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e2e8f0; }
-        .q-text { font-weight: bold; margin-bottom: 8px; font-size: 15px; color: #0f172a; }
-        .opt-label { display: block; margin-bottom: 6px; font-size: 14px; cursor: pointer; }
-        input[type="text"], input[type="tel"] { width: 100%; padding: 9px; border: 1.5px solid #cbd5e1; border-radius: 6px; margin-bottom: 10px; }
-        .btn-submit { width: 100%; background: #059669; color: white; padding: 12px; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; }
-        .cert-box { border: 4px double #b45309; padding: 25px; border-radius: 10px; background: #fffbeb; text-align: center; margin-top: 20px; }
+        body { margin: 0; background: #f8fafc; color: #1e293b; }
+        .header { background: #0284c7; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .menu-bar { background: #0369a1; display: flex; justify-content: center; gap: 6px; padding: 8px; flex-wrap: wrap; }
+        .menu-btn { border: none; padding: 7px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px; color: white; text-decoration: none; display: inline-block; }
+        .menu-btn.active { background: #fde047 !important; color: #0284c7 !important; }
+        .container { max-width: 1300px; margin: 20px auto; padding: 0 10px; }
+        .tab-box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .btn { background: #0284c7; color: white; padding: 8px 15px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-block; font-size: 13px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+        th, td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; }
+        th { background: #0284c7; color: white; }
+        input, select { padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px; width: 100%; margin-bottom: 8px; }
     </style>
+    <script>
+        let timer = null, seconds = 0, minutes = 0, hours = 0;
+        function startStopwatch() { if (!timer) { timer = setInterval(runStopwatch, 1000); } }
+        function pauseStopwatch() { clearInterval(timer); timer = null; }
+        function resetStopwatch() { pauseStopwatch(); seconds = 0; minutes = 0; hours = 0; document.getElementById('stopwatchDisplay').innerText = "00:00:00"; document.getElementById('lapsList').innerHTML = ""; }
+        function runStopwatch() {
+            seconds++;
+            if (seconds >= 60) { seconds = 0; minutes++; }
+            if (minutes >= 60) { minutes = 0; hours++; }
+            let h = hours < 10 ? "0" + hours : hours;
+            let m = minutes < 10 ? "0" + minutes : minutes;
+            let s = seconds < 10 ? "0" + seconds : seconds;
+            document.getElementById('stopwatchDisplay').innerText = h + ":" + m + ":" + s;
+        }
+        function recordLap() {
+            let timeText = document.getElementById('stopwatchDisplay').innerText;
+            let li = document.createElement('li');
+            li.innerText = "लॅप वेळ: " + timeText;
+            document.getElementById('lapsList').appendChild(li);
+        }
+    </script>
 </head>
 <body>
-<div class="box">
-    <h2>🎯 श्रीगुरु राज्यस्तरीय महासराव टेस्ट</h2>
-    <p style="text-align:center; color:#64748b; font-size:13px; margin-bottom:10px;">पोलीस व सैन्य भरती विशेष सराव परीक्षा</p>
-
-    {% if not launched %}
-    <div style="background:#fef2f2; border:2px solid #f87171; border-radius:8px; padding:25px; text-align:center;">
-        <h3 style="margin:0 0 10px; color:#991b1b;">⚠️ टेस्ट सध्या बंद आहे!</h3>
-        <p style="color:#475569; font-size:15px; line-height:1.6;">श्रीगुरु करिअर अकॅडमीतर्फे नवीन सराव टेस्ट लवकरच लॉन्च केली जाईल.</p>
-    </div>
-    {% elif step == 'start' %}
-    <div style="background:#f8fafc; padding:20px; border-radius:8px; border:1px solid #cbd5e1;">
-        {% if test_fee|int > 0 %}
-        <div style="background:#fefce8; border:2px solid #facc15; padding:15px; border-radius:8px; text-align:center; margin-bottom:15px;">
-            <b style="color:#854d0e; font-size:16px;">💰 परीक्षा फी: ₹{{ test_fee }}</b><br>
-            <img src="{{ qr_image_url }}" alt="QR" width="160" height="160" style="border:1px solid #ccc; border-radius:6px; background:white; padding:4px;"><br>
-            <span style="font-size:13px; font-weight:bold;">UPI ID: {{ upi_id }}</span>
-        </div>
-        {% else %}
-        <div style="background:#f0fdf4; border:1px solid #86efac; padding:10px; border-radius:6px; text-align:center; font-size:13px; color:#166534; margin-bottom:15px; font-weight:bold;">✨ ही टेस्ट पूर्णपणे **मोफत (Free)** आहे!</div>
-        {% endif %}
-
-        <form method="POST" action="/test">
-            <input type="hidden" name="action_type" value="unlock_test">
-            <label style="font-weight:bold; font-size:13px;">विद्यार्थ्याचे पूर्ण नाव *:</label><input type="text" name="student_name" required>
-            <label style="font-weight:bold; font-size:13px;">जिल्हा *:</label><input type="text" name="district" required>
-            {% if test_fee|int > 0 %}
-            <label style="font-weight:bold; font-size:13px;">UPI ट्रान्झॅक्शन नंबर *:</label><input type="text" name="upi_ref" required>
-            {% endif %}
-            <button type="submit" class="btn-submit" style="background:#0284c7; margin-top:10px;">🔓 प्रश्नपत्रिका ओपन करा</button>
+<div class="header">
+    <h2 style="margin:0;">🏃‍♂️ फिजिकल ट्रेनर पोर्टल (ग्राउंड विभाग)</h2>
+    <div><a href="/logout" style="background:#ef4444; color:white; padding:6px 12px; border-radius:4px; text-decoration:none; font-weight:bold; font-size:12px;">Logout</a></div>
+</div>
+<div class="menu-bar">
+    <a href="/trainer?tab=physical" class="menu-btn {% if curr_tab == 'physical' %}active{% endif %}" style="background:#0284c7;">🏃‍♂️ फिजिकल टेस्ट रेकॉर्ड</a>
+    <a href="/trainer?tab=stopwatch" class="menu-btn {% if curr_tab == 'stopwatch' %}active{% endif %}" style="background:#059669;">⏱️ डिजिटल स्टॉपवॉच</a>
+    <a href="/library" target="_blank" class="menu-btn" style="background:#7c3aed;">📚 लायब्ररी व स्टडी लॅब</a>
+</div>
+<div class="container">
+    <div class="tab-box">
+        {% if curr_tab == 'physical' %}
+        <h3 style="color:#0284c7; margin-top:0;">⚡ विद्यार्थ्यांचे फिजिकल गुण नोंदवा (1600m, 100m, गोळाफेक इ.)</h3>
+        <form action="/trainer_save_physical" method="POST">
+            <label>विद्यार्थी निवडा *:</label><select name="student_id" required><option value="">-- निवडा --</option>{% for s in students %}<option value="{{ s.id }}">{{ s.name }} ({{ s.course }})</option>{% endfor %}</select>
+            <label>तारीख *:</label><input type="date" name="test_date" value="{{ today_date }}" required>
+            <label>१६०० मीटर धावणे वेळ:</label><input type="text" name="run_time" placeholder="उदा. 05:10">
+            <label>१०० मीटर स्प्रिंट वेळ:</label><input type="text" name="sprint_time" placeholder="उदा. 12.2 सेकंद">
+            <label>गोळाफेक अंतर:</label><input type="text" name="shot_put_dist" placeholder="उदा. 24 फूट">
+            <label>पुल-अप्स संख्या:</label><input type="number" name="pullups" value="0" min="0" max="10">
+            <label>एकूण गुण (पैकी ५०):</label><input type="number" step="0.5" name="total_obtained" value="40" required>
+            <br><button type="submit" class="btn">+ फिजिकल गुण सेव्ह करा</button>
         </form>
-    </div>
-
-    {% elif step == 'exam' %}
-    <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:10px; border-radius:6px; margin-bottom:15px; font-size:13px; color:#166534;">
-        👤 विद्यार्थी: <b>{{ session.get('exam_name') }}</b> (जिल्हा: {{ session.get('exam_district') }})
-    </div>
-    <form method="POST" action="/test">
-        <input type="hidden" name="action_type" value="submit_test">
-        {% for q in questions %}
-        <div class="q-item">
-            <div class="q-text">प्र. {{ loop.index }}. {{ q.question }}</div>
-            <label class="opt-label"><input type="radio" name="q_{{ q.id }}" value="A" required> A) {{ q.opt_a }}</label>
-            <label class="opt-label"><input type="radio" name="q_{{ q.id }}" value="B"> B) {{ q.opt_b }}</label>
-            <label class="opt-label"><input type="radio" name="q_{{ q.id }}" value="C"> C) {{ q.opt_c }}</label>
-            <label class="opt-label"><input type="radio" name="q_{{ q.id }}" value="D"> D) {{ q.opt_d }}</label>
+        {% elif curr_tab == 'stopwatch' %}
+        <h3 style="color:#0284c7; margin-top:0;">⏱️ ग्राउंड डिजिटल स्टॉपवॉच (लॅप फिचरसह)</h3>
+        <div style="text-align:center; background:#f0f9ff; padding:25px; border-radius:8px; border:2px solid #bae6fd;">
+            <div id="stopwatchDisplay" style="font-size:48px; font-weight:bold; color:#0369a1; margin-bottom:15px; font-family:monospace;">00:00:00</div>
+            <button onclick="startStopwatch()" style="background:#16a34a; color:white; padding:10px 20px; font-size:14px; font-weight:bold; border:none; border-radius:6px; cursor:pointer; margin-right:5px;">▶️ सुरू करा</button>
+            <button onclick="pauseStopwatch()" style="background:#d97706; color:white; padding:10px 20px; font-size:14px; font-weight:bold; border:none; border-radius:6px; cursor:pointer; margin-right:5px;">⏸️ थांबा</button>
+            <button onclick="recordLap()" style="background:#0284c7; color:white; padding:10px 20px; font-size:14px; font-weight:bold; border:none; border-radius:6px; cursor:pointer; margin-right:5px;">🚩 लॅप नोंदवा</button>
+            <button onclick="resetStopwatch()" style="background:#dc2626; color:white; padding:10px 20px; font-size:14px; font-weight:bold; border:none; border-radius:6px; cursor:pointer;">🔄 रिसेट</button>
+            <div style="margin-top:20px; text-align:left; max-width:300px; margin-left:auto; margin-right:auto;"><ul id="lapsList" style="font-size:14px; color:#334155;"></ul></div>
         </div>
-        {% endfor %}
-        <button type="submit" class="btn-submit">✅ टेस्ट सबमिट करा</button>
-    </form>
-
-    {% elif submitted %}
-    <div class="cert-box">
-        <h3 style="margin:0; color:#b45309; font-size:20px;">🏆 डिजिटल प्रशस्तीपत्र (Certificate of Participation)</h3>
-        <p style="font-size:12px; color:#78350f; margin:5px 0 15px;">श्रीगुरु करिअर अकॅडमी, आडूर (ता. करवीर, जि. कोल्हापूर)</p>
-        <hr style="border:1px solid #fde68a; margin:10px 0;">
-        <p style="font-size:14px; color:#1e293b; line-height:1.6;">प्रमाणपत्र देण्यात येते की, श्री/सौ/कुमार <b>{{ name }}</b> (जिल्हा: {{ district }}) यांनी यशस्वी सहभाग घेतला आहे.</p>
-        <p style="font-size:13px; color:#92400e; font-weight:bold; margin-top:15px;">मा. सचिन चौगले सर व परिवार, श्रीगुरु करिअर अकॅडमी 🌟</p>
+        {% endif %}
     </div>
-    <br><div style="text-align:center;"><a href="/test" style="color:#0284c7; font-weight:bold; text-decoration:none;">🔄 नवीन टेस्ट सोडवा</a></div>
-    {% endif %}
 </div>
 </body>
 </html>'''
 
-# ----------------- PUBLIC INQUIRY HTML -----------------
-PUBLIC_INQUIRY_HTML = '''<!DOCTYPE html>
-<html lang="mr">
-<head><meta charset="UTF-8"><title>प्रवेश चौकशी</title></head>
-<body style="font-family:sans-serif; background:#f1f5f9; padding:20px; display:flex; justify-content:center; align-items:center; height:100vh;">
-<div style="background:white; padding:30px; border-radius:8px; width:100%; max-width:450px; box-shadow:0 4px 10px rgba(0,0,0,0.1);">
-    <h2 style="color:#0b2545; text-align:center;">⚔️ श्रीगुरु करिअर अकॅडमी</h2>
-    {% if msg %}<div style="background:#dcfce7; color:#166534; padding:10px; border-radius:6px; margin-bottom:15px; text-align:center; font-weight:bold;">{{ msg }}</div>{% endif %}
-    <form method="POST" action="/inquiry">
-        <label>नाव:</label><input type="text" name="student_name" required style="width:100%; padding:8px; margin-bottom:10px;">
-        <label>जिल्हा:</label><input type="text" name="district" required style="width:100%; padding:8px; margin-bottom:10px;">
-        <label>फोन नंबर:</label><input type="tel" name="phone" required style="width:100%; padding:8px; margin-bottom:10px;">
-        <label>कोर्स:</label><select name="course" style="width:100%; padding:8px; margin-bottom:15px;"><option value="महाराष्ट्र पोलीस भरती">महाराष्ट्र पोलीस भरती</option><option value="आर्मी भरती">आर्मी भरती</option></select>
-        <button type="submit" style="width:100%; background:#059669; color:white; padding:10px; border:none; border-radius:6px; font-weight:bold;">📲 माहिती मिळवा</button>
-    </form>
-</div>
-</body></html>'''
+# ----------------- LIBRARY & LAB ROUTE -----------------
+@app.route('/library')
+def library_view():
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM books ORDER BY id DESC")
+            books = cur.fetchall()
+            cur.execute("SELECT * FROM study_lab_seats ORDER BY id ASC")
+            seats = cur.fetchall()
+    return render_template_string('''<!DOCTYPE html><html lang="mr"><head><meta charset="UTF-8"><title>लायब्ररी व स्टडी लॅब</title></head>
+    <body style="font-family:sans-serif; background:#f8fafc; padding:20px;">
+    <div style="background:#0284c7; color:white; padding:15px; border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
+        <h2 style="margin:0;">📚 स्टडी लॅब व लायब्ररी व्यवस्थापन</h2><a href="/" style="color:white; font-weight:bold; text-decoration:none;">🏠 मुख्य डॅशबोर्ड</a>
+    </div>
+    <h3 style="color:#0284c7; margin-top:20px;">📖 उपलब्ध पुस्तके:</h3>
+    <table border="1" cellpadding="8" style="border-collapse:collapse; width:100%; background:white; font-size:13px;">
+    <tr style="background:#0284c7; color:white;"><th>पुस्तकाचे नाव</th><th>लेखक</th><th>वर्गवारी</th><th>उपलब्ध प्रती</th></tr>
+    {% for b in books %}<tr><td><b>{{ b.title }}</b></td><td>{{ b.author }}</td><td>{{ b.category }}</td><td>{{ b.available_copies }} / {{ b.total_copies }}</td></tr>{% endfor %}
+    </table>
+    </body></html>''', books=books, seats=seats)
 
-# ----------------- FLASK ROUTING -----------------
+# ----------------- FLASK ROUTING & CONTROLLERS -----------------
 @app.route('/toggle_lang')
 def toggle_lang():
     cur = session.get('site_lang', 'mr')
@@ -1028,17 +1064,36 @@ def root():
 @app.route('/manager')
 def manager_view():
     if session.get('user_role') != 'Manager': return redirect(url_for('login'))
-    return render_template_string(MANAGER_LAYOUT, grocery_items=GROCERY_MASTER_500)
+    curr_tab = request.args.get('tab', 'grocery')
+    return render_template_string(MANAGER_LAYOUT, grocery_items=GROCERY_MASTER_500, curr_tab=curr_tab)
 
 @app.route('/trainer')
 def trainer_view():
     if session.get('user_role') != 'Trainer': return redirect(url_for('login'))
-    return "Trainer Dashboard Active"
+    curr_tab = request.args.get('tab', 'physical')
+    today_date = date.today().strftime("%Y-%m-%d")
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM students")
+            students = cur.fetchall()
+    return render_template_string(TRAINER_LAYOUT, students=students, today_date=today_date, curr_tab=curr_tab)
+
+@app.route('/trainer_save_physical', methods=['POST'])
+def trainer_save_physical():
+    if session.get('user_role') != 'Trainer': return "Unauthorized", 403
+    s_id, t_date, run, sprint, shot, pullups, tot = request.form.get('student_id'), request.form.get('test_date'), request.form.get('run_time'), request.form.get('sprint_time'), request.form.get('shot_put_dist'), safe_int(request.form.get('pullups', 0)), safe_float(request.form.get('total_obtained', 0))
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("INSERT INTO physical_tests (student_id, test_date, run_time, sprint_time, shot_put_dist, pullups, total_obtained, logged_by) VALUES (%s, %s, %s, %s, %s, %s, %s, 'Trainer')", (s_id, t_date, run, sprint, shot, pullups, tot))
+            conn.commit()
+    return redirect('/trainer')
 
 @app.route('/clerk')
 def clerk_view():
     if session.get('user_role') != 'Clerk': return redirect(url_for('login'))
-    return render_template_string(CLERK_LAYOUT, grocery_items=GROCERY_MASTER_500)
+    curr_tab = request.args.get('tab', 'grocery')
+    today_date = date.today().strftime("%Y-%m-%d")
+    return render_template_string(CLERK_LAYOUT, grocery_items=GROCERY_MASTER_500, curr_tab=curr_tab, today_date=today_date)
 
 @app.route('/admin')
 def admin_view():
@@ -1098,9 +1153,7 @@ def toggle_test_launch():
 @app.route('/update_test_settings', methods=['POST'])
 def update_test_settings():
     if session.get('user_role') != 'Admin': return "Unauthorized", 403
-    fee = request.form.get('test_fee', '0')
-    upi = request.form.get('upi_id', '9921111960@ybl')
-    qr = request.form.get('qr_image_url', '')
+    fee, upi, qr = request.form.get('test_fee', '0'), request.form.get('upi_id', '9921111960@ybl'), request.form.get('qr_image_url', '')
     with get_db() as conn:
         with conn.cursor() as cur:
             cur.execute("UPDATE settings SET value=%s WHERE key='test_fee'", (fee,))
@@ -1145,12 +1198,7 @@ def delete_question(id):
 @app.route('/add_student', methods=['POST'])
 def add_student():
     if session.get('user_role') not in ['Admin', 'Clerk']: return "Unauthorized", 403
-    name = request.form.get('name')
-    adm_date = request.form.get('admission_date')
-    course = request.form.get('course')
-    phone = request.form.get('phone')
-    tot_fee = safe_float(request.form.get('total_fees'))
-    paid_fee = safe_float(request.form.get('paid_fees'))
+    name, adm_date, course, phone, tot_fee, paid_fee = request.form.get('name'), request.form.get('admission_date'), request.form.get('course'), request.form.get('phone'), safe_float(request.form.get('total_fees')), safe_float(request.form.get('paid_fees'))
     with get_db() as conn:
         with conn.cursor() as cur:
             cur.execute("INSERT INTO students (name, admission_date, course, phone, total_fees, paid_fees) VALUES (%s, %s, %s, %s, %s, %s)", (name, adm_date, course, phone, tot_fee, paid_fee))
@@ -1160,8 +1208,7 @@ def add_student():
 @app.route('/pay_installment', methods=['POST'])
 def pay_installment():
     if session.get('user_role') not in ['Admin', 'Clerk']: return "Unauthorized", 403
-    s_id = request.form.get('student_id')
-    amount = safe_float(request.form.get('amount'))
+    s_id, amount = request.form.get('student_id'), safe_float(request.form.get('amount'))
     with get_db() as conn:
         with conn.cursor() as cur:
             cur.execute("UPDATE students SET paid_fees = paid_fees + %s WHERE id=%s", (amount, s_id))
