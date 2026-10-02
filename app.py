@@ -11,7 +11,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
-app.secret_key = "shreeguru_complete_bulletproof_v70_all_features_and_roles"
+app.secret_key = "shreeguru_complete_bulletproof_ultimate_stable_v71"
 
 # --- NEON CLOUD DATABASE CONNECTION ---
 DATABASE_URL = os.environ.get("DATABASE_URL")
@@ -546,7 +546,7 @@ LOGIN_HTML = '''<!DOCTYPE html>
 <body>
 <div class="login-box">
     <a href="/toggle_lang" class="lang-btn">🌐 {{ 'MR' if lang == 'en' else 'EN' }}</a>
-    <span class="insignia">⚔️ POLICE & DEFENCE ACADEMY</span>
+    <span class="insignia">⚔️️ POLICE & DEFENCE ACADEMY</span>
     <h2 class="title">श्रीगुरु करिअर अकॅडमी</h2>
     <div class="subtitle">पोलीस व सैन्य भरती पूर्व प्रशिक्षण केंद्र<br>आडूर, ता. करवीर, जि. कोल्हापूर</div>
     {% if error %}<div style="color:#dc2626; font-size:12px; font-weight:bold; margin-bottom:12px;">{{ error }}</div>{% endif %}
@@ -694,7 +694,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
                         {{ '🟢 निवडली आहे' if current_test_id == tp.id else '✏️ प्रश्न पहा' }}
                     </a>
                     {% if tp.id != 1 %}
-                    <a href="/delete_test_paper/{{ tp.id }}" onclick="return confirm('हा टेस्ट पेपर व त्यातील सर्व प्रश्न डिलीट करायचे?')" style="color:red; font-weight:bold; text-decoration:none; font-size:14px;">🗑️️</a>
+                    <a href="/delete_test_paper/{{ tp.id }}" onclick="return confirm('हा टेस्ट पेपर व त्यातील सर्व प्रश्न डिलीट करायचे?')" style="color:red; font-weight:bold; text-decoration:none; font-size:14px;">🗑️</a>
                     {% endif %}
                 </div>
                 {% endfor %}
