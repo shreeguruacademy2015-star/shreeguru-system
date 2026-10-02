@@ -11,7 +11,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
-app.secret_key = "shreeguru_ultimate_master_all_features_bilingual_v85_final"
+app.secret_key = "shreeguru_ultimate_errorless_master_v90"
 
 # --- NEON CLOUD DATABASE CONNECTION ---
 DATABASE_URL = os.environ.get("DATABASE_URL")
@@ -470,7 +470,7 @@ GROCERY_MASTER_500 = [
     "टॉयलेट क्लिनर (हार्पिक)", "काच पुसण्याचा लिक्विड", "हॅन्ड वॉश लिक्विड रिफिल", "नॅप्थालीन गोळ्या", "कचऱ्याच्या मोठ्या पिशव्या"
 ]
 
-# ----------------- LOGIN HTML (BILINGUAL) -----------------
+# ----------------- LOGIN HTML -----------------
 LOGIN_HTML = '''<!DOCTYPE html>
 <html lang="{{ lang }}">
 <head>
@@ -530,7 +530,7 @@ LOGIN_HTML = '''<!DOCTYPE html>
 </body>
 </html>'''
 
-# ----------------- ADMIN DASHBOARD LAYOUT -----------------
+# ----------------- ADMIN DASHBOARD LAYOUT (LIVE CLOCK) -----------------
 ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
 <html lang="{{ lang }}">
 <head>
@@ -554,14 +554,38 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
         input, select, textarea { padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; }
         .btn-act { padding: 4px 7px; border-radius: 3px; color: white; text-decoration: none; font-size: 11px; font-weight: bold; display: inline-block; cursor: pointer; border: none; }
     </style>
+    <script>
+        function updateLiveClock() {
+            const now = new Date();
+            let hours = now.getHours();
+            let minutes = now.getMinutes();
+            let seconds = now.getSeconds();
+            let ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            seconds = seconds < 10 ? '0' + seconds : seconds;
+            let timeStr = hours + ':' + minutes + ':' + seconds + ' ' + ampm;
+            
+            let options = { year: 'numeric', month: 'long', day: 'numeric' };
+            let dateStr = now.toLocaleDateString('mr-IN', options);
+            
+            if(document.getElementById('liveTime')) {
+                document.getElementById('liveTime').innerText = timeStr;
+                document.getElementById('liveDate').innerText = dateStr;
+            }
+        }
+        setInterval(updateLiveClock, 1000);
+        window.onload = updateLiveClock;
+    </script>
 </head>
 <body>
 <div class="header">
-    <div class="clock"><div id="liveTime" style="font-weight:bold; color:#ffdd59;">04:15:32 PM</div><div id="liveDate">२५/९/२०२६</div></div>
+    <div class="clock"><div id="liveTime" style="font-weight:bold; color:#ffdd59;">--:--:-- --</div><div id="liveDate">----</div></div>
     <h1 style="margin:0; color:#ffdd59; font-size:24px;">SHREEGURU CAREER ACADEMY</h1>
     <p style="margin:3px 0 0; font-size:12px;">पत्ता: आडूर, करवीर, कोल्हापूर | संपर्क: ९९२११११९६०</p>
     <div class="top-right">
-        <a href="/toggle_lang" style="background:#ffdd59; color:#0b3c5d; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:bold; text-decoration:none;">🌐 {{ 'मराठी' if lang == 'en' else 'English' }}</a>
+        <a href="/toggle_lang" style="background:#ffdd59; color:#0b3c5d; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:bold; text-decoration:none;">🌐 मराठी / EN</a>
         <span style="color:#ffdd59; font-size:12px;">👤 Admin</span>
         <a href="/logout" style="background:#ef4444; color:white; padding:3px 8px; border-radius:4px; text-decoration:none; font-size:11px; font-weight:bold;">Logout</a>
     </div>
@@ -572,7 +596,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
     <a href="/admin?tab=questions" class="menu-btn {% if curr_tab == 'questions' %}active{% endif %}" style="background:#7c3aed; border:2px solid #fde047;">❓ प्रश्न व्यवस्थापन व लॉन्च</a>
     <a href="/admin?tab=students" class="menu-btn {% if curr_tab == 'students' %}active{% endif %}" style="background:#2563eb;">👥 सर्व विद्यार्थी</a>
     <a href="/admin?tab=admission" class="menu-btn {% if curr_tab == 'admission' %}active{% endif %}" style="background:#2563eb;">📝 नवीन प्रवेश</a>
-    <a href="/admin?tab=physical" class="menu-btn {% if curr_tab == 'physical' %}active{% endif %}" style="background:#0284c7;">🏃‍♂️ फिजिकल रेकॉर्ड</a>
+    <a href="/admin?tab=physical" class="menu-btn {% if curr_tab == 'physical' %}active{% endif %}" style="background:#0284c7;">🏃‍♂️️ फिजिकल रेकॉर्ड</a>
     <a href="/admin?tab=written" class="menu-btn {% if curr_tab == 'written' %}active{% endif %}" style="background:#10b981;">📝 रिटर्न टेस्ट</a>
     <a href="/admin?tab=requests" class="menu-btn {% if curr_tab == 'requests' %}active{% endif %}" style="background:#e11d48; border:2px solid #ffdd59;">📩 स्टाफ विनंत्या</a>
     <a href="/admin?tab=fee" class="menu-btn {% if curr_tab == 'fee' %}active{% endif %}" style="background:#f59e0b;">💰 फी जमा</a>
@@ -608,9 +632,9 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
                     <b style="color:#166534; font-size:15px;">🚀 टेस्ट ऑनलाईन लॉन्च व फी नियंत्रण:</b><br>
                     <span style="font-size:13px; color:#475569;">सध्याची स्थिती: 
                         {% if test_launched == 'yes' %}
-                            <b style="color:green; font-size:14px;">✅ टेस्ट लाईव्ह (Launched) आहे. (फी: ₹{{ test_fee }})</b>
+                            <b style="color:green; font-size:14px;">✅ टेस्ट लाईव्ह आहे. (फी: ₹{{ test_fee }})</b>
                         {% else %}
-                            <b style="color:red; font-size:14px;">❌ टेस्ट बंद (Unlaunched) आहे.</b>
+                            <b style="color:red; font-size:14px;">❌ टेस्ट बंद आहे.</b>
                         {% endif %}
                     </span>
                 </div>
@@ -739,7 +763,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
 </body>
 </html>'''
 
-# ----------------- MANAGER & CLERK LAYOUTS (500 GROCERY ITEMS) -----------------
+# ----------------- MANAGER & CLERK LAYOUTS -----------------
 MANAGER_LAYOUT = '''<!DOCTYPE html>
 <html lang="mr">
 <head>
@@ -1118,6 +1142,32 @@ def delete_question(id):
             conn.commit()
     return redirect('/admin?tab=questions')
 
+@app.route('/add_student', methods=['POST'])
+def add_student():
+    if session.get('user_role') not in ['Admin', 'Clerk']: return "Unauthorized", 403
+    name = request.form.get('name')
+    adm_date = request.form.get('admission_date')
+    course = request.form.get('course')
+    phone = request.form.get('phone')
+    tot_fee = safe_float(request.form.get('total_fees'))
+    paid_fee = safe_float(request.form.get('paid_fees'))
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("INSERT INTO students (name, admission_date, course, phone, total_fees, paid_fees) VALUES (%s, %s, %s, %s, %s, %s)", (name, adm_date, course, phone, tot_fee, paid_fee))
+            conn.commit()
+    return redirect('/admin?tab=students')
+
+@app.route('/pay_installment', methods=['POST'])
+def pay_installment():
+    if session.get('user_role') not in ['Admin', 'Clerk']: return "Unauthorized", 403
+    s_id = request.form.get('student_id')
+    amount = safe_float(request.form.get('amount'))
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE students SET paid_fees = paid_fees + %s WHERE id=%s", (amount, s_id))
+            conn.commit()
+    return redirect('/admin?tab=students')
+
 @app.route('/inquiry', methods=['GET', 'POST'])
 def public_inquiry():
     msg = None
@@ -1173,19 +1223,43 @@ def inquiry_desk():
         with conn.cursor() as cur:
             cur.execute("SELECT * FROM admission_inquiries ORDER BY id DESC")
             inquiries = cur.fetchall()
+            cur.execute("SELECT * FROM mock_test_leads ORDER BY id DESC LIMIT 50")
+            test_leads = cur.fetchall()
     return render_template_string('''<!DOCTYPE html><html lang="mr"><head><meta charset="UTF-8"><title>कॉलिंग डेस्क</title></head>
-    <body style="font-family:sans-serif; padding:20px;"><h2>📞 ॲडमिशन कॉलिंग डेस्क</h2><a href="/">🏠 डॅशबोर्ड</a><hr>
-    <table border="1" cellpadding="6" style="border-collapse:collapse; width:100%;"><tr><th>नाव</th><th>जिल्हा</th><th>फोन</th><th>कोर्स</th></tr>
-    {% for i in inquiries %}<tr><td><b>{{ i.student_name }}</b></td><td>{{ i.district }}</td><td><a href="tel:{{ i.phone }}">📞 {{ i.phone }}</a></td><td>{{ i.course }}</td></tr>{% endfor %}
-    </table></body></html>''', inquiries=inquiries)
+    <body style="font-family:sans-serif; padding:20px; background:#f8fafc;">
+    <div style="background:#0b3c5d; color:white; padding:15px; border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
+        <h2 style="margin:0;">📞 प्रवेश चौकशी व टेस्ट कॉलिंग डेस्क</h2>
+        <a href="/" style="color:#ffdd59; font-weight:bold; text-decoration:none;">🏠 मुख्य डॅशबोर्ड</a>
+    </div>
+    <h3 style="color:#0b3c5d; margin-top:20px;">📋 थेट प्रवेश चौकशी अर्ज ({{ inquiries|length }}):</h3>
+    <table border="1" cellpadding="8" style="border-collapse:collapse; width:100%; background:white; font-size:13px;">
+    <tr style="background:#1e293b; color:white;"><th>तारीख</th><th>नाव</th><th>जिल्हा (तालुका)</th><th>फोन</th><th>कोर्स</th></tr>
+    {% for i in inquiries %}
+    <tr><td>{{ i.inquiry_date }}</td><td><b>{{ i.student_name }}</b></td><td>{{ i.district }} ({{ i.taluka or '-' }})</td><td><a href="tel:{{ i.phone }}">📞 {{ i.phone }}</a></td><td>{{ i.course }}</td></tr>
+    {% else %}
+    <tr><td colspan="5" style="text-align:center; color:#64748b;">कोणतीही चौकशी नाही.</td></tr>
+    {% endfor %}
+    </table>
+    
+    <h3 style="color:#0b3c5d; margin-top:25px;">📝 ऑनलाइन टेस्ट लीड्स ({{ test_leads|length }}):</h3>
+    <table border="1" cellpadding="8" style="border-collapse:collapse; width:100%; background:white; font-size:13px;">
+    <tr style="background:#1e293b; color:white;"><th>तारीख</th><th>नाव</th><th>जिल्हा</th><th>फोन</th><th>गुण</th></tr>
+    {% for t in test_leads %}
+    <tr><td>{{ t.test_date }}</td><td><b>{{ t.student_name }}</b></td><td>{{ t.district }}</td><td><a href="tel:{{ t.phone }}">📞 {{ t.phone }}</a></td><td><b style="color:green;">{{ t.score }} / {{ t.total_marks }}</b></td></tr>
+    {% else %}
+    <tr><td colspan="5" style="text-align:center; color:#64748b;">कोणतीही टेस्ट लीड नाही.</td></tr>
+    {% endfor %}
+    </table>
+    </body></html>''', inquiries=inquiries, test_leads=test_leads)
 
 @app.route('/print_grocery_slip', methods=['POST'])
 def print_grocery_slip():
     items = request.form.getlist('items')
-    rows = "".join([f"<tr><td style='border:1px solid #333; padding:4px;'>{i+1}</td><td style='border:1px solid #333; padding:4px;'><b>{itm}</b></td><td style='border:1px solid #333; padding:4px;'>लागेल तेवढे</td></tr>" for i, itm in enumerate(items)])
+    rows = "".join([f"<tr><td style='border:1px solid #333; padding:4px; text-align:center;'>{i+1}</td><td style='border:1px solid #333; padding:4px;'><b>{itm}</b></td><td style='border:1px solid #333; padding:4px;'>लागेल तेवढे</td><td style='border:1px solid #333; padding:4px; text-align:center;'>[  ]</td></tr>" for i, itm in enumerate(items)])
     html = f'''<!DOCTYPE html><html><head><title>किराणा पावती</title></head><body onload="window.print()" style="font-family:sans-serif; padding:20px;">
     <h2 style="text-align:center; color:#065f46;">श्रीगुरु करिअर अकॅडमी (मेस व कॅन्टीन)</h2>
-    <table style="width:100%; border-collapse:collapse;"><thead><tr style="background:#065f46; color:white;"><th style="border:1px solid #333; padding:4px;">क्र.</th><th style="border:1px solid #333; padding:4px;">साहित्याचे नाव</th><th style="border:1px solid #333; padding:4px;">प्रमाण</th></tr></thead>
+    <p style="text-align:center; font-size:12px;">दिनांक: {date.today().strftime('%d/%m/%Y')} | एकूण साहित्य: {len(items)}</p>
+    <table style="width:100%; border-collapse:collapse; font-size:12px;"><thead><tr style="background:#065f46; color:white;"><th style="border:1px solid #333; padding:6px; width:40px;">क्र.</th><th style="border:1px solid #333; padding:6px;">साहित्याचे नाव</th><th style="border:1px solid #333; padding:6px; width:110px;">प्रमाण</th><th style="border:1px solid #333; padding:6px; width:60px;">तपासले</th></tr></thead>
     <tbody>{rows}</tbody></table></body></html>'''
     return render_template_string(html)
 
