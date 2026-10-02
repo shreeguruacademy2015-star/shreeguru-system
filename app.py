@@ -1,5 +1,6 @@
 import os
 import shutil
+import re
 from datetime import date, datetime 
 from flask import Flask, redirect, render_template, render_template_string, request, send_file, send_from_directory, url_for, session, Response
 from werkzeug.utils import secure_filename
@@ -10,7 +11,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
-app.secret_key = "shreeguru_complete_bulletproof_v55_btn_verify"
+app.secret_key = "shreeguru_complete_bulletproof_v59_qr_payment"
 
 # --- NEON CLOUD DATABASE CONNECTION ---
 DATABASE_URL = os.environ.get("DATABASE_URL")
@@ -68,6 +69,7 @@ def init_db():
             cur.execute("INSERT INTO users (role, password) VALUES ('Clerk', 'clerk123') ON CONFLICT (role) DO NOTHING")
             cur.execute("INSERT INTO users (role, password) VALUES ('Trainer', 'trainer123') ON CONFLICT (role) DO NOTHING")
 
+            # ॲडमिन कंट्रोलसाठी सेटिंग्स टेबल (Launch Status, Test Fee, UPI & QR Code)
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS settings (
                     key TEXT PRIMARY KEY,
@@ -75,6 +77,9 @@ def init_db():
                 )
             """)
             cur.execute("INSERT INTO settings (key, value) VALUES ('test_launched', 'no') ON CONFLICT (key) DO NOTHING")
+            cur.execute("INSERT INTO settings (key, value) VALUES ('test_fee', '0') ON CONFLICT (key) DO NOTHING")
+            cur.execute("INSERT INTO settings (key, value) VALUES ('upi_id', '9921111960@ybl') ON CONFLICT (key) DO NOTHING")
+            cur.execute("INSERT INTO settings (key, value) VALUES ('qr_image_url', 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=9921111960@ybl&pn=ShreeguruCareerAcademy') ON CONFLICT (key) DO NOTHING")
 
             cur.execute('''CREATE TABLE IF NOT EXISTS questions (
                 id SERIAL PRIMARY KEY,
@@ -598,27 +603,52 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
     <div class="admin-tab">
         <h3 style="color:#7c3aed; margin-top:0;">❓ ऑनलाइन टेस्ट प्रश्न व्यवस्थापन व लॉन्च कंट्रोल (Admin Only)</h3>
         
-        <div style="background:#f0fdf4; border:2px solid #15803d; padding:15px; border-radius:8px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-            <div>
-                <b style="color:#166534; font-size:15px;">🚀 टेस्ट ऑनलाईन लॉन्च स्टेटस (Test Launch Control):</b><br>
-                <span style="font-size:13px; color:#475569;">सध्याची स्थिती: 
-                    {% if test_launched == 'yes' %}
-                        <b style="color:green; font-size:14px;">✅ टेस्ट लाईव्ह (Launched) आहे. विद्यार्थी सोडवू शकतात.</b>
-                    {% else %}
-                        <b style="color:red; font-size:14px;">❌ टेस्ट बंद (Unlaunched) आहे. प्रश्न टाकून झाल्यावरच लॉन्च करा.</b>
-                    {% endif %}
-                </span>
+        <!-- Test Launch, Fee & Payment QR Settings Control Box -->
+        <div style="background:#f0fdf4; border:2px solid #15803d; padding:15px; border-radius:8px; margin-bottom:20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px;">
+                <div>
+                    <b style="color:#166534; font-size:15px;">🚀 टेस्ट ऑनलाईन लॉन्च व फी नियंत्रण (Test Launch & Fee):</b><br>
+                    <span style="font-size:13px; color:#475569;">सध्याची स्थिती: 
+                        {% if test_launched == 'yes' %}
+                            <b style="color:green; font-size:14px;">✅ टेस्ट लाईव्ह (Launched) आहे. (फी: ₹{{ test_fee }})</b>
+                        {% else %}
+                            <b style="color:red; font-size:14px;">❌ टेस्ट बंद (Unlaunched) आहे.</b>
+                        {% endif %}
+                    </span>
+                </div>
+                <div>
+                    <form action="/toggle_test_launch" method="POST" style="display:inline;">
+                        {% if test_launched == 'yes' %}
+                        <button type="submit" class="btn-act" style="background:#dc2626; padding:10px 16px; font-size:13px;">🔴 टेस्ट बंद करा (Unlaunch)</button>
+                        {% else %}
+                        <button type="submit" class="btn-act" style="background:#16a34a; padding:10px 16px; font-size:13px;">🟢 टेस्ट लाईव्ह करा (Launch Test)</button>
+                        {% endif %}
+                    </form>
+                    <a href="/test" target="_blank" class="btn-act" style="background:#0284c7; padding:10px 16px; font-size:13px; margin-left:5px;">🌐 टेस्ट पेज तपासा</a>
+                </div>
             </div>
-            <div>
-                <form action="/toggle_test_launch" method="POST" style="display:inline;">
-                    {% if test_launched == 'yes' %}
-                    <button type="submit" class="btn-act" style="background:#dc2626; padding:10px 16px; font-size:13px;">🔴 टेस्ट बंद करा (Unlaunch)</button>
-                    {% else %}
-                    <button type="submit" class="btn-act" style="background:#16a34a; padding:10px 16px; font-size:13px;">🟢 टेस्ट लाईव्ह करा (Launch Test)</button>
-                    {% endif %}
-                </form>
-                <a href="/test" target="_blank" class="btn-act" style="background:#0284c7; padding:10px 16px; font-size:13px; margin-left:5px;">🌐 टेस्ट पेज तपासा</a>
-            </div>
+
+            <!-- Dynamic Fee & Payment Details Form -->
+            <form action="/update_test_settings" method="POST" style="background:white; padding:12px; border-radius:6px; border:1px solid #bbf7d0;">
+                <h4 style="margin:0 0 10px; color:#166534; font-size:14px;">⚙️ टेस्ट फी आणि पेमेंट QR कोड सेटिंग्ज:</h4>
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:10px; margin-bottom:10px;">
+                    <div>
+                        <label style="font-weight:bold; font-size:12px;">टेस्टची रक्कम / फी (₹):</label>
+                        <input type="number" name="test_fee" value="{{ test_fee }}" min="0" max="100" style="width:100%; padding:6px; font-weight:bold;" required>
+                    </div>
+                    <div>
+                        <label style="font-weight:bold; font-size:12px;">UPI ID (उदा. 9921111960@ybl):</label>
+                        <input type="text" name="upi_id" value="{{ upi_id }}" style="width:100%; padding:6px;" required>
+                    </div>
+                </div>
+                <div>
+                    <label style="font-weight:bold; font-size:12px;">QR कोड इमेजची लिंक (QR Code Image URL):</label>
+                    <input type="text" name="qr_image_url" value="{{ qr_image_url }}" style="width:100%; padding:6px;" placeholder="तुमच्या QR कोडची इमेज लिंक इथे टाका" required>
+                    <span style="font-size:11px; color:#64748b;">(टीप: तुम्ही तुमच्या फोनमधील QR कोड इमेज अपलोड करून त्याची लिंक इथे टाकू शकता)</span>
+                </div>
+                <br>
+                <button type="submit" class="btn-act" style="background:#15803d; padding:8px 16px; font-size:13px;">💾 सर्व पेमेंट सेटिंग्ज सेव्ह करा</button>
+            </form>
         </div>
 
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
@@ -1036,12 +1066,12 @@ CLERK_LAYOUT = '''<!DOCTYPE html>
 </body>
 </html>'''
 
-# ----------------- BUTTON-VERIFIED TEST TEMPLATE -----------------
+# ----------------- DYNAMIC QR & FEE TEST TEMPLATE -----------------
 MOCK_TEST_HTML = '''<!DOCTYPE html>
 <html lang="mr">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>महाराष्ट्र पोलीस भरती - मोफत ऑनलाइन सराव टेस्ट</title>
+    <title>महाराष्ट्र पोलीस भरती - मोफत / सशुल्क ऑनलाइन सराव टेस्ट</title>
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
         body { margin: 0; background: #f1f5f9; color: #1e293b; padding: 15px; }
@@ -1058,7 +1088,20 @@ MOCK_TEST_HTML = '''<!DOCTYPE html>
 <body>
 <div class="box">
     <h2>🎯 श्रीगुरु राज्यस्तरीय महासराव टेस्ट</h2>
-    <p style="text-align:center; color:#64748b; font-size:13px; margin-bottom:20px;">पोलीस व सैन्य भरती विशेष सराव परीक्षा</p>
+    <p style="text-align:center; color:#64748b; font-size:13px; margin-bottom:10px;">पोलीस व सैन्य भरती विशेष सराव परीक्षा</p>
+    
+    {% if test_fee|int > 0 %}
+    <div style="background:#fefce8; border:2px solid #facc15; padding:12px; border-radius:8px; text-align:center; margin-bottom:15px;">
+        <b style="color:#854d0e; font-size:15px;">💰 या टेस्टची परीक्षा फी: ₹{{ test_fee }}</b><br>
+        <p style="font-size:12px; color:#78350f; margin:5px 0 10px;">खालील QR कोड स्कॅन करून किंवा UPI द्वारे फी भरून खालील माहिती भरा:</p>
+        <img src="{{ qr_image_url }}" alt="Payment QR Code" width="150" height="150" style="border:1px solid #ccc; border-radius:6px; background:white; padding:4px;"><br>
+        <span style="font-size:12px; font-weight:bold; color:#1e293b;">UPI ID: {{ upi_id }}</span>
+    </div>
+    {% else %}
+    <div style="background:#f0fdf4; border:1px solid #86efac; padding:8px; border-radius:6px; text-align:center; font-size:13px; color:#166534; margin-bottom:15px; font-weight:bold;">
+        ✨ ही राज्यस्तरीय सराव टेस्ट पूर्णपणे **मोफत (Free)** आहे!
+    </div>
+    {% endif %}
 
     {% if not launched %}
     <div style="background:#fef2f2; border:2px solid #f87171; border-radius:8px; padding:25px; text-align:center;">
@@ -1067,94 +1110,89 @@ MOCK_TEST_HTML = '''<!DOCTYPE html>
             श्रीगुरु करिअर अकॅडमीतर्फे नवीन सराव टेस्ट लवकरच लॉन्च केली जाईल. कृपया ॲडमिनने टेस्ट लाईव्ह (Launch) केल्यावर पुन्हा भेट द्या!
         </p>
     </div>
-    {% elif step == 'verify' %}
-    <!-- Step 1: Verification Box with a direct Verify Button -->
-    <div style="background:#fffbeb; border:2px solid #f59e0b; border-radius:8px; padding:20px;">
-        <h3 style="margin-top:0; color:#b45309;">🔐 WhatsApp नंबर पडताळणी (Verification Required)</h3>
-        <p style="font-size:13px; color:#78350f; line-height:1.5;">
-            टेस्ट सोडवण्यासाठी आणि डिजिटल प्रशस्तीपत्र मिळवण्यासाठी तुमचा <b>ओरिजिनल १० अंकी WhatsApp नंबर</b> खाली टाकून खालील बटणावर क्लिक करा:
-        </p>
-        {% if error_msg %}
-        <div style="background:#fee2e2; color:#991b1b; padding:8px; border-radius:4px; font-size:13px; font-weight:bold; margin-bottom:10px;">{{ error_msg }}</div>
-        {% endif %}
-        <form method="POST" action="/test">
-            <input type="hidden" name="action_type" value="verify_phone">
-            <label style="font-weight:bold; font-size:13px;">विद्यार्थ्याचे पूर्ण नाव *:</label>
-            <input type="text" name="student_name" placeholder="उदा. राहुल पाटील" required>
-
-            <label style="font-weight:bold; font-size:13px;">जिल्हा *:</label>
-            <input type="text" name="district" placeholder="उदा. कोल्हापूर" required>
-
-            <label style="font-weight:bold; font-size:13px;">व्हॉट्सॲप मोबाईल नंबर (१० अंकी) *:</label>
-            <input type="tel" name="phone" placeholder="9876543210" pattern="[0-9]{10}" required>
-
-            <button type="submit" class="btn-submit" style="background: linear-gradient(135deg, #25D366, #16a34a); margin-top:10px;">📲 WhatsApp नंबर व्हेरिफाय करा व टेस्ट सोडवा</button>
-        </form>
-    </div>
-
     {% elif submitted %}
-    <!-- Step 3: Result & Certificate displayed ONLY after successful test submission -->
+    <!-- Certificate shown immediately -->
     <div style="background:#f0fdf4; border:2px solid #86efac; border-radius:8px; padding:20px; text-align:center; margin-bottom:20px;">
-        <h3 style="margin:0 0 10px; color:#166534;">हार्दिक अभिनंदन, {{ name }}! 🎉</h3>
-        <p style="font-size:18px; margin:5px 0;">तुमचा अंतिम स्कोअर: <b style="color:#059669; font-size:24px;">{{ score }} / {{ total }}</b></p>
-        <p style="color:#475569; font-size:13px;">तुमचा नंबर ({{ phone }}) यशस्वीरीत्या व्हेरिफाय होऊन लीड सेव्ह झाली आहे.</p>
-        <a href="{{ wa_share }}" target="_blank" style="display:inline-block; background:#25D366; color:white; padding:10px 20px; border-radius:6px; text-decoration:none; font-weight:bold; margin-top:10px; font-size:14px;">
-            📲 WhatsApp वर निकाल शेअर करा
-        </a>
+        <h3 style="margin:0 0 5px; color:#166534;">टेस्ट यशस्वीरीत्या पूर्ण झाली आहे! 🎉</h3>
+        <p style="color:#475569; font-size:14px; margin:5px 0;">खाली तुमचे सहभाग घेतल्याबद्दलचे डिजिटल प्रशस्तीपत्र दिले आहे.</p>
     </div>
 
-    <!-- Right/Wrong Review -->
-    <div style="background:#f8fafc; border:1px solid #cbd5e1; padding:15px; border-radius:8px; margin-bottom:20px;">
-        <h3 style="margin-top:0; color:#0b3c5d; font-size:16px;">📖 सविस्तर प्रश्न व अचूक उत्तर रिव्ह्यू:</h3>
-        {% for r in review_list %}
-        <div style="margin-bottom:12px; padding-bottom:8px; border-bottom:1px dashed #cbd5e1; font-size:13px;">
-            <b>प्र. {{ loop.index }}. {{ r.question }}</b><br>
-            तुमचे उत्तर: <span style="color:{{ 'green' if r.is_correct else 'red' }}; font-weight:bold;">{{ r.user_ans or 'सोडवले नाही' }}</span> | 
-            अचूक उत्तर: <b style="color:green;">{{ r.correct_ans }}</b>
-            {% if r.is_correct %} <span style="color:green; font-weight:bold;">✔️ बरोबर</span> {% else %} <span style="color:red; font-weight:bold;">❌ चूक</span> {% endif %}
-        </div>
-        {% endfor %}
-    </div>
-
-    <!-- Digital Certificate -->
     <div class="cert-box">
-        <h3 style="margin:0; color:#b45309; font-size:20px;">🏆 डिजिटल प्रशस्तीपत्र (Certificate of Merit)</h3>
+        <h3 style="margin:0; color:#b45309; font-size:20px;">🏆 डिजिटल प्रशस्तीपत्र (Certificate of Participation)</h3>
         <p style="font-size:12px; color:#78350f; margin:5px 0 15px;">श्रीगुरु करिअर अकॅडमी, आडूर (ता. करवीर, जि. कोल्हापूर)</p>
         <hr style="border:1px solid #fde68a; margin:10px 0;">
         <p style="font-size:14px; color:#1e293b; line-height:1.6;">
-            प्रमाणपत्र देण्यात येते की, श्री/सौ/कुमार <b>{{ name }}</b> (जिल्हा: {{ district }}) यांनी श्रीगुरु करिअर अकॅडमीतर्फे आयोजित राज्यस्तरीय पोलीस भरती सराव टेस्टमध्ये सहभाग घेऊन <b>{{ score }} / {{ total }}</b> गुण प्राप्त केले आहेत.
+            प्रमाणपत्र देण्यात येते की, श्री/सौ/कुमार <b>{{ name }}</b> (जिल्हा: {{ district }}) यांनी श्रीगुरु करिअर अकॅडमीतर्फे आयोजित राज्यस्तरीय पोलीस भरती सराव टेस्टमध्ये यशस्वी सहभाग घेतला आहे.
         </p>
         <p style="font-size:13px; color:#92400e; font-weight:bold; margin-top:15px; line-height:1.5;">
-            मा. सचिन चौगले सर तसेच श्रीगुरु करिअर अकॅडमी परिवारातर्फे घेण्यात आलेल्या या राज्यस्तरीय लेखी स्पर्धेमध्ये सहभागी झाल्याबद्दल खूप खूप अभिनंदन! आपले पोलीस बनण्याचे व इतर शासकीय सेवांमध्ये जाण्याचे स्वप्न लवकरच पूर्ण होवो, अशा सदिच्छा! 🌟
+            मा. सचिन चौगले सर तसेच श्रीगुरु करिअर अकॅडमी परिवारातर्फे आपल्या उज्ज्वल भविष्यासाठी आणि पोलीस अधिकारी बनण्याच्या स्वप्नासाठी खूप खूप शुभेच्छा! 🌟
         </p>
         <div style="margin-top:20px; display:flex; justify-content:space-between; font-size:12px; font-weight:bold; color:#78350f;">
             <div>दिनांक: {{ today_date }}</div>
             <div>संचालक / मार्गदर्शक<br>मा. सचिन चौगले सर व परिवार<br>श्रीगुरु करिअर अकॅडमी, आडूर</div>
         </div>
     </div>
+
+    <!-- WhatsApp Number Box to get Score & Review -->
+    <div style="background:#fffbeb; border:2px dashed #f59e0b; padding:20px; border-radius:8px; margin-top:20px; text-align:center;">
+        <h4 style="margin-top:0; color:#b45309; font-size:16px;">📊 तुमचे अचूक गुण (Score) व प्रश्न रिव्ह्यू हवेत का?</h4>
+        <p style="font-size:13px; color:#78350f; margin-bottom:15px;">
+            तुमचा निकाल आणि सविस्तर रिव्ह्यू थेट तुमच्या **WhatsApp** वर मिळवण्यासाठी खाली नंबर टाका:
+        </p>
+        <form method="POST" action="/test">
+            <input type="hidden" name="action_type" value="send_whatsapp_score">
+            <input type="hidden" name="saved_name" value="{{ name }}">
+            <input type="hidden" name="saved_district" value="{{ district }}">
+            <input type="hidden" name="saved_score" value="{{ score }}">
+            <input type="hidden" name="saved_total" value="{{ total }}">
+            
+            <input type="tel" name="whatsapp_phone" placeholder="१० अंकी ओरिजनल WhatsApp नंबर (उदा. ९९२११११९६०)" pattern="[6-9][0-9]{9}" required style="max-width:350px; margin:0 auto 10px; display:block; text-align:center; font-weight:bold;">
+            <button type="submit" style="background:#25D366; color:white; border:none; padding:10px 20px; border-radius:6px; font-weight:bold; font-size:14px; cursor:pointer;">
+                📲 WhatsApp वर निकाल मिळवा
+            </button>
+        </form>
+    </div>
     <br>
     <div style="text-align:center;"><a href="/test" style="color:#0284c7; font-weight:bold; text-decoration:none;">🔄 नवीन टेस्ट सोडवा</a></div>
 
-    {% else %}
-    <!-- Step 2: Question Paper (Accessible only after clicking Verify Button) -->
-    <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:10px; border-radius:6px; margin-bottom:15px; font-size:13px; color:#166534; display:flex; justify-content:space-between; align-items:center;">
-        <div>✅ नंबर व्हेरिफाइड: <b>{{ session.get('test_student_name') }}</b> ({{ session.get('test_student_phone') }})</div>
-        <a href="/test" style="color:red; font-size:11px; text-decoration:none; font-weight:bold;">[ नंबर बदला ]</a>
+    {% elif step == 'whatsapp_sent' %}
+    <div style="background:#f0fdf4; border:2px solid #86efac; border-radius:8px; padding:25px; text-align:center;">
+        <h3 style="margin:0 0 10px; color:#166534;">निकालाची लिंक तयार आहे! 🎉</h3>
+        <p style="color:#475569; font-size:14px; line-height:1.6; margin-bottom:20px;">
+            खालील बटणावर क्लिक करून तुमचा निकाल, गुण आणि प्रशस्तीपत्र थेट तुमच्या WhatsApp वर पाठवा:
+        </p>
+        <a href="{{ wa_link }}" target="_blank" style="display:inline-block; background:#25D366; color:white; padding:12px 25px; border-radius:6px; text-decoration:none; font-weight:bold; font-size:15px;">
+            📲 WhatsApp वर निकाल उघडा व पाठवा
+        </a>
+        <br><br>
+        <div style="margin-top:15px;"><a href="/test" style="color:#0284c7; font-weight:bold; text-decoration:none;">🔄 नवीन टेस्ट सोडवा</a></div>
     </div>
-    <form method="POST" action="/test">
-        <input type="hidden" name="action_type" value="submit_test">
-        {% for q in questions %}
-        <div class="q-item">
-            <div class="q-text">प्र. {{ loop.index }}. {{ q.question }}</div>
-            <label class="opt-label"><input type="radio" name="q_{{ q.id }}" value="A" required> A) {{ q.opt_a }}</label>
-            <label class="opt-label"><input type="radio" name="q_{{ q.id }}" value="B"> B) {{ q.opt_b }}</label>
-            <label class="opt-label"><input type="radio" name="q_{{ q.id }}" value="C"> C) {{ q.opt_c }}</label>
-            <label class="opt-label"><input type="radio" name="q_{{ q.id }}" value="D"> D) {{ q.opt_d }}</label>
-        </div>
-        {% endfor %}
 
-        <button type="submit" class="btn-submit">✅ टेस्ट सबमिट करा व निकाल पहा</button>
-    </form>
+    {% else %}
+    <!-- Question Paper Form -->
+    <div style="background:#f8fafc; padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid #cbd5e1; border-left:4px solid #0284c7;">
+        <form method="POST" action="/test">
+            <input type="hidden" name="action_type" value="start_test">
+            <label style="font-weight:bold; font-size:13px;">विद्यार्थ्याचे पूर्ण नाव *:</label>
+            <input type="text" name="student_name" placeholder="उदा. राहुल पाटील" required>
+
+            <label style="font-weight:bold; font-size:13px;">जिल्हा *:</label>
+            <input type="text" name="district" placeholder="उदा. कोल्हापूर" required>
+
+            <h4 style="margin:15px 0 10px; color:#0b3c5d;">📝 खालील प्रश्न सोडवा:</h4>
+            {% for q in questions %}
+            <div class="q-item">
+                <div class="q-text">प्र. {{ loop.index }}. {{ q.question }}</div>
+                <label class="opt-label"><input type="radio" name="q_{{ q.id }}" value="A" required> A) {{ q.opt_a }}</label>
+                <label class="opt-label"><input type="radio" name="q_{{ q.id }}" value="B"> B) {{ q.opt_b }}</label>
+                <label class="opt-label"><input type="radio" name="q_{{ q.id }}" value="C"> C) {{ q.opt_c }}</label>
+                <label class="opt-label"><input type="radio" name="q_{{ q.id }}" value="D"> D) {{ q.opt_d }}</label>
+            </div>
+            {% endfor %}
+
+            <button type="submit" class="btn-submit">✅ टेस्ट सबमिट करा व प्रशस्तीपत्र पहा</button>
+        </form>
+    </div>
     {% endif %}
 </div>
 </body>
@@ -1304,6 +1342,18 @@ def admin_view():
             res_launch = cur.fetchone()
             test_launched = res_launch['value'] if res_launch else 'no'
 
+            cur.execute("SELECT value FROM settings WHERE key='test_fee'")
+            res_fee = cur.fetchone()
+            test_fee = res_fee['value'] if res_fee else '0'
+
+            cur.execute("SELECT value FROM settings WHERE key='upi_id'")
+            res_upi = cur.fetchone()
+            upi_id = res_upi['value'] if res_upi else '9921111960@ybl'
+
+            cur.execute("SELECT value FROM settings WHERE key='qr_image_url'")
+            res_qr = cur.fetchone()
+            qr_image_url = res_qr['value'] if res_qr else ''
+
             cur.execute("SELECT * FROM students")
             students = cur.fetchall()
             cur.execute("SELECT * FROM expenses ORDER BY id DESC")
@@ -1335,7 +1385,7 @@ def admin_view():
     total_pending = sum(safe_float(s['total_fees']) - safe_float(s['paid_fees']) for s in students)
     total_expenses = sum(safe_float(ex['amount']) for ex in expenses_list)
 
-    return render_template_string(ADMIN_DASHBOARD_LAYOUT, curr_tab=curr_tab, students=students, expenses_list=expenses_list, users_list=users_list, diet_list=diet_list, staff_members=staff_members, staff_tasks=staff_tasks, all_requests=all_requests, all_staff_logs=all_staff_logs, discipline_logs=discipline_logs, hostel_logs=hostel_logs, physical_records=physical_records, written_records=written_records, questions=questions, total_paid=total_paid, total_pending=total_pending, total_expenses=total_expenses, today_date=today_date, lang=lang, test_launched=test_launched)
+    return render_template_string(ADMIN_DASHBOARD_LAYOUT, curr_tab=curr_tab, students=students, expenses_list=expenses_list, users_list=users_list, diet_list=diet_list, staff_members=staff_members, staff_tasks=staff_tasks, all_requests=all_requests, all_staff_logs=all_staff_logs, discipline_logs=discipline_logs, hostel_logs=hostel_logs, physical_records=physical_records, written_records=written_records, questions=questions, total_paid=total_paid, total_pending=total_pending, total_expenses=total_expenses, today_date=today_date, lang=lang, test_launched=test_launched, test_fee=test_fee, upi_id=upi_id, qr_image_url=qr_image_url)
 
 @app.route('/toggle_test_launch', methods=['POST'])
 def toggle_test_launch():
@@ -1347,6 +1397,20 @@ def toggle_test_launch():
             current = res['value'] if res else 'no'
             new_val = 'no' if current == 'yes' else 'yes'
             cur.execute("UPDATE settings SET value=%s WHERE key='test_launched'", (new_val,))
+            conn.commit()
+    return redirect('/admin?tab=questions')
+
+@app.route('/update_test_settings', methods=['POST'])
+def update_test_settings():
+    if session.get('user_role') != 'Admin': return "Unauthorized", 403
+    fee = request.form.get('test_fee', '0')
+    upi = request.form.get('upi_id', '9921111960@ybl')
+    qr = request.form.get('qr_image_url', '')
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE settings SET value=%s WHERE key='test_fee'", (fee,))
+            cur.execute("UPDATE settings SET value=%s WHERE key='upi_id'", (upi,))
+            cur.execute("UPDATE settings SET value=%s WHERE key='qr_image_url'", (qr,))
             conn.commit()
     return redirect('/admin?tab=questions')
 
@@ -1390,7 +1454,7 @@ def delete_question(id):
             conn.commit()
     return redirect('/admin?tab=questions')
 
-# ----------------- PUBLIC INQUIRY & BUTTON-VERIFIED TEST ROUTES -----------------
+# ----------------- PUBLIC INQUIRY & DYNAMIC QR TEST ROUTES -----------------
 @app.route('/inquiry', methods=['GET', 'POST'])
 def public_inquiry():
     msg = None
@@ -1422,83 +1486,73 @@ def mock_test():
             res_launch = cur.fetchone()
             launched = (res_launch['value'] == 'yes') if res_launch else False
 
+            cur.execute("SELECT value FROM settings WHERE key='test_fee'")
+            res_fee = cur.fetchone()
+            test_fee = res_fee['value'] if res_fee else '0'
+
+            cur.execute("SELECT value FROM settings WHERE key='upi_id'")
+            res_upi = cur.fetchone()
+            upi_id = res_upi['value'] if res_upi else '9921111960@ybl'
+
+            cur.execute("SELECT value FROM settings WHERE key='qr_image_url'")
+            res_qr = cur.fetchone()
+            qr_image_url = res_qr['value'] if res_qr else ''
+
             cur.execute("SELECT * FROM questions ORDER BY id ASC")
             questions = cur.fetchall()
 
-    score = None
-    total = 0
+    score = 0
+    total = len(questions)
     name = ""
     district = ""
     phone = ""
     submitted = False
-    review_list = []
     today_date = date.today().strftime("%d/%m/%Y")
-    wa_share = ""
-    step = "verify"
-    error_msg = ""
-
-    if session.get('test_verified') == True:
-        step = "question_paper"
-        name = session.get('test_student_name')
-        district = session.get('test_student_district')
-        phone = session.get('test_student_phone')
+    wa_link = ""
+    step = "start"
 
     if request.method == 'POST' and launched:
         action = request.form.get('action_type')
-        
-        if action == 'verify_phone':
+
+        if action == 'start_test':
             name = request.form.get('student_name')
             district = request.form.get('district')
-            phone = request.form.get('phone')
-
-            if phone and len(phone.strip()) >= 10:
-                session['test_verified'] = True
-                session['test_student_name'] = name
-                session['test_student_district'] = district
-                session['test_student_phone'] = phone
-                step = "question_paper"
-            else:
-                error_msg = "कृपया वैध १० अंकी WhatsApp नंबर टाका!"
-                step = "verify"
-
-        elif action == 'submit_test' and session.get('test_verified') == True:
-            step = "question_paper"
-            submitted = True
-            name = session.get('test_student_name')
-            district = session.get('test_student_district')
-            phone = session.get('test_student_phone')
             
             current_score = 0
-            total = len(questions)
-
-            with get_db() as conn:
-                with conn.cursor() as cur:
-                    for q in questions:
-                        user_ans = request.form.get(f"q_{q['id']}")
-                        is_corr = (user_ans and user_ans == q['correct'])
-                        if is_corr:
-                            current_score += 1
-                        review_list.append({
-                            'question': q['question'],
-                            'user_ans': user_ans,
-                            'correct_ans': q['correct'],
-                            'is_correct': is_corr
-                        })
-
-                    t_date = date.today().strftime("%Y-%m-%d")
-                    cur.execute("""
-                        INSERT INTO mock_test_leads (test_date, student_name, district, phone, score, total_marks, test_name)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s)
-                    """, (t_date, name, district, phone, current_score, total, "राज्यस्तरीय पोलीस सराव टेस्ट"))
-                    conn.commit()
+            for q in questions:
+                user_ans = request.form.get(f"q_{q['id']}")
+                if user_ans and user_ans == q['correct']:
+                    current_score += 1
 
             score = current_score
-            wa_text = f"नमस्कार, मी {name} ({district}). श्रीगुरु करिअर अकॅडमीच्या ऑनलाईन टेस्टमध्ये मला {score}/{total} गुण मिळाले आहेत!"
-            wa_share = f"https://wa.me/?text={urllib.parse.quote(wa_text)}"
-            
-            session.pop('test_verified', None)
+            submitted = True
+            step = "certificate_view"
 
-    return render_template_string(MOCK_TEST_HTML, questions=questions, submitted=submitted, score=score, total=total, name=name, district=district, phone=phone, review_list=review_list, today_date=today_date, launched=launched, wa_share=wa_share, step=step, error_msg=error_msg)
+        elif action == 'send_whatsapp_score':
+            submitted = True
+            step = "whatsapp_sent"
+            name = request.form.get('saved_name')
+            district = request.form.get('saved_district')
+            score = safe_int(request.form.get('saved_score'))
+            total = safe_int(request.form.get('saved_total'))
+            phone = request.form.get('whatsapp_phone', '').strip()
+
+            if phone and re.match(r'^[6-9]\d{9}$', phone):
+                with get_db() as conn:
+                    with conn.cursor() as cur:
+                        t_date = date.today().strftime("%Y-%m-%d")
+                        cur.execute("""
+                            INSERT INTO mock_test_leads (test_date, student_name, district, phone, score, total_marks, test_name)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s)
+                        """, (t_date, name, district, phone, score, total, "राज्यस्तरीय पोलीस सराव टेस्ट"))
+                        conn.commit()
+
+                wa_text = f"नमस्कार {name} जी,%0Aश्रीगुरु करिअर अकॅडमीच्या ऑनलाईन टेस्टचा निकाल:%0Aप्राप्त गुण: *{score}/{total}*%0Aजिल्हा: {district}%0Aअकॅडमीतर्फे खूप खूप अभिनंदन! संपर्क: ९९२११११९६०"
+                wa_link = f"https://wa.me/91{phone}?text={wa_text}"
+            else:
+                step = "certificate_view"
+
+    return render_template_string(MOCK_TEST_HTML, questions=questions, submitted=submitted, score=score, total=total, name=name, district=district, phone=phone, today_date=today_date, launched=launched, wa_link=wa_link, step=step, test_fee=test_fee, upi_id=upi_id, qr_image_url=qr_image_url)
 
 @app.route('/inquiries')
 def inquiry_desk():
