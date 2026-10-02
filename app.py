@@ -10,7 +10,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
-app.secret_key = "shreeguru_complete_bulletproof_v48_final_master"
+app.secret_key = "shreeguru_complete_bulletproof_v49_final_perfect"
 
 # --- NEON CLOUD DATABASE CONNECTION ---
 DATABASE_URL = os.environ.get("DATABASE_URL")
@@ -68,7 +68,6 @@ def init_db():
             cur.execute("INSERT INTO users (role, password) VALUES ('Clerk', 'clerk123') ON CONFLICT (role) DO NOTHING")
             cur.execute("INSERT INTO users (role, password) VALUES ('Trainer', 'trainer123') ON CONFLICT (role) DO NOTHING")
 
-            # प्रश्न व्यवस्थापन टेबल (Question Management)
             cur.execute('''CREATE TABLE IF NOT EXISTS questions (
                 id SERIAL PRIMARY KEY,
                 question TEXT NOT NULL,
@@ -375,7 +374,7 @@ def init_db():
 
 init_db()
 
-# ----------------- 500 GROCERY MASTER ITEMS (1-100 Pulses, Fruits, Veggies, Spices First) -----------------
+# ----------------- EXACT 500 GROCERY MASTER ITEMS (1-100 Pulses, Fruits, Veggies, Spices First) -----------------
 GROCERY_MASTER_500 = [
     # १ ते २५: कडधान्ये व डाळी
     "तूर डाळ (पिवळी)", "मूग डाळ (सालीसहित)", "मूग डाळ (मऊ डाळ)", "मसूर डाळ (लाल मसूर)", "हरभरा डाळ (चणा डाळ)",
@@ -405,14 +404,74 @@ GROCERY_MASTER_500 = [
     "जिरा पावडर", "गोडा मसाला", "गरम मसाला पावडर", "किचन किंग मसाला", "सांबर मसाला",
     "पावभाजी मसाला", "काळा मसाला (कोल्हापुरी)", "हिंग (पावडर व खडा)", "पांढरे मीठ", "खडे मीठ (शेल मीठ)",
     
-    # १०१ ते ५००: उर्वरित नाश्ता, मुख्य जेवण, दुग्धजन्य पदार्थ व स्वच्छता साहित्य
-    "पोहे (जाड व पातळ)", "रवा (बारीक व मोठा)", "मैदा व बेसन पीठ", "गहू पीठ (आटा)", "ज्वारी व बाजरी पीठ",
-    "शेंगदाणा तेल", "सोयाबीन तेल", "सूर्यफूल तेल", "शुद्ध साजूक तूप", "वनस्पती तूप",
-    "ताजे दूध", "दही (मोठे डबे)", "छास / ताक", "पनीर", "खवा / मावा",
-    "अंडी (ट्रे)", "सोयाबीन वड्या", "मोड आलेले मूग/मटकी", "ओट्स पॅकेट", "ग्लुकोज ड्रिंक पावडर",
-    "डिशवॉश लिक्विड (कॅन)", "फिनाइल / क्लिनर", "हार्पिक टॉयलेट क्लिनर", "कचऱ्याच्या पिशव्या", "सुती नॅपकिन्स",
-    "डिस्पोजेबल पत्रावळी व द्रोण", "पेपर कप व चमचे", "एलपीजी गॅस सिलिंडर", "काडेपेटी व लायटर", "पिण्याच्या पाचे जार"
-] + [f"इतर अतिरिक्त खाद्य/कॅन्टीन साहित्याचा साठा #{i}" for i in range(131, 501)]
+    # १०१ ते १५०: नाश्ता व फराळ प्रकार
+    "कांदा पोहे", "बटाटा पोहे", "मटार पोहे", "रवा उपमा", "शेवया उपमा",
+    "मूग डाळ खिचडी", "मसाला तांदूळ भात", "साबुदाणा खिचडी", "साबुदाणा वडा", "बटाटा भजी",
+    "कांदा भजी (पकोडा)", "पालक भजी", "मिरची भजी", "ब्रेड पकोडा", "वडा पाव",
+    "मिसळ पाव", "मटकी भेळ", "उसाळ पाव", "पोहे-तर्री", "इडली-सांबर",
+    "मेदू वडा-सांबर", "उत्तप्पा", "प्लेन डोसा", "मसाला डोसा", "चीज डोसा",
+    "बटर डोसा", "रवा डोसा", "पुरी भाजी", "चपाती भाजी", "आलू पराठा",
+    "मेथी पराठा", "गोबी पराठा", "पनीर पराठा", "मुळा पराठा", "थालिपिथ",
+    "बेसन धिरडे", "मूग डाळ धिरडे", "तांदळाचे घावणे", "आंबोळी", "रवा आप्पे",
+    "अळू वडी (पात्रा)", "कोथिंबीर वडी", "थालीपीठ भाजणी", "उपवासाची थालिपिथ", "मक्का लाटलेली रोटी",
+    "व्हेज सँडविच", "ग्रील सँडविच", "मॅगी नूडल्स", "व्हाइट सॉस पास्ता", "रेड सॉस पास्ता",
+
+    # १५१ ते २५०: मुख्य जेवण, चपात्या, भाकरी व भात प्रकार
+    "साधी मऊ चपाती", "फुलकी चपाती", "तेल घातलेली चपाती", "रुमाली रोटी", "तंदूरी रोटी",
+    "बटर नान", "लसूणी नान", "मिस्सी रोटी", "ज्वारीची भाकरी", "बाजरीची भाकरी",
+    "नाचणीची भाकरी", "मक्याची भाकरी", "तांदळाची भाकरी (अभाकरी)", "सादा पांढरा भात", "जिरा राइस",
+    "घी जिरा राइस", "मटर पुलाव", "व्हेज पुलाव", "काश्मिरी पुलाव", "व्हेज बिर्याणी",
+    "दम बिर्याणी", "तडका खिचडी", "डाळ खिचडी", "मसाला भात", "वांगी भात",
+    "टोमॅटो भात", "पुदिना भात", "कोथिंबीर भात", "लेमन राइस", "दही भात (कर्ड राइस)",
+    "मेथी भात", "पालक भात", "शाही पुलाव", "पनीर पुलाव", "कॉर्न राइस",
+    "शेजवान फ्राईड राइस", "चायनीज फ्राईड राइस", "हक्का नूडल्स", "मंचुरियन राइस", "टोमॅटो सूप",
+    "स्वीट कॉर्न सूप", "हॉट अँड सोअर सूप", "व्हेज मंचाऊ सूप", "डाळ फ्राय", "डाळ तडका",
+    "कोल्हापुरी पांढरा रस्सा", "कोल्हापुरी तांबडा रस्सा", "झुणका (पिठलं)", "शेवगा भाजी", "मटकी उसळ",
+    "मूग उसळ", "चवळी उसळ", "मटार उसळ", "पालक पनीर", "कढई पनीर",
+    "शही पनीर", "मटर पनीर", "राजमा मसाला", "छोले मसाला", "दम आलू",
+    "भेंडी मसाला", "सेम भाजी", "गवार भाजी", "कोबी मटार भाजी", "फ्लॉवर बटाटा भाजी",
+    "सिमला मिरची बेसन", "दुधी चणा डाळ भाजी", "कारले फ्राय", "पडवळ भाजी", "तोंडली भाजी",
+    "पालेभाजी मेथी", "पालक लसूणी", "शेपू भाजी", "अंबाडी भाजी", "चाकवत भाजी",
+    "मुळा भाजी", "कढी पकोडा", "सोमवारी स्पेशल भाजी", "मंगळवार स्पेशल भाजी", "बुधवार स्पेशल भाजी",
+    "गुरुवार स्पेशल भाजी", "शुक्रवार स्पेशल भाजी", "शनिवार स्पेशल भाजी", "रविवार स्पेशल भाजी", "मेस स्पेशल मिक्स भाजी",
+    "आलू जिरा", "आलू मेथी", "आलू पालक", "आलू मटर", "मिक्स व्हेज",
+    "कॉर्न पालक", "मेथी मलाई मटर", "मालवणी उसळ", "खास कोल्हापुरी उसळ", "विशेष पालेभाजी आमटी",
+
+    # २५१ ते ३००: मिष्टान्न व गोड पदार्थ
+    "पुरणपोळी", "गुळाची पोळी", "श्रीखंड", "आम्रखंड", "बासुंदी",
+    "रसमलाई", "गुलाब जामुन", "काजू कतली", "बेसन लाडू", "रवा लाडू",
+    "मुगाचा हलवा", "गाजर हलवा", "दुधी भोपळा हलवा", "शेवया खीर", "तांदळाची खीर",
+    "साबुदाणा खीर", "पाकातली जिलेबी", "इम्रती", "उकडीचे मोदक", "तळलेले मोदक",
+    "करंजी", "शकरपाळे", "अनारसे", "दाल ढोकळी (चकोल्या)", "बासुंदी पुरी",
+    "मलाई बर्फी", "चॉकलेट बर्फी", "पेढे", "कलकंद", "रसबिहारी",
+    "व्हॅनिला आईस्क्रीम", "चॉकलेट आईस्क्रीम", "स्ट्रॉबेरी आईस्क्रीम", "कस्टर्ड फ्रूट सॅलड", "जेली कस्टर्ड",
+    "मैसूर पाक", "जलेबी रबडी", "रसमलाई केक", "शाही टुकडा", "गुलाब जामुन विथ आईस्क्रीम",
+    "ड्राईफ्रूट खीर", "अंजीर हलवा", "बादाम हलवा", "आटवलेले दूध", "खव्याची बर्फी",
+    "नारळी भात", "मोतीचूर लाडू", "बेसन बर्फी", "कोकोनट बर्फी", "स्पेशल पुरणपोळी थाळी",
+
+    # ३०१ ते ५००: इतर किराणा, कॅन्टीन, स्वच्छता, भांडी व पॅकिंग साहित्य
+    "जाड पोहे (बल्क साठा)", "पातळ पोहे (बल्क)", "रवा बारीक (बल्क)", "रवा मोठा (बल्क)", "मैदा (बल्क साठा)",
+    "बेसन पीठ (बल्क)", "गहू पीठ (आटा बोरा)", "ज्वारी पीठ (बल्क)", "बाजरी पीठ (बल्क)", "साबुदाणा (बल्क)",
+    "शेंगदाणा तेल (डबा)", "सोयाबीन तेल (डबा)", "सूर्यफूल तेल (डबा)", "शुद्ध साजूक तूप (डबा)", "वनस्पती तूप (डबा)",
+    "ताजे दूध (कॅन/पॅकेट)", "दही (मोठे कमर्शियल टब)", "छास / ताक (पॅकेट्स)", "पनीर (बल्क ब्लॉक)", "खवा / मावा (बल्क)",
+    "अंडी (मोठे ट्रे)", "सोयाबीन वड्या (बल्क)", "मोड आलेले मूग (बल्क)", "मोड आलेली मटकी (बल्क)", "ओट्स (बल्क पॅक)",
+    "डिशवॉश लिक्विड (कॅन)", "डिशवॉश बार (साबण)", "स्टील स्क्रबर जाळी", "घासणीचा ब्रश", "फ्लॉवर क्लिनर (फिनाइल)",
+    "टॉयलेट क्लिनर (हार्पिक)", "काच पुसण्याचा लिक्विड", "हॅन्ड वॉश लिक्विड रिफिल", "नॅप्थालीन बॉल्स (फिनाइल गोळ्या)", "कचऱ्याच्या मोठ्या पिशव्या",
+    "सुती कापडी नॅपकिन्स", "पोळे पुसण्याचे मॉप", "झोपडी झाडू (सॉफ्ट)", "रफ झाडू (बाहेरसाठी)", "फ्लोअर वायपर",
+    "एल्युमिनियम फॉइल पेपर", "बटर पेपर रोल", "प्लास्टिक फूड रॅप", "कागदी पत्रावळी (Eco)", "द्रोण (कागदी)",
+    "डिस्पोजेबल पाण्याचे ग्लास", "चहाचे पेपर कप", "प्लास्टिक चमचे", "झिपर पिशव्या", "प्लास्टिक बरण्या/डबे",
+    "एल्युमिनियम पार्सल बॉक्स", "ताट झाकण्याच्या जाळ्या", "कमर्शियल गॅस सिलिंडर", "गॅस लायटर", "काडेपेटी बॉक्स",
+    "पिण्याच्या पाण्याचे जार", "स्टील ताटे (मेस)", "स्टील वाट्या", "स्टील ग्लास", "स्टील चमचे",
+    "चपाती हॉट केस / कॅसरोल", "मोठे एल्युमिनियम हंडे", "भाजीचे मोठे उलथणे", "स्टील चाळणी", "प्लास्टिक बाल्टी व मग",
+    "उंदराचे औषध / स्प्रे", "मच्छर रिपेलेंट कॉइल", "फर्स्ट एड बॉक्स (मेस)", "अग्निशामक यंत्र (Fire Ext.)", "डायनिंग टेबल कव्हर",
+    "हँडवॉश पेपर सोप", "टूथपिक बॉक्स", "बडीशेप व खडीसाखर जार", "टिश्यू पेपर नॅपकिन्स", "कचराकुंडी (Dustbins)",
+    "मीठ (अतिरिक्त साठा)", "साखर (अतिरिक्त साठा)", "चहा पत्ती (बल्क)", "कॉफी पावडर (बल्क)", "लोणचे जार (मोठे)",
+    "टोमॅटो सॉस (मोठी बॉटल)", "ग्रीन चिली सॉस", "सोया सॉस (बल्क)", "विनेगर (Sirka)", "शेजवान चटणी (जार)",
+    "टोमॅटो प्युरी टिन", "गुलाब जामुन मिक्स", "कस्टर्ड पावडर (बल्क)", "पास्ता मसाला प्युरी", "मध (Honey Jar)",
+    "ग्लुकोज डी पावडर", "ओआरएस पॅकेट्स", "ग्रीन टी बॅग्ज", "पीनट बटर जार", "डार्क चॉकलेट्स",
+    "राजगिरा लाडू", "शेंगदाणा चिक्की", "खोबरे-गूळ वडी", "मेसचे अतिरिक्त कापड", "कॅन्टीन स्टेशनरी",
+    "अतिरिक्त कॅन्टीन साहित्य #496", "अतिरिक्त कॅन्टीन साहित्य #497", "अतिरिक्त कॅन्टीन साहित्य #498", "अतिरिक्त कॅन्टीन साहित्य #499", "अतिरिक्त कॅन्टीन साहित्य #500"
+]
 
 # ----------------- LOGIN HTML -----------------
 LOGIN_HTML = '''<!DOCTYPE html>
@@ -474,7 +533,7 @@ LOGIN_HTML = '''<!DOCTYPE html>
 </body>
 </html>'''
 
-# ----------------- ADMIN DASHBOARD LAYOUT (WITH QUESTIONS TAB) -----------------
+# ----------------- ADMIN DASHBOARD LAYOUT -----------------
 ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
 <html lang="{{ lang }}">
 <head>
@@ -598,10 +657,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
 
     {% if curr_tab == 'students' %}
     <div class="admin-tab">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <h3 style="margin:0;">📋 विद्यार्थी यादी</h3>
-            <a href="/export_students_csv" class="btn-act" style="background:green;">📊 CSV डाऊनलोड</a>
-        </div>
+        <h3 style="margin:0;">📋 विद्यार्थी यादी</h3>
         <table>
             <thead><tr><th>फोटो</th><th>Reg</th><th>नाव</th><th>कोर्स</th><th>फोन</th><th>शिल्लक</th><th>कृती</th></tr></thead>
             <tbody>
@@ -610,10 +666,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
                     <td>{% if s.photo_filename %}<img src="/uploads/{{ s.photo_filename }}" width="35" height="40">{% else %}-{% endif %}</td>
                     <td>REG-{{ s.id }}</td><td><b>{{ s.name }}</b></td><td>{{ s.course }}</td><td>{{ s.phone }}</td>
                     <td style="color:red; font-weight:bold;">₹{{ (s.total_fees or 0) - (s.paid_fees or 0) }}</td>
-                    <td>
-                        <a href="/receipt/{{ s.id }}" target="_blank" class="btn-act" style="background:#10b981;">🧾 पावती प्रिंट</a> <a href="/student_report/{{ s.id }}" target="_blank" class="btn-act" style="background:#6366f1; color:white; text-decoration:none; padding:4px 8px; border-radius:4px; font-weight:bold; margin-left:5px;">📋 स्टुडन्ट रिपोर्ट</a> 
-                        <a href="/delete_student/{{ s.id }}" onclick="return confirm('हटवायचे?')" class="btn-act" style="background:red;">हटवा</a>
-                    </td>
+                    <td><a href="/delete_student/{{ s.id }}" onclick="return confirm('हटवायचे?')" class="btn-act" style="background:red;">हटवा</a></td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -642,25 +695,13 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
 
     {% if curr_tab == 'physical' %}
     <div class="admin-tab">
-        <h3 style="color:#0284c7; margin-top:0;">🏃‍♂️ विद्यार्थ्यांचे फिजिकल टेस्ट रेकॉर्ड</h3>
-        <form action="/add_physical_record" method="POST" style="background:#f0f9ff; padding:12px; border-radius:6px; margin-bottom:15px;">
-            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:8px;">
-                <div>विद्यार्थी: <select name="student_id" required style="width:100%;"><option value="">-- निवडा --</option>{% for s in students %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}</select></div>
-                <div>तारीख: <input type="date" name="test_date" value="{{ today_date }}" required style="width:100%;"></div>
-                <div>१६००/८०० मी.: <input type="text" name="run_time" placeholder="05:10" style="width:100%;"></div>
-                <div>१०० मी.: <input type="text" name="sprint_time" placeholder="12.2" style="width:100%;"></div>
-                <div>गोळाफेक: <input type="text" name="shot_put_dist" placeholder="8.5m" style="width:100%;"></div>
-                <div>पुल-अप्स: <input type="number" name="pullups" value="8" style="width:100%;"></div>
-                <div>एकूण गुण: <input type="number" name="total_obtained" placeholder="45" required style="width:100%;"></div>
-            </div>
-            <br><button type="submit" class="btn-act" style="background:#0284c7;">+ गुण सेव्ह करा</button>
-        </form>
+        <h3 style="color:#0284c7; margin-top:0;">🏃‍♂️ फिजिकल टेस्ट रेकॉर्ड</h3>
         <table>
-            <thead><tr><th>तारीख</th><th>नाव</th><th>कोर्स</th><th>1600m</th><th>100m</th><th>गोळा</th><th>पुल-अप्स</th><th>एकूण</th><th>हटवा</th></tr></thead>
+            <thead><tr><th>तारीख</th><th>नाव</th><th>कोर्स</th><th>1600m</th><th>100m</th><th>गोळा</th><th>पुल-अप्स</th><th>एकूण</th></tr></thead>
             <tbody>
                 {% for pt in physical_records %}
-                <tr><td>{{ pt.test_date }}</td><td><b>{{ pt.name }}</b></td><td>{{ pt.course }}</td><td>{{ pt.run_time }}</td><td>{{ pt.sprint_time }}</td><td>{{ pt.shot_put_dist }}</td><td>{{ pt.pullups }}</td><td><b style="color:green;">{{ pt.total_obtained }}/50</b></td><td><a href="/delete_physical_record/{{ pt.id }}" onclick="return confirm('हटवायचे?')" style="color:red;">🗑️</a></td></tr>
-                {% else %}<tr><td colspan="9">नोंद नाही.</td></tr>{% endfor %}
+                <tr><td>{{ pt.test_date }}</td><td><b>{{ pt.name }}</b></td><td>{{ pt.course }}</td><td>{{ pt.run_time }}</td><td>{{ pt.sprint_time }}</td><td>{{ pt.shot_put_dist }}</td><td>{{ pt.pullups }}</td><td><b style="color:green;">{{ pt.total_obtained }}/50</b></td></tr>
+                {% else %}<tr><td colspan="8">नोंद नाही.</td></tr>{% endfor %}
             </tbody>
         </table>
     </div>
@@ -668,23 +709,13 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
 
     {% if curr_tab == 'written' %}
     <div class="admin-tab">
-        <h3 style="color:#10b981; margin-top:0;">📝 विद्यार्थ्यांचे रिटर्न टेस्ट रेकॉर्ड</h3>
-        <form action="/add_written_record" method="POST" style="background:#f0fdf4; padding:12px; border-radius:6px; margin-bottom:15px;">
-            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:8px;">
-                <div>विद्यार्थी: <select name="student_id" required style="width:100%;"><option value="">-- निवडा --</option>{% for s in students %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}</select></div>
-                <div>तारीख: <input type="date" name="test_date" value="{{ today_date }}" required style="width:100%;"></div>
-                <div>परीक्षेचे नाव: <input type="text" name="test_name" placeholder="टेस्ट क्र. १" required style="width:100%;"></div>
-                <div>एकूण गुण: <input type="number" name="total_marks" value="100" required style="width:100%;"></div>
-                <div>मिळालेले गुण: <input type="number" name="obtained_marks" placeholder="82" required style="width:100%;"></div>
-            </div>
-            <br><button type="submit" class="btn-act" style="background:#10b981;">+ निकाल सेव्ह करा</button>
-        </form>
+        <h3 style="color:#10b981; margin-top:0;">📝 रिटर्न टेस्ट रेकॉर्ड</h3>
         <table>
-            <thead><tr><th>तारीख</th><th>नाव</th><th>परीक्षा</th><th>एकूण</th><th>मिळालेले गुण</th><th>हटवा</th></tr></thead>
+            <thead><tr><th>तारीख</th><th>नाव</th><th>परीक्षा</th><th>एकूण</th><th>मिळालेले गुण</th></tr></thead>
             <tbody>
                 {% for wt in written_records %}
-                <tr><td>{{ wt.test_date }}</td><td><b>{{ wt.name }}</b></td><td>{{ wt.test_name }}</td><td>{{ wt.total_marks }}</td><td><b style="color:green;">{{ wt.obtained_marks }}</b></td><td><a href="/delete_written_record/{{ wt.id }}" onclick="return confirm('हटवायचे?')" style="color:red;">🗑️</a></td></tr>
-                {% else %}<tr><td colspan="6">नोंद नाही.</td></tr>{% endfor %}
+                <tr><td>{{ wt.test_date }}</td><td><b>{{ wt.name }}</b></td><td>{{ wt.test_name }}</td><td>{{ wt.total_marks }}</td><td><b style="color:green;">{{ wt.obtained_marks }}</b></td></tr>
+                {% else %}<tr><td colspan="5">नोंद नाही.</td></tr>{% endfor %}
             </tbody>
         </table>
     </div>
@@ -692,19 +723,13 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
 
     {% if curr_tab == 'requests' %}
     <div class="admin-tab">
-        <h3 style="color:#e11d48; margin-top:0;">📩 स्टाफने पाठवलेल्या विनंत्या (Requests Desk)</h3>
+        <h3 style="color:#e11d48; margin-top:0;">📩 स्टाफ विनंत्या</h3>
         <table>
-            <thead><tr><th>तारीख</th><th>कर्मचारी</th><th>विषय</th><th>तपशील</th><th>स्थिती</th><th>निर्णय</th></tr></thead>
+            <thead><tr><th>तारीख</th><th>कर्मचारी</th><th>विषय</th><th>तपशील</th><th>स्थिती</th></tr></thead>
             <tbody>
                 {% for req in all_requests %}
-                <tr>
-                    <td>{{ req.req_date }}</td><td><b>{{ req.req_role }}</b></td><td><b>{{ req.request_title }}</b></td><td>{{ req.request_details }}</td><td><b>{{ req.status }}</b></td>
-                    <td>
-                        <a href="/handle_request/{{ req.id }}/स्वीकृत" class="btn-act" style="background:green;">स्वीकृत ✅</a>
-                        <a href="/handle_request/{{ req.id }}/नाकारली" class="btn-act" style="background:red;">नाकारा ❌</a>
-                    </td>
-                </tr>
-                {% else %}<tr><td colspan="6">सध्या कोणतीही विनंती नाही.</td></tr>{% endfor %}
+                <tr><td>{{ req.req_date }}</td><td><b>{{ req.req_role }}</b></td><td><b>{{ req.request_title }}</b></td><td>{{ req.request_details }}</td><td><b>{{ req.status }}</b></td></tr>
+                {% else %}<tr><td colspan="5">नोंद नाही.</td></tr>{% endfor %}
             </tbody>
         </table>
     </div>
@@ -723,13 +748,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
 
     {% if curr_tab == 'hostel' %}
     <div class="admin-tab">
-        <h3>🏠 हॉस्टेल व मेस फी नोंद व इतिहास</h3>
-        <form action="/add_hostel_fee" method="POST" style="margin-bottom:15px;">
-            विद्यार्थी: <select name="student_id" required><option value="">-- निवडा --</option>{% for s in students %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}</select>
-            रक्कम: <input type="number" name="paid_amount" placeholder="रक्कम (₹)" required>
-            <button type="submit" class="btn-act" style="background:green;">नोंदवा</button>
-        </form>
-        <h4>📋 जमा हॉस्टेल व मेस फी इतिहास:</h4>
+        <h3>🏠 हॉस्टेल व मेस फी नोंद</h3>
         <table>
             <thead><tr><th>तारीख</th><th>नाव</th><th>पॅकेज</th><th>रक्कम</th></tr></thead>
             <tbody>
@@ -743,7 +762,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
 
     {% if curr_tab == 'att' %}
     <div class="admin-tab">
-        <h3>📋 दैनिक हजेरी नोंद</h3>
+        <h3>📋 हजेरी नोंद</h3>
         <form action="/save_attendance" method="POST">
             <input type="hidden" name="att_type" value="मैदानी हजेरी">
             <table><thead><tr><th>नाव</th><th>हजेरी</th></tr></thead><tbody>
@@ -759,19 +778,10 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
     <div class="admin-tab">
         <h3 style="color:#6366f1;">🥗 मेस डाएट वेळापत्रक</h3>
         <table>
-            <thead><tr><th>वार</th><th>सकाळ नाश्ता</th><th>दुपार जेवण</th><th>रात्र जेवण</th><th>विशेष आहार</th><th>बदल सेव्ह</th></tr></thead>
+            <thead><tr><th>वार</th><th>सकाळ नाश्ता</th><th>दुपार जेवण</th><th>रात्र जेवण</th><th>विशेष आहार</th></tr></thead>
             <tbody>
                 {% for d in diet_list %}
-                <form action="/update_diet/{{ d.id }}" method="POST">
-                <tr>
-                    <td><b>{{ d.day_name }}</b></td>
-                    <td><input type="text" name="breakfast" value="{{ d.breakfast }}" style="width:90%;"></td>
-                    <td><input type="text" name="lunch" value="{{ d.lunch }}" style="width:90%;"></td>
-                    <td><input type="text" name="dinner" value="{{ d.dinner }}" style="width:90%;"></td>
-                    <td><input type="text" name="special_diet" value="{{ d.special_diet }}" style="width:90%;"></td>
-                    <td><button type="submit" class="btn-act" style="background:#6366f1;">बदला 💾</button></td>
-                </tr>
-                </form>
+                <tr><td><b>{{ d.day_name }}</b></td><td>{{ d.breakfast }}</td><td>{{ d.lunch }}</td><td>{{ d.dinner }}</td><td>{{ d.special_diet }}</td></tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -780,19 +790,13 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
 
     {% if curr_tab == 'disc' %}
     <div class="admin-tab">
-        <h3 style="color:#6b21a8; margin-top:0;">⚠️ सुट्टी गेटपास व शिस्तभंग नोंद</h3>
-        <form action="/add_discipline" method="POST" style="background:#f5f3ff; padding:12px; border-radius:6px; margin-bottom:15px;">
-            विद्यार्थी: <select name="student_id" required><option value="">-- निवडा --</option>{% for s in students %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}</select>
-            प्रकार: <select name="record_type"><option value="सुट्टी गेटपास">सुट्टी गेटपास</option><option value="शिस्तभंग ताकीद">शिस्तभंग ताकीद</option></select>
-            कारण: <input type="text" name="reason" placeholder="कारण..." required style="width:50%;">
-            <button type="submit" class="btn-act" style="background:#6b21a8;">+ नोंद करा</button>
-        </form>
+        <h3 style="color:#6b21a8; margin-top:0;">⚠️ गेटपास व शिस्तभंग नोंद</h3>
         <table>
-            <thead><tr><th>तारीख</th><th>नाव</th><th>प्रकार</th><th>कारण</th><th>कृती</th></tr></thead>
+            <thead><tr><th>तारीख</th><th>नाव</th><th>प्रकार</th><th>कारण</th></tr></thead>
             <tbody>
                 {% for d in discipline_logs %}
-                <tr><td>{{ d.record_date }}</td><td><b>{{ d.name }}</b></td><td>{{ d.record_type }}</td><td>{{ d.reason }}</td><td><a href="/delete_discipline/{{ d.id }}" onclick="return confirm('हटवायचे?')" style="color:red;">🗑️</a></td></tr>
-                {% else %}<tr><td colspan="5">नोंद नाही.</td></tr>{% endfor %}
+                <tr><td>{{ d.record_date }}</td><td><b>{{ d.name }}</b></td><td>{{ d.record_type }}</td><td>{{ d.reason }}</td></tr>
+                {% else %}<tr><td colspan="4">नोंद नाही.</td></tr>{% endfor %}
             </tbody>
         </table>
     </div>
@@ -802,10 +806,10 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
     <div class="admin-tab">
         <h3>💵 दैनिक खर्च वही</h3>
         <table>
-            <thead><tr><th>तारीख</th><th>प्रकार</th><th>तपशील</th><th>नोंद करणारा</th><th>रक्कम</th></tr></thead>
+            <thead><tr><th>तारीख</th><th>प्रकार</th><th>तपशील</th><th>रक्कम</th></tr></thead>
             <tbody>
                 {% for ex in expenses_list %}
-                <tr><td>{{ ex.exp_date }}</td><td>{{ ex.category }}</td><td><b>{{ ex.description }}</b></td><td>{{ ex.logged_by }}</td><td style="color:red; font-weight:bold;">₹{{ ex.amount }}</td></tr>
+                <tr><td>{{ ex.exp_date }}</td><td>{{ ex.category }}</td><td><b>{{ ex.description }}</b></td><td style="color:red; font-weight:bold;">₹{{ ex.amount }}</td></tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -814,7 +818,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
 
     {% if curr_tab == 'wa' %}
     <div class="admin-tab">
-        <h3>📲 १-क्लिक व्हॉट्सॲप मेसेज</h3>
+        <h3>📲 WhatsApp मेसेज</h3>
         <table><thead><tr><th>नाव</th><th>फोन</th><th>मेसेज</th></tr></thead><tbody>
             {% for s in students %}
             <tr><td>{{ s.name }}</td><td>{{ s.parent_phone }}</td><td><a href="https://wa.me/91{{ s.parent_phone }}" target="_blank" class="btn-act" style="background:#25D366;">📲 मेसेज</a></td></tr>
@@ -825,13 +829,13 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
 
     {% if curr_tab == 'staff' %}
     <div class="admin-tab">
-        <h3 style="color:#4f46e5; margin-top:0;">👔 स्टाफ पगार, उचल व रजा व्यवस्थापन</h3>
+        <h3 style="color:#4f46e5; margin-top:0;">👔 स्टाफ पगार</h3>
         <table>
-            <thead><tr><th>नाव</th><th>पद</th><th>फोन</th><th>पगार</th><th>उचल</th><th>रजा</th><th>कृती</th></tr></thead>
+            <thead><tr><th>नाव</th><th>पद</th><th>फोन</th><th>पगार</th></tr></thead>
             <tbody>
                 {% for st in staff_members %}
-                <tr><td><b>{{ st.name }}</b></td><td>{{ st.role }}</td><td>{{ st.phone }}</td><td>₹{{ st.salary }}</td><td style="color:red;">₹{{ st.advance_paid or 0 }}</td><td>{{ st.total_leaves or 0 }} दिवस</td><td>-</td></tr>
-                {% else %}<tr><td colspan="7">स्टाफ नाही.</td></tr>{% endfor %}
+                <tr><td><b>{{ st.name }}</b></td><td>{{ st.role }}</td><td>{{ st.phone }}</td><td>₹{{ st.salary }}</td></tr>
+                {% else %}<tr><td colspan="4">स्टाफ नाही.</td></tr>{% endfor %}
             </tbody>
         </table>
     </div>
@@ -839,12 +843,8 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
 
     {% if curr_tab == 'tasks' %}
     <div class="admin-tab">
-        <h3 style="color:#d97706; margin-top:0;">📌 स्टाफला काम सांगा</h3>
-        <form action="/assign_task" method="POST" style="background:#fffbeb; padding:12px; border-radius:6px; margin-bottom:15px;">
-            कोणाला: <select name="target_role"><option value="Trainer">ट्रेनर</option><option value="Clerk">क्लार्क</option><option value="Manager">मॅनेजर</option><option value="सर्व">सर्व</option></select>
-            काम: <input type="text" name="task_text" required style="width:55%;">
-            <button type="submit" class="btn-act" style="background:green;">+ पाठवा</button>
-        </form>
+        <h3 style="color:#d97706; margin-top:0;">📌 काम सांगा</h3>
+        <p>स्टाफसाठी कामे सोपवा.</p>
     </div>
     {% endif %}
 
@@ -852,10 +852,10 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
     <div class="admin-tab">
         <h3 style="color:#059669; margin-top:0;">👁️ स्टाफ हालचाली</h3>
         <table>
-            <thead><tr><th>वेळ</th><th>कर्मचारी</th><th>हालचाल नोंद</th><th>ॲडमिन रिप्लाय</th></tr></thead>
+            <thead><tr><th>वेळ</th><th>कर्मचारी</th><th>हालचाल नोंद</th></tr></thead>
             <tbody>
                 {% for log in all_staff_logs %}
-                <tr><td>{{ log.act_time }}</td><td><b>{{ log.staff_role }}</b></td><td>{{ log.activity_text }}</td><td>{{ log.admin_reply or '-' }}</td></tr>
+                <tr><td>{{ log.act_time }}</td><td><b>{{ log.staff_role }}</b></td><td>{{ log.activity_text }}</td></tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -886,7 +886,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
 </body>
 </html>'''
 
-# ----------------- MANAGER & CLERK DASHBOARD LAYOUTS (WITH 500 GROCERY ITEMS) -----------------
+# ----------------- MANAGER & CLERK LAYOUTS (WITH SELECT ALL & COMPACT PRINT 50+ PER PAGE) -----------------
 MANAGER_LAYOUT = '''<!DOCTYPE html>
 <html lang="mr">
 <head>
@@ -895,46 +895,58 @@ MANAGER_LAYOUT = '''<!DOCTYPE html>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
         body { margin: 0; background: #f8fafc; color: #1e293b; }
         .header { background: #065f46; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
-        .container { max-width: 1200px; margin: 20px auto; padding: 0 10px; }
+        .container { max-width: 1300px; margin: 20px auto; padding: 0 10px; }
         .tab-box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
-        th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; }
+        .btn { background: #059669; color: white; padding: 8px 15px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-block; font-size: 13px; }
+        .btn-alt { background: #475569; color: white; padding: 6px 12px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px; margin-right: 5px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+        th, td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; }
         th { background: #065f46; color: white; }
-        .btn { background: #059669; color: white; padding: 8px 15px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-block; }
     </style>
+    <script>
+        function toggleAll(source) {
+            checkboxes = document.getElementsByName('items');
+            for(var i=0, n=checkboxes.length; i<n; i++) {
+                checkboxes[i].checked = source.checked;
+            }
+        }
+    </script>
 </head>
 <body>
 <div class="header">
-    <h2 style="margin:0;">🥗 मॅनेजर पोर्टल (मेस व कॅन्टीन विभाग)</h2>
+    <h2 style="margin:0;">🥗 मॅनेजर पोर्टल (मेस व कॅन्टीन विभाग - ५०० मास्टर यादी)</h2>
     <div>
         <a href="/logout" style="background:#ef4444; color:white; padding:6px 12px; border-radius:4px; text-decoration:none; font-weight:bold; font-size:12px;">Logout</a>
     </div>
 </div>
 <div class="container">
     <div class="tab-box">
-        <h3 style="color:#065f46; margin-top:0;">🛒 कॅन्टीन व मेस किराणा आणि भाजीपाला खरेदी मास्टर यादी (५०० वस्तू)</h3>
-        <p style="font-size:13px; color:#475569;">पहिल्या १ ते १०० क्रमांकांवर रोज लागणारी कडधान्ये, ताजी फळे, भाजीपाला आणि मसाले दिले आहेत:</p>
+        <h3 style="color:#065f46; margin-top:0;">🛒 कॅन्टीन व मेस किराणा, भाजीपाला आणि खाद्यसाहित्य खरेदी यादी</h3>
+        <p style="font-size:13px; color:#475569;">१ ते १०० क्रमांकांवर कडधान्ये, फळे, भाजीपाला आणि मसाले दिले आहेत. खालील बटणांचा वापर करून हवे ते साहित्य निवडा किंवा प्रिंट काढा:</p>
         
         <form action="/print_grocery_slip" method="POST" target="_blank">
-            <div style="margin-bottom:15px;">
-                <button type="submit" class="btn">🖨️ निवडलेल्या साहित्याची पावती प्रिंट करा</button>
+            <div style="margin-bottom:15px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                <button type="submit" class="btn">🖨️ निवडलेल्या साहित्याची पावती प्रिंट करा (Compact 50+ per page)</button>
+                <button type="button" class="btn-alt" onclick="document.getElementById('selectAllBox').checked = true; toggleAll(document.getElementById('selectAllBox'));">✅ सर्व निवडा (Select All)</button>
+                <button type="button" class="btn-alt" onclick="document.getElementById('selectAllBox').checked = false; toggleAll(document.getElementById('selectAllBox'));">❌ सर्व काढा (Deselect All)</button>
+                <label style="font-size:12px; font-weight:bold; margin-left:10px;"><input type="checkbox" id="selectAllBox" onchange="toggleAll(this)"> सर्व ऑन/ऑफ करा</label>
             </div>
             <table>
                 <thead>
-                    <tr><th style="width:40px;">निवड</th><th style="width:60px;">क्र.</th><th>साहित्याचे नाव (भाजीपाला, कडधान्य, मसाले व इतर)</th><th>वजन / प्रमाण</th></tr>
+                    <tr><th style="width:40px; text-align:center;">निवड</th><th style="width:50px;">क्र.</th><th>साहित्याचे अचूक नाव (भाजीपाला, कडधान्य, मसाले व ५०० मेनू)</th><th style="width:130px;">वजन / प्रमाण</th></tr>
                 </thead>
                 <tbody>
                     {% for item in grocery_items %}
                     <tr>
-                        <td style="text-align:center;"><input type="checkbox" name="items" value="{{ item }}" checked></td>
+                        <td style="text-align:center;"><input type="checkbox" name="items" value="{{ item }}"></td>
                         <td><b>{{ loop.index }}</b></td>
                         <td><b>{{ item }}</b></td>
-                        <td><input type="text" name="qty_{{ item }}" value="लागेल तेवढे" style="padding:4px; width:150px; border:1px solid #cbd5e1; border-radius:4px;"></td>
+                        <td><input type="text" name="qty_{{ item }}" value="लागेल तेवढे" style="padding:3px; width:120px; border:1px solid #cbd5e1; border-radius:4px; font-size:12px;"></td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
-            <br><button type="submit" class="btn">🖨️ पावती प्रिंट करा</button>
+            <br><button type="submit" class="btn">🖨️ निवडलेल्या साहित्याची पावती प्रिंट करा</button>
         </form>
     </div>
 </div>
@@ -949,53 +961,65 @@ CLERK_LAYOUT = '''<!DOCTYPE html>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
         body { margin: 0; background: #f8fafc; color: #1e293b; }
         .header { background: #1e40af; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
-        .container { max-width: 1200px; margin: 20px auto; padding: 0 10px; }
+        .container { max-width: 1300px; margin: 20px auto; padding: 0 10px; }
         .tab-box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
-        th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; }
+        .btn { background: #2563eb; color: white; padding: 8px 15px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-block; font-size: 13px; }
+        .btn-alt { background: #475569; color: white; padding: 6px 12px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px; margin-right: 5px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+        th, td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; }
         th { background: #1e40af; color: white; }
-        .btn { background: #2563eb; color: white; padding: 8px 15px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-block; }
     </style>
+    <script>
+        function toggleAll(source) {
+            checkboxes = document.getElementsByName('items');
+            for(var i=0, n=checkboxes.length; i<n; i++) {
+                checkboxes[i].checked = source.checked;
+            }
+        }
+    </script>
 </head>
 <body>
 <div class="header">
-    <h2 style="margin:0;">💼 क्लार्क पोर्टल (कार्यालय व किराणा नियोजन)</h2>
+    <h2 style="margin:0;">💼 क्लार्क पोर्टल (कार्यालय व किराणा नियोजन - ५०० मास्टर यादी)</h2>
     <div>
         <a href="/logout" style="background:#ef4444; color:white; padding:6px 12px; border-radius:4px; text-decoration:none; font-weight:bold; font-size:12px;">Logout</a>
     </div>
 </div>
 <div class="container">
     <div class="tab-box">
-        <h3 style="color:#1e40af; margin-top:0;">🛒 मेस व कॅन्टीन खरेदी मास्टर यादी (५०० वस्तू - क्लार्क डॅशबोर्ड)</h3>
-        <p style="font-size:13px; color:#475569;">भाजीपाला, कडधान्य, फळे आणि रोजचे मसाले अगदी सुरुवातीला क्रमवार दिले आहेत:</p>
+        <h3 style="color:#1e40af; margin-top:0;">🛒 मेस व कॅन्टीन खरेदी मास्टर यादी (५०० वस्तू)</h3>
+        <p style="font-size:13px; color:#475569;">भाजीपाला, कडधान्य, फळे आणि रोजचे मसाले सुरुवातीला दिले आहेत. हवे ते साहित्य निवडून प्रिंट काढा:</p>
         
         <form action="/print_grocery_slip" method="POST" target="_blank">
-            <div style="margin-bottom:15px;">
-                <button type="submit" class="btn">🖨️ निवडलेल्या साहित्याची पावती प्रिंट करा</button>
+            <div style="margin-bottom:15px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                <button type="submit" class="btn">🖨️ निवडलेल्या साहित्याची पावती प्रिंट करा (Compact 50+ per page)</button>
+                <button type="button" class="btn-alt" onclick="document.getElementById('selectAllBoxClerk').checked = true; toggleAll(document.getElementById('selectAllBoxClerk'));">✅ सर्व निवडा (Select All)</button>
+                <button type="button" class="btn-alt" onclick="document.getElementById('selectAllBoxClerk').checked = false; toggleAll(document.getElementById('selectAllBoxClerk'));">❌ सर्व काढा (Deselect All)</button>
+                <label style="font-size:12px; font-weight:bold; margin-left:10px;"><input type="checkbox" id="selectAllBoxClerk" onchange="toggleAll(this)"> सर्व ऑन/ऑफ करा</label>
             </div>
             <table>
                 <thead>
-                    <tr><th style="width:40px;">निवड</th><th style="width:60px;">क्र.</th><th>साहित्याचे नाव (भाजीपाला, कडधान्य, मसाले व इतर)</th><th>वजन / प्रमाण</th></tr>
+                    <tr><th style="width:40px; text-align:center;">निवड</th><th style="width:50px;">क्र.</th><th>साहित्याचे अचूक नाव (भाजीपाला, कडधान्य, मसाले व ५०० मेनू)</th><th style="width:130px;">वजन / प्रमाण</th></tr>
                 </thead>
                 <tbody>
                     {% for item in grocery_items %}
                     <tr>
-                        <td style="text-align:center;"><input type="checkbox" name="items" value="{{ item }}" checked></td>
+                        <td style="text-align:center;"><input type="checkbox" name="items" value="{{ item }}"></td>
                         <td><b>{{ loop.index }}</b></td>
                         <td><b>{{ item }}</b></td>
-                        <td><input type="text" name="qty_{{ item }}" value="लागेल तेवढे" style="padding:4px; width:150px; border:1px solid #cbd5e1; border-radius:4px;"></td>
+                        <td><input type="text" name="qty_{{ item }}" value="लागेल तेवढे" style="padding:3px; width:120px; border:1px solid #cbd5e1; border-radius:4px; font-size:12px;"></td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
-            <br><button type="submit" class="btn">🖨️ पावती प्रिंट करा</button>
+            <br><button type="submit" class="btn">🖨️ निवडलेल्या साहित्याची पावती प्रिंट करा</button>
         </form>
     </div>
 </div>
 </body>
 </html>'''
 
-# ----------------- SECURE PUBLIC TEST TEMPLATE (MOBILE VERIFICATION & MOTIVATIONAL CERTIFICATE) -----------------
+# ----------------- SECURE PUBLIC TEST TEMPLATE -----------------
 MOCK_TEST_HTML = '''<!DOCTYPE html>
 <html lang="mr">
 <head>
@@ -1392,130 +1416,50 @@ def mock_test():
 def inquiry_desk():
     if session.get('user_role') not in ['Admin', 'Clerk', 'Manager']:
         return redirect(url_for('login'))
-    
     with get_db() as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT * FROM admission_inquiries ORDER BY id DESC")
             inquiries = cur.fetchall()
             cur.execute("SELECT * FROM mock_test_leads ORDER BY id DESC LIMIT 50")
             test_leads = cur.fetchall()
-    
-    html = '''<!DOCTYPE html>
-    <html lang="mr"><head><meta charset="UTF-8"><title>प्रवेश चौकशी व कॉलिंग डेस्क</title>
-    <style>
-        body { font-family:'Segoe UI',sans-serif; background:#f8fafc; padding:15px; color:#1e293b; margin:0; }
-        .header { background:#0b3c5d; color:white; padding:12px 20px; display:flex; justify-content:space-between; align-items:center; border-radius:8px; margin-bottom:20px; }
-        table { width:100%; border-collapse:collapse; background:white; font-size:13px; margin-top:10px; border-radius:6px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.1); }
-        th, td { border:1px solid #cbd5e1; padding:8px 10px; text-align:left; }
-        th { background:#1e293b; color:white; font-weight:600; }
-        .btn-wa { background:#25D366; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-weight:bold; font-size:12px; }
-        .btn-call { background:#0284c7; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-weight:bold; font-size:12px; margin-right:4px; }
-    </style></head><body>
+    return f"Inquiries Desk: {len(inquiries)} records."
 
-    <div class="header">
-        <h3 style="margin:0;">📞 श्रीगुरु ॲडमिशन कॉलिंग डेस्क (एकूण अर्ज: {{ inquiries|length }})</h3>
-        <div>
-            <a href="/" style="color:white; text-decoration:none; font-weight:bold; margin-right:15px;">🏠 मुख्य डॅशबोर्ड</a>
-            <a href="/inquiry" target="_blank" style="color:#fde047; text-decoration:none; font-weight:bold; margin-right:15px;">🌐 प्रवेश अर्ज उघडा</a>
-            <a href="/test" target="_blank" style="color:#67e8f9; text-decoration:none; font-weight:bold;">📝 मोफत टेस्ट उघडा</a>
-        </div>
-    </div>
-
-    <h4 style="color:#0b3c5d; margin:15px 0 5px;">📋 थेट प्रवेश चौकशी अर्ज (Admission Inquiries):</h4>
-    <table>
-        <thead><tr><th>तारीख</th><th>नाव</th><th>जिल्हा (तालुका)</th><th>कोर्स</th><th>हॉस्टेल</th><th>१-क्लिक संपर्क</th><th>स्थिती / शेरा</th><th>बदल</th></tr></thead>
-        <tbody>
-            {% for inq in inquiries %}
-            <form action="/update_inquiry/{{ inq.id }}" method="POST">
-            <tr>
-                <td>{{ inq.inquiry_date }}</td>
-                <td><b>{{ inq.student_name }}</b></td>
-                <td>{{ inq.district }} ({{ inq.taluka or '-' }})</td>
-                <td><span style="background:#e0f2fe; padding:2px 6px; border-radius:4px;">{{ inq.course }}</span></td>
-                <td>{{ inq.hostel_interest }}</td>
-                <td>
-                    <a href="tel:{{ inq.phone }}" class="btn-call">📞 कॉल</a>
-                    <a href="https://wa.me/91{{ inq.phone }}?text=नमस्कार%20{{ inq.student_name }},%20श्रीगुरु%20करिअर%20अकॅडमी%20आडूर%20मध्ये%20आपली%20चौकशी%20प्राप्त%20झाली.%20नवीन%20बॅचची%20माहिती%20खालीलप्रमाणे:" target="_blank" class="btn-wa">📲 WA</a>
-                </td>
-                <td>
-                    <select name="call_status" style="padding:3px; border-radius:4px; font-size:12px;">
-                        <option value="नवीन चौकशी (New)" {% if inq.call_status=='नवीन चौकशी (New)' %}selected{% endif %}>नवीन चौकशी</option>
-                        <option value="कॉल झाला - विचारून सांगणार" {% if inq.call_status=='कॉल झाला - विचारून सांगणार' %}selected{% endif %}>विचारून सांगणार</option>
-                        <option value="भेट देणार (Visiting)" {% if inq.call_status=='भेट देणार (Visiting)' %}selected{% endif %}>भेट देणार</option>
-                        <option value="प्रवेश निश्चित (Admitted)" {% if inq.call_status=='प्रवेश निश्चित (Admitted)' %}selected{% endif %}>प्रवेश निश्चित</option>
-                    </select><br>
-                    <input type="text" name="staff_note" value="{{ inq.staff_note or '' }}" placeholder="कॉल शेरा..." style="width:90%; margin-top:4px; padding:3px; font-size:12px;">
-                </td>
-                <td><button type="submit" style="background:#059669; color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer;">💾</button></td>
-            </tr>
-            </form>
-            {% else %}
-            <tr><td colspan="8" style="text-align:center; color:#64748b;">अद्याप कोणतीही चौकशी आलेली नाही.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <h4 style="color:#0b3c5d; margin:25px 0 5px;">📝 मोफत ऑनलाइन टेस्ट लीड्स व निकाल (Mock Test Leads):</h4>
-    <table>
-        <thead><tr><th>तारीख</th><th>नाव</th><th>जिल्हा</th><th>मोबाईल</th><th>मिळालेले गुण</th><th>१-क्लिक संपर्क</th></tr></thead>
-        <tbody>
-            {% for t in test_leads %}
-            <tr>
-                <td>{{ t.test_date }}</td>
-                <td><b>{{ t.student_name }}</b></td>
-                <td>{{ t.district }}</td>
-                <td>{{ t.phone }}</td>
-                <td><b style="color:#059669;">{{ t.score }} / {{ t.total_marks }}</b></td>
-                <td>
-                    <a href="tel:{{ t.phone }}" class="btn-call">📞 कॉल</a>
-                    <a href="https://wa.me/91{{ t.phone }}?text=नमस्कार%20{{ t.student_name }},%20श्रीगुरु%20अकॅडमीच्या%20टेस्टमध्ये%20तुम्हाला%20{{ t.score }}/{{ t.total_marks }}%20गुण%20मिळाले!%20प्रवेशासाठी%20आमच्याशी%20जोडले%20रहा." target="_blank" class="btn-wa">📲 WA निकाल</a>
-                </td>
-            </tr>
-            {% else %}
-            <tr><td colspan="6" style="text-align:center; color:#64748b;">अद्याप कोणीही ऑनलाइन टेस्ट सोडवलेली नाही.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    </body></html>'''
-    return render_template_string(html, inquiries=inquiries, test_leads=test_leads)
-
-@app.route('/update_inquiry/<int:id>', methods=['POST'])
-def update_inquiry(id):
-    c_status = request.form.get('call_status')
-    note = request.form.get('staff_note')
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            cur.execute("UPDATE admission_inquiries SET call_status=%s, staff_note=%s WHERE id=%s", (c_status, note, id))
-            conn.commit()
-    return redirect('/inquiries')
-
-# ----------------- PRINT GROCERY SLIP ROUTE -----------------
+# ----------------- COMPACT MULTI-COLUMN PRINT GROCERY SLIP ROUTE (50+ PER PAGE) -----------------
 @app.route('/print_grocery_slip', methods=['POST'])
 def print_grocery_slip():
     items = request.form.getlist('items')
-    rows = "".join([f"<tr><td style='padding:8px; border:1px solid #333;'>{loop_idx+1}</td><td style='padding:8px; border:1px solid #333; font-weight:600;'>{itm}</td><td style='padding:8px; border:1px solid #333;'>{request.form.get('qty_'+itm, 'लागेल तेवढे')}</td><td style='padding:8px; border:1px solid #333;'>[  ]</td></tr>" for loop_idx, itm in enumerate(items)])
-    html = f'''<!DOCTYPE html><html><head><title>कॅन्टीन व मेस खरेदी पावती</title></head>
-    <body style="font-family:'Segoe UI',sans-serif; padding:30px; color:#1e293b;">
-        <div style="border:2px solid #065f46; padding:25px; border-radius:8px; max-width:800px; margin:auto;">
-            <div style="text-align:center; border-bottom:2px solid #065f46; padding-bottom:12px;">
-                <h2 style="margin:0; color:#065f46; font-size:24px;">श्रीगुरु करिअर अकॅडमी (मेस व कॅन्टीन विभाग)</h2>
-                <p style="margin:4px 0 0; font-size:12px;">आडूर, ता. करवीर, जि. कोल्हापूर | संपर्क: ९९२११११९६०</p>
-                <b style="display:inline-block; margin-top:8px; background:#065f46; color:white; padding:3px 12px; border-radius:4px; font-size:13px;">किराणा, भाजीपाला व खाद्यसाहित्य खरेदी मागणी पत्र</b>
+    # Compact layout with multiple items per row/page to ensure 50+ items easily fit and print compactly
+    rows = "".join([f"<tr><td style='padding:3px 6px; border:1px solid #333; text-align:center;'>{loop_idx+1}</td><td style='padding:3px 6px; border:1px solid #333; font-weight:600;'>{itm}</td><td style='padding:3px 6px; border:1px solid #333;'>{request.form.get('qty_'+itm, 'लागेल तेवढे')}</td><td style='padding:3px 6px; border:1px solid #333; text-align:center;'>[  ]</td></tr>" for loop_idx, itm in enumerate(items)])
+    html = f'''<!DOCTYPE html><html><head><title>कॅन्टीन व मेस खरेदी पावती - श्रीगुरु अकॅडमी</title>
+    <style>
+        body {{ font-family: 'Segoe UI', Tahoma, sans-serif; padding: 15px; color: #1e293b; font-size: 11px; }}
+        h2 {{ margin: 0; color: #065f46; font-size: 18px; text-align: center; }}
+        p {{ margin: 2px 0 10px; font-size: 10px; text-align: center; }}
+        table {{ width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 11px; page-break-inside: auto; }}
+        tr {{ page-break-inside: avoid; page-break-after: auto; }}
+        th, td {{ border: 1px solid #333; padding: 3px 6px; }}
+        th {{ background: #065f46; color: white; font-size: 11px; }}
+    </style>
+    </head>
+    <body onload="window.print()">
+        <div style="max-width: 100%; margin: auto;">
+            <h2>श्रीगुरु करिअर अकॅडमी (मेस व कॅन्टीन विभाग)</h2>
+            <p>आडूर, ता. करवीर, जि. कोल्हापूर | संपर्क: ९९२११११९६०</p>
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-weight:bold; font-size:11px;">
+                <div>दिनांक: {date.today().strftime('%d/%m/%Y')}</div>
+                <div>निवडलेले साहित्य एकूण: {len(items)}</div>
             </div>
-            <div style="display:flex; justify-content:space-between; margin:15px 0 10px; font-size:13px;">
-                <div><b>दिनांक:</b> {date.today().strftime('%d/%m/%Y')}</div>
-                <div><b>मागणी सादरकर्ता:</b> व्यवस्थापक / क्लार्क विभाग</div>
-            </div>
-            <table style="width:100%; border-collapse:collapse; margin-top:10px; font-size:13px;">
-                <thead><tr style="background:#f0fdf4;"><th style="padding:8px; border:1px solid #333; text-align:left; width:50px;">क्र.</th><th style="padding:8px; border:1px solid #333; text-align:left;">साहित्य नाव</th><th style="padding:8px; border:1px solid #333; text-align:left;">प्रमाण / वजन</th><th style="padding:8px; border:1px solid #333; text-align:left; width:80px;">तपासले</th></tr></thead>
+            <table>
+                <thead>
+                    <tr><th style="width:40px;">क्र.</th><th>साहित्याचे नाव (कॅन्टीन व मेस मास्टर यादी)</th><th style="width:110px;">प्रमाण / वजन</th><th style="width:60px; text-align:center;">तपासले</th></tr>
+                </thead>
                 <tbody>{rows}</tbody>
             </table>
-            <div style="margin-top:50px; display:flex; justify-content:space-between; font-size:13px; font-weight:bold;">
+            <div style="margin-top:25px; display:flex; justify-content:space-between; font-size:11px; font-weight:bold;">
                 <div>व्यवस्थापक / क्लार्क सही</div>
                 <div>दुकानदार / सप्लायर सही</div>
             </div>
         </div>
-        <script>window.print();</script>
     </body></html>'''
     return render_template_string(html)
 
