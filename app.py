@@ -7,9 +7,6 @@ from psycopg2.extras import RealDictCursor
 app = Flask(__name__)
 app.secret_key = "shreeguru_complete_fresh_master_2026"
 
-# Supabase PostgreSQL Database Connection URL (password madhla @ = %40)
- import os
-
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
 def get_db():
