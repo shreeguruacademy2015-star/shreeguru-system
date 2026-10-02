@@ -10,7 +10,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
-app.secret_key = "shreeguru_complete_bulletproof_v53_onscreen_cert"
+app.secret_key = "shreeguru_complete_bulletproof_v55_btn_verify"
 
 # --- NEON CLOUD DATABASE CONNECTION ---
 DATABASE_URL = os.environ.get("DATABASE_URL")
@@ -1036,7 +1036,7 @@ CLERK_LAYOUT = '''<!DOCTYPE html>
 </body>
 </html>'''
 
-# ----------------- SECURE PUBLIC TEST TEMPLATE (ON-SCREEN CERTIFICATE & REVIEW) -----------------
+# ----------------- BUTTON-VERIFIED TEST TEMPLATE -----------------
 MOCK_TEST_HTML = '''<!DOCTYPE html>
 <html lang="mr">
 <head>
@@ -1067,11 +1067,37 @@ MOCK_TEST_HTML = '''<!DOCTYPE html>
             श्रीगुरु करिअर अकॅडमीतर्फे नवीन सराव टेस्ट लवकरच लॉन्च केली जाईल. कृपया ॲडमिनने टेस्ट लाईव्ह (Launch) केल्यावर पुन्हा भेट द्या!
         </p>
     </div>
+    {% elif step == 'verify' %}
+    <!-- Step 1: Verification Box with a direct Verify Button -->
+    <div style="background:#fffbeb; border:2px solid #f59e0b; border-radius:8px; padding:20px;">
+        <h3 style="margin-top:0; color:#b45309;">🔐 WhatsApp नंबर पडताळणी (Verification Required)</h3>
+        <p style="font-size:13px; color:#78350f; line-height:1.5;">
+            टेस्ट सोडवण्यासाठी आणि डिजिटल प्रशस्तीपत्र मिळवण्यासाठी तुमचा <b>ओरिजिनल १० अंकी WhatsApp नंबर</b> खाली टाकून खालील बटणावर क्लिक करा:
+        </p>
+        {% if error_msg %}
+        <div style="background:#fee2e2; color:#991b1b; padding:8px; border-radius:4px; font-size:13px; font-weight:bold; margin-bottom:10px;">{{ error_msg }}</div>
+        {% endif %}
+        <form method="POST" action="/test">
+            <input type="hidden" name="action_type" value="verify_phone">
+            <label style="font-weight:bold; font-size:13px;">विद्यार्थ्याचे पूर्ण नाव *:</label>
+            <input type="text" name="student_name" placeholder="उदा. राहुल पाटील" required>
+
+            <label style="font-weight:bold; font-size:13px;">जिल्हा *:</label>
+            <input type="text" name="district" placeholder="उदा. कोल्हापूर" required>
+
+            <label style="font-weight:bold; font-size:13px;">व्हॉट्सॲप मोबाईल नंबर (१० अंकी) *:</label>
+            <input type="tel" name="phone" placeholder="9876543210" pattern="[0-9]{10}" required>
+
+            <button type="submit" class="btn-submit" style="background: linear-gradient(135deg, #25D366, #16a34a); margin-top:10px;">📲 WhatsApp नंबर व्हेरिफाय करा व टेस्ट सोडवा</button>
+        </form>
+    </div>
+
     {% elif submitted %}
+    <!-- Step 3: Result & Certificate displayed ONLY after successful test submission -->
     <div style="background:#f0fdf4; border:2px solid #86efac; border-radius:8px; padding:20px; text-align:center; margin-bottom:20px;">
         <h3 style="margin:0 0 10px; color:#166534;">हार्दिक अभिनंदन, {{ name }}! 🎉</h3>
         <p style="font-size:18px; margin:5px 0;">तुमचा अंतिम स्कोअर: <b style="color:#059669; font-size:24px;">{{ score }} / {{ total }}</b></p>
-        <p style="color:#475569; font-size:13px;">तुमचा ओरिजनल मोबाईल नंबर डेटाबेसमध्ये सेव्ह झाला आहे.</p>
+        <p style="color:#475569; font-size:13px;">तुमचा नंबर ({{ phone }}) यशस्वीरीत्या व्हेरिफाय होऊन लीड सेव्ह झाली आहे.</p>
         <a href="{{ wa_share }}" target="_blank" style="display:inline-block; background:#25D366; color:white; padding:10px 20px; border-radius:6px; text-decoration:none; font-weight:bold; margin-top:10px; font-size:14px;">
             📲 WhatsApp वर निकाल शेअर करा
         </a>
@@ -1110,24 +1136,13 @@ MOCK_TEST_HTML = '''<!DOCTYPE html>
     <div style="text-align:center;"><a href="/test" style="color:#0284c7; font-weight:bold; text-decoration:none;">🔄 नवीन टेस्ट सोडवा</a></div>
 
     {% else %}
+    <!-- Step 2: Question Paper (Accessible only after clicking Verify Button) -->
+    <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:10px; border-radius:6px; margin-bottom:15px; font-size:13px; color:#166534; display:flex; justify-content:space-between; align-items:center;">
+        <div>✅ नंबर व्हेरिफाइड: <b>{{ session.get('test_student_name') }}</b> ({{ session.get('test_student_phone') }})</div>
+        <a href="/test" style="color:red; font-size:11px; text-decoration:none; font-weight:bold;">[ नंबर बदला ]</a>
+    </div>
     <form method="POST" action="/test">
-        <div style="background:#f8fafc; padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid #cbd5e1; border-left:4px solid #b45309;">
-            <b style="color:#b45309; display:block; margin-bottom:8px;">⚠️ सूचना: निकाल व प्रशस्तीपत्र पाहण्यासाठी तुमचा ओरिजनल WhatsApp नंबर भरणे अनिवार्य आहे:</b>
-            <label style="font-weight:bold; font-size:13px;">विद्यार्थ्याचे पूर्ण नाव *:</label>
-            <input type="text" name="student_name" placeholder="उदा. गणेश पाटील" required>
-            
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                <div>
-                    <label style="font-weight:bold; font-size:13px;">जिल्हा *:</label>
-                    <input type="text" name="district" placeholder="उदा. सातारा / सांगली" required>
-                </div>
-                <div>
-                    <label style="font-weight:bold; font-size:13px;">व्हॉट्सॲप मोबाईल नंबर *:</label>
-                    <input type="tel" name="phone" placeholder="१० अंकी ओरिजनल नंबर" pattern="[0-9]{10}" required>
-                </div>
-            </div>
-        </div>
-
+        <input type="hidden" name="action_type" value="submit_test">
         {% for q in questions %}
         <div class="q-item">
             <div class="q-text">प्र. {{ loop.index }}. {{ q.question }}</div>
@@ -1375,7 +1390,7 @@ def delete_question(id):
             conn.commit()
     return redirect('/admin?tab=questions')
 
-# ----------------- PUBLIC INQUIRY & ON-SCREEN CERTIFICATE TEST ROUTES -----------------
+# ----------------- PUBLIC INQUIRY & BUTTON-VERIFIED TEST ROUTES -----------------
 @app.route('/inquiry', methods=['GET', 'POST'])
 def public_inquiry():
     msg = None
@@ -1419,14 +1434,40 @@ def mock_test():
     review_list = []
     today_date = date.today().strftime("%d/%m/%Y")
     wa_share = ""
+    step = "verify"
+    error_msg = ""
+
+    if session.get('test_verified') == True:
+        step = "question_paper"
+        name = session.get('test_student_name')
+        district = session.get('test_student_district')
+        phone = session.get('test_student_phone')
 
     if request.method == 'POST' and launched:
-        name = request.form.get('student_name')
-        district = request.form.get('district')
-        phone = request.form.get('phone')
+        action = request.form.get('action_type')
+        
+        if action == 'verify_phone':
+            name = request.form.get('student_name')
+            district = request.form.get('district')
+            phone = request.form.get('phone')
 
-        if phone and len(phone.strip()) >= 10:
+            if phone and len(phone.strip()) >= 10:
+                session['test_verified'] = True
+                session['test_student_name'] = name
+                session['test_student_district'] = district
+                session['test_student_phone'] = phone
+                step = "question_paper"
+            else:
+                error_msg = "कृपया वैध १० अंकी WhatsApp नंबर टाका!"
+                step = "verify"
+
+        elif action == 'submit_test' and session.get('test_verified') == True:
+            step = "question_paper"
             submitted = True
+            name = session.get('test_student_name')
+            district = session.get('test_student_district')
+            phone = session.get('test_student_phone')
+            
             current_score = 0
             total = len(questions)
 
@@ -1454,8 +1495,10 @@ def mock_test():
             score = current_score
             wa_text = f"नमस्कार, मी {name} ({district}). श्रीगुरु करिअर अकॅडमीच्या ऑनलाईन टेस्टमध्ये मला {score}/{total} गुण मिळाले आहेत!"
             wa_share = f"https://wa.me/?text={urllib.parse.quote(wa_text)}"
+            
+            session.pop('test_verified', None)
 
-    return render_template_string(MOCK_TEST_HTML, questions=questions, submitted=submitted, score=score, total=total, name=name, district=district, phone=phone, review_list=review_list, today_date=today_date, launched=launched, wa_share=wa_share)
+    return render_template_string(MOCK_TEST_HTML, questions=questions, submitted=submitted, score=score, total=total, name=name, district=district, phone=phone, review_list=review_list, today_date=today_date, launched=launched, wa_share=wa_share, step=step, error_msg=error_msg)
 
 @app.route('/inquiries')
 def inquiry_desk():
@@ -1577,7 +1620,7 @@ def print_grocery_slip():
     <body onload="window.print()">
         <div style="max-width: 100%; margin: auto;">
             <h2>श्रीगुरु करिअर अकॅडमी (मेस व कॅन्टीन विभाग)</h2>
--            <p>आडूर, ता. करवीर, जि. कोल्हापूर | संपर्क: ९९२११११९६०</p>
+            <p>आडूर, ता. करवीर, जि. कोल्हापूर | संपर्क: ९९२११११९६०</p>
             <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-weight:bold; font-size:11px;">
                 <div>दिनांक: {date.today().strftime('%d/%m/%Y')}</div>
                 <div>निवडलेले साहित्य एकूण: {len(items)}</div>
