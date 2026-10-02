@@ -12,7 +12,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
-app.secret_key = "shreeguru_ultimate_master_all_roles_tabs_v105_final"
+app.secret_key = "shreeguru_ultimate_master_all_tabs_fully_complete_v110"
 
 # --- NEON CLOUD DATABASE CONNECTION ---
 DATABASE_URL = os.environ.get("DATABASE_URL")
@@ -123,6 +123,16 @@ def init_db():
                 category TEXT,
                 total_copies INTEGER DEFAULT 1,
                 available_copies INTEGER DEFAULT 1
+            )''')
+
+            cur.execute('''CREATE TABLE IF NOT EXISTS book_issues (
+                id SERIAL PRIMARY KEY,
+                book_id INTEGER,
+                student_id INTEGER,
+                student_name TEXT,
+                issue_date TEXT,
+                return_date TEXT,
+                status TEXT DEFAULT 'Issued'
             )''')
 
             cur.execute('''CREATE TABLE IF NOT EXISTS study_lab_seats (
@@ -713,7 +723,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
 
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
             <div style="background:#f8fafc; padding:15px; border-radius:6px; border:1px solid #cbd5e1;">
-                <h4 style="margin-top:0; color:#0b3c5d;">१. नवीन प्रश्न व स्पष्टीकरण (Explanation) टाка:</h4>
+                <h4 style="margin-top:0; color:#0b3c5d;">१. नवीन प्रश्न व स्पष्टीकरण (Explanation) टाका:</h4>
                 <form action="/add_single_question" method="POST">
                     <input type="hidden" name="test_id" value="{{ current_test_id }}">
                     <label>प्रश्न:</label><textarea name="question" required style="width:100%; height:50px;"></textarea>
@@ -761,55 +771,150 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
     {% endif %}
 
     {% if curr_tab == 'students' %}
-    <div class="admin-tab"><h3>📋 विद्यार्थी यादी</h3><table><thead><tr><th>Reg</th><th>नाव</th><th>कोर्स</th><th>फोन</th><th>शिल्लक</th></tr></thead><tbody>{% for s in students %}<tr><td>REG-{{ s.id }}</td><td><b>{{ s.name }}</b></td><td>{{ s.course }}</td><td>{{ s.phone }}</td><td style="color:red;">₹{{ (s.total_fees or 0)-(s.paid_fees or 0) }}</td></tr>{% endfor %}</tbody></table></div>
+    <div class="admin-tab">
+        <h3 style="margin:0;">📋 सर्व विद्यार्थी यादी</h3>
+        <table>
+            <thead><tr><th>फोटो</th><th>Reg</th><th>नाव</th><th>कोर्स</th><th>फोन</th><th>शिल्लक</th><th>कृती</th></tr></thead>
+            <tbody>
+                {% for s in students %}
+                <tr>
+                    <td>{% if s.photo_filename %}<img src="/uploads/{{ s.photo_filename }}" width="35" height="40">{% else %}-{% endif %}</td>
+                    <td>REG-{{ s.id }}</td><td><b>{{ s.name }}</b></td><td>{{ s.course }}</td><td>{{ s.phone }}</td>
+                    <td style="color:red; font-weight:bold;">₹{{ (s.total_fees or 0) - (s.paid_fees or 0) }}</td>
+                    <td><a href="/delete_student/{{ s.id }}" onclick="return confirm('हटवायचे?')" class="btn-act" style="background:red;">हटवा</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
     {% endif %}
+
     {% if curr_tab == 'admission' %}
-    <div class="admin-tab"><h3>📝 नवीन प्रवेश</h3><form action="/add_student" method="POST"><input type="text" name="name" placeholder="नाव" required><input type="date" name="admission_date" value="{{ today_date }}" required><input type="text" name="course" value="पोलीस भरती" required><input type="text" name="phone" placeholder="फोन" required><input type="number" name="total_fees" placeholder="एकूण फी" required><input type="number" name="paid_fees" placeholder="भरलेली फी" required><button type="submit" class="btn-act" style="background:green;">सेव्ह करा</button></form></div>
+    <div class="admin-tab">
+        <h3>📝 नवीन विद्यार्थी प्रवेश नोंदणी</h3>
+        <form action="/add_student" method="POST" enctype="multipart/form-data">
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap:10px;">
+                <div>नाव *: <input type="text" name="name" required style="width:100%;"></div>
+                <div>तारीख *: <input type="date" name="admission_date" value="{{ today_date }}" required style="width:100%;"></div>
+                <div>कोर्स *: <input type="text" name="course" value="पोलीस भरती" required style="width:100%;"></div>
+                <div>मोबाईल *: <input type="text" name="phone" required style="width:100%;"></div>
+                <div>पालक फोन *: <input type="text" name="parent_phone" required style="width:100%;"></div>
+                <div>एकूण फी *: <input type="number" name="total_fees" required style="width:100%;"></div>
+                <div>भरलेली फी *: <input type="number" name="paid_fees" required style="width:100%;"></div>
+                <div>फोटो: <input type="file" name="photo" accept="image/*" style="width:100%;"></div>
+            </div>
+            <br><button type="submit" class="btn-act" style="background:green; padding:8px 15px;">+ प्रवेश सेव्ह करा</button>
+        </form>
+    </div>
     {% endif %}
+
     {% if curr_tab == 'physical' %}
-    <div class="admin-tab"><h3>🏃‍♂️ फिजिकल रेकॉर्ड</h3><table><thead><tr><th>तारीख</th><th>नाव</th><th>एकूण गुण</th></tr></thead><tbody>{% for pt in physical_records %}<tr><td>{{ pt.test_date }}</td><td><b>{{ pt.name }}</b></td><td style="color:green;">{{ pt.total_obtained }}/50</td></tr>{% endfor %}</tbody></table></div>
+    <div class="admin-tab"><h3 style="color:#0284c7; margin-top:0;">🏃‍♂️ फिजिकल रेकॉर्ड</h3><table><thead><tr><th>तारीख</th><th>नाव</th><th>कोर्स</th><th>1600m</th><th>100m</th><th>गोळा</th><th>पुल-अप्स</th><th>एकूण</th></tr></thead><tbody>{% for pt in physical_records %}<tr><td>{{ pt.test_date }}</td><td><b>{{ pt.name }}</b></td><td>{{ pt.course }}</td><td>{{ pt.run_time }}</td><td>{{ pt.sprint_time }}</td><td>{{ pt.shot_put_dist }}</td><td>{{ pt.pullups }}</td><td><b style="color:green;">{{ pt.total_obtained }}/50</b></td></tr>{% endfor %}</tbody></table></div>
     {% endif %}
+
     {% if curr_tab == 'written' %}
-    <div class="admin-tab"><h3>📝 रिटर्न टेस्ट</h3><table><thead><tr><th>तारीख</th><th>नाव</th><th>गुण</th></tr></thead><tbody>{% for wt in written_records %}<tr><td>{{ wt.test_date }}</td><td><b>{{ wt.name }}</b></td><td style="color:green;">{{ wt.obtained_marks }}</td></tr>{% endfor %}</tbody></table></div>
+    <div class="admin-tab"><h3 style="color:#10b981; margin-top:0;">📝 रिटर्न टेस्ट</h3><table><thead><tr><th>तारीख</th><th>नाव</th><th>परीक्षा</th><th>गुण</th></tr></thead><tbody>{% for wt in written_records %}<tr><td>{{ wt.test_date }}</td><td><b>{{ wt.name }}</b></td><td>{{ wt.test_name }}</td><td style="color:green;">{{ wt.obtained_marks }}/{{ wt.total_marks }}</td></tr>{% endfor %}</tbody></table></div>
     {% endif %}
+
     {% if curr_tab == 'requests' %}
-    <div class="admin-tab"><h3>📩 स्टाफ विनंत्या</h3><table><thead><tr><th>तारीख</th><th>कर्मचारी</th><th>विषय</th><th>स्थिती</th></tr></thead><tbody>{% for r in all_requests %}<tr><td>{{ r.req_date }}</td><td><b>{{ r.req_role }}</b></td><td>{{ r.request_title }}</td><td>{{ r.status }}</td></tr>{% endfor %}</tbody></table></div>
+    <div class="admin-tab"><h3 style="color:#e11d48; margin-top:0;">📩 स्टाफ विनंत्या</h3><table><thead><tr><th>तारीख</th><th>कर्मचारी</th><th>विषय</th><th>तपशील</th><th>स्थिती</th></tr></thead><tbody>{% for r in all_requests %}<tr><td>{{ r.req_date }}</td><td><b>{{ r.req_role }}</b></td><td><b>{{ r.request_title }}</b></td><td>{{ r.request_details }}</td><td><b>{{ r.status }}</b></td></tr>{% endfor %}</tbody></table></div>
     {% endif %}
+
     {% if curr_tab == 'fee' %}
-    <div class="admin-tab"><h3>💰 फी जमा</h3><form action="/pay_installment" method="POST"><select name="student_id" required>{% for s in students %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}</select><input type="number" name="amount" placeholder="रक्कम" required><button type="submit" class="btn-act" style="background:green;">जमा करा</button></form></div>
+    <div class="admin-tab">
+        <h3>💰 फी हप्ता जमा</h3>
+        <form action="/pay_installment" method="POST">
+            विद्यार्थी: <select name="student_id" required><option value="">-- निवडा --</option>{% for s in students %}<option value="{{ s.id }}">{{ s.name }} (बाकी: ₹{{ (s.total_fees or 0)-(s.paid_fees or 0) }})</option>{% endfor %}</select>
+            रक्कम: <input type="number" name="amount" placeholder="रक्कम (₹)" required>
+            <button type="submit" class="btn-act" style="background:green;">जमा करा</button>
+        </form>
+    </div>
     {% endif %}
+
     {% if curr_tab == 'hostel' %}
-    <div class="admin-tab"><h3>🏠 हॉस्टेल/मेस</h3><table><thead><tr><th>तारीख</th><th>नाव</th><th>रक्कम</th></tr></thead><tbody>{% for h in hostel_logs %}<tr><td>{{ h.pay_date }}</td><td><b>{{ h.name }}</b></td><td style="color:green;">₹{{ h.paid_amount }}</td></tr>{% endfor %}</tbody></table></div>
+    <div class="admin-tab"><h3>🏠 हॉस्टेल व मेस फी नोंद</h3><table><thead><tr><th>तारीख</th><th>नाव</th><th>पॅकेज</th><th>रक्कम</th></tr></thead><tbody>{% for h in hostel_logs %}<tr><td>{{ h.pay_date }}</td><td><b>{{ h.name }}</b></td><td>{{ h.package_type }}</td><td style="color:green; font-weight:bold;">₹{{ h.paid_amount }}</td></tr>{% endfor %}</tbody></table></div>
     {% endif %}
+
     {% if curr_tab == 'att' %}
-    <div class="admin-tab"><h3>📋 हजेरी</h3><p>हजेरी नोंद प्रणाली कार्यरत आहे.</p></div>
+    <div class="admin-tab">
+        <h3>📋 हजेरी नोंद</h3>
+        <form action="/save_attendance" method="POST">
+            <input type="hidden" name="att_type" value="मैदानी हजेरी">
+            <table><thead><tr><th>नाव</th><th>हजेरी</th></tr></thead><tbody>
+                {% for s in students %}
+                <tr><td><b>{{ s.name }}</b></td><td><label><input type="radio" name="status_{{ s.id }}" value="हजर" checked> P</label> <label style="color:red;"><input type="radio" name="status_{{ s.id }}" value="गैरहजर"> A</label></td></tr>
+                {% endfor %}
+            </tbody></table><br><button type="submit" class="btn-act" style="background:#e11d48;">💾 हजेरी सेव्ह करा</button>
+        </form>
+    </div>
     {% endif %}
+
     {% if curr_tab == 'diet' %}
-    <div class="admin-tab"><h3>🥗 मेस डाएट</h3><table><thead><tr><th>वार</th><th>सकाळ नाश्ता</th><th>दुपार जेवण</th></tr></thead><tbody>{% for d in diet_list %}<tr><td><b>{{ d.day_name }}</b></td><td>{{ d.breakfast }}</td><td>{{ d.lunch }}</td></tr>{% endfor %}</tbody></table></div>
+    <div class="admin-tab">
+        <h3 style="color:#6366f1;">🥗 मेस डाएट वेळापत्रक</h3>
+        <table><thead><tr><th>वार</th><th>सकाळ नाश्ता</th><th>दुपार जेवण</th><th>रात्र जेवण</th><th>विशेष आहार</th></tr></thead><tbody>
+            {% for d in diet_list %}<tr><td><b>{{ d.day_name }}</b></td><td>{{ d.breakfast }}</td><td>{{ d.lunch }}</td><td>{{ d.dinner }}</td><td>{{ d.special_diet }}</td></tr>{% endfor %}
+        </tbody></table>
+    </div>
     {% endif %}
+
     {% if curr_tab == 'disc' %}
-    <div class="admin-tab"><h3>⚠️ गेटपास/शिस्त</h3><p>शिस्तभंग नोंदवही.</p></div>
+    <div class="admin-tab"><h3 style="color:#6b21a8; margin-top:0;">⚠️️ गेटपास व शिस्तभंग नोंद</h3><table><thead><tr><th>तारीख</th><th>नाव</th><th>प्रकार</th><th>कारण</th></tr></thead><tbody>{% for d in discipline_logs %}<tr><td>{{ d.record_date }}</td><td><b>{{ d.name }}</b></td><td>{{ d.record_type }}</td><td>{{ d.reason }}</td></tr>{% endfor %}</tbody></table></div>
     {% endif %}
+
     {% if curr_tab == 'exp' %}
-    <div class="admin-tab"><h3>💵 खर्च वही</h3><table><thead><tr><th>तारीख</th><th>तपशील</th><th>रक्कम</th></tr></thead><tbody>{% for ex in expenses_list %}<tr><td>{{ ex.exp_date }}</td><td><b>{{ ex.description }}</b></td><td style="color:red;">₹{{ ex.amount }}</td></tr>{% endfor %}</tbody></table></div>
+    <div class="admin-tab">
+        <h3>💵 दैनिक खर्च वही</h3>
+        <form action="/add_expense" method="POST" style="margin-bottom:15px; display:flex; gap:10px; flex-wrap:wrap;">
+            <input type="date" name="exp_date" value="{{ today_date }}" required>
+            <input type="text" name="category" placeholder="खर्चाचा प्रकार (उदा. भाजीपाला)" required>
+            <input type="text" name="description" placeholder="तपशील">
+            <input type="number" name="amount" placeholder="रक्कम (₹)" required>
+            <button type="submit" class="btn-act" style="background:#ff416c;">+ खर्च नोंदवा</button>
+        </form>
+        <table><thead><tr><th>तारीख</th><th>प्रकार</th><th>तपशील</th><th>रक्कम</th></tr></thead><tbody>
+            {% for ex in expenses_list %}<tr><td>{{ ex.exp_date }}</td><td>{{ ex.category }}</td><td><b>{{ ex.description }}</b></td><td style="color:red; font-weight:bold;">₹{{ ex.amount }}</td></tr>{% endfor %}
+        </tbody></table>
+    </div>
     {% endif %}
+
     {% if curr_tab == 'wa' %}
-    <div class="admin-tab"><h3>📲 WhatsApp</h3><table><thead><tr><th>नाव</th><th>फोन</th></tr></thead><tbody>{% for s in students %}<tr><td>{{ s.name }}</td><td><a href="https://wa.me/91{{ s.parent_phone }}" target="_blank" style="color:green; font-weight:bold;">📲 मेसेज पाठवा</a></td></tr>{% endfor %}</tbody></table></div>
+    <div class="admin-tab"><h3>📲 WhatsApp मेसेज</h3><table><thead><tr><th>नाव</th><th>फोन</th><th>मेसेज</th></tr></thead><tbody>{% for s in students %}<tr><td>{{ s.name }}</td><td>{{ s.parent_phone }}</td><td><a href="https://wa.me/91{{ s.parent_phone }}" target="_blank" class="btn-act" style="background:#25D366;">📲 मेसेज</a></td></tr>{% endfor %}</tbody></table></div>
     {% endif %}
+
     {% if curr_tab == 'staff' %}
-    <div class="admin-tab"><h3>👔 स्टाफ पगार</h3><table><thead><tr><th>नाव</th><th>पद</th><th>पगार</th></tr></thead><tbody>{% for st in staff_members %}<tr><td><b>{{ st.name }}</b></td><td>{{ st.role }}</td><td>₹{{ st.salary }}</td></tr>{% endfor %}</tbody></table></div>
+    <div class="admin-tab">
+        <h3 style="color:#4f46e5; margin-top:0;">👔 स्टाफ पगार व उचल हिशोब</h3>
+        <table><thead><tr><th>नाव</th><th>पद</th><th>फोन</th><th>पगार</th><th>उचल (Advance)</th><th>निव्वळ पगार</th></tr></thead><tbody>
+            {% for st in staff_members %}<tr><td><b>{{ st.name }}</b></td><td>{{ st.role }}</td><td>{{ st.phone }}</td><td>₹{{ st.salary }}</td><td style="color:red;">₹{{ st.advance_paid }}</td><td style="color:green; font-weight:bold;">₹{{ st.salary - st.advance_paid }}</td></tr>{% endfor %}
+        </tbody></table>
+    </div>
     {% endif %}
+
     {% if curr_tab == 'tasks' %}
-    <div class="admin-tab"><h3>📌 काम सांगा</h3><p>स्टाफसाठी टास्क असाइनमेंट.</p></div>
+    <div class="admin-tab">
+        <h3 style="color:#d97706; margin-top:0;">📌 स्टाफ कामे (Task Assignment)</h3>
+        <form action="/assign_task" method="POST" style="margin-bottom:15px; display:flex; gap:10px; flex-wrap:wrap;">
+            <select name="target_role" required><option value="Manager">मॅनेजर</option><option value="Clerk">क्लार्क</option><option value="Trainer">फिजिकल ट्रेनर</option></select>
+            <input type="text" name="task_text" placeholder="कामाचा तपशील..." required style="flex:2;">
+            <button type="submit" class="btn-act" style="background:#d97706;">+ काम सांगा</button>
+        </form>
+        <table><thead><tr><th>दिनांक</th><th>कोणाला</th><th>काम</th><th>स्थिती</th></tr></thead><tbody>
+            {% for t in staff_tasks %}<tr><td>{{ t.task_date }}</td><td><b>{{ t.target_role }}</b></td><td>{{ t.task_text }}</td><td><b>{{ t.status }}</b></td></tr>{% endfor %}
+        </tbody></table>
+    </div>
     {% endif %}
+
     {% if curr_tab == 'staff_tracking' %}
-    <div class="admin-tab"><h3>👁️ स्टाफ हालचाली</h3><p>ॲक्टिव्हिटी लॉग.</p></div>
+    <div class="admin-tab"><h3 style="color:#059669; margin-top:0;">👁️ स्टाफ हालचाली (Activity Log)</h3><table><thead><tr><th>वेळ</th><th>कर्मचारी</th><th>हालचाल नोंद</th></tr></thead><tbody>{% for log in all_staff_logs %}<tr><td>{{ log.act_time }}</td><td><b>{{ log.staff_role }}</b></td><td>{{ log.activity_text }}</td></tr>{% endfor %}</tbody></table></div>
     {% endif %}
+
     {% if curr_tab == 'passwords' %}
-    <div class="admin-tab"><h3>🔐 युजर्स व पासवर्ड</h3><p>सिस्टीम युझर क्रेडेंशिअल्स.</p></div>
+    <div class="admin-tab"><h3 style="color:#dc2626; margin-top:0;">🔐 युजर पासवर्ड</h3><table><thead><tr><th>Role</th><th>Password</th></tr></thead><tbody>{% for u in users_list %}<tr><td><b>{{ u.role }}</b></td><td>{{ u.password }}</td></tr>{% endfor %}</tbody></table></div>
     {% endif %}
+
     {% if curr_tab == 'bak' %}
-    <div class="admin-tab"><h3>💾 बॅकअप / रिस्टोअर</h3><p>Neon Cloud PostgreSQL डेटाबेस.</p></div>
+    <div class="admin-tab"><h3 style="color:#0b3c5d;">💾 डेटाबेस बॅकअप</h3><p>क्लाउड डेटाबेस (Neon PostgreSQL) पूर्णपणे सुरक्षित कार्यरत आहे.</p></div>
     {% endif %}
 </div>
 </body>
@@ -850,6 +955,7 @@ MANAGER_LAYOUT = '''<!DOCTYPE html>
 <div class="menu-bar">
     <a href="/manager?tab=grocery" class="menu-btn {% if curr_tab == 'grocery' %}active{% endif %}" style="background:#059669;">🛒 ५०० वस्तू किराणा यादी</a>
     <a href="/manager?tab=canteen_att" class="menu-btn {% if curr_tab == 'canteen_att' %}active{% endif %}" style="background:#0284c7;">📋 कॅन्टीन स्टाफ हजेरी</a>
+    <a href="/manager?tab=diet" class="menu-btn {% if curr_tab == 'diet' %}active{% endif %}" style="background:#6366f1;">🥗 मेस डाएट वेळापत्रक</a>
     <a href="/inquiries" class="menu-btn" style="background:#d97706;">📞 प्रवेश चौकशी डेस्क</a>
     <a href="/library" target="_blank" class="menu-btn" style="background:#7c3aed;">📚 स्टडी लॅब व लायब्ररी</a>
 </div>
@@ -881,6 +987,11 @@ MANAGER_LAYOUT = '''<!DOCTYPE html>
         {% elif curr_tab == 'canteen_att' %}
         <h3 style="color:#065f46; margin-top:0;">📋 कॅन्टीन स्टाफ हजेरी (सुरेखा ताई, सुनीता ताई इ.)</h3>
         <p>कॅन्टीन स्वयंपाकी व मदतनीस महिलांची सत्रनिहाय हजेरी व्यवस्थापन.</p>
+        {% elif curr_tab == 'diet' %}
+        <h3 style="color:#065f46; margin-top:0;">🥗 मेस डाएट वेळापत्रक</h3>
+        <table><thead><tr><th>वार</th><th>सकाळ नाश्ता</th><th>दुपार जेवण</th><th>रात्र जेवण</th><th>विशेष आहार</th></tr></thead><tbody>
+            {% for d in diet_list %}<tr><td><b>{{ d.day_name }}</b></td><td>{{ d.breakfast }}</td><td>{{ d.lunch }}</td><td>{{ d.dinner }}</td><td>{{ d.special_diet }}</td></tr>{% endfor %}
+        </tbody></table>
         {% endif %}
     </div>
 </div>
@@ -922,6 +1033,7 @@ CLERK_LAYOUT = '''<!DOCTYPE html>
 <div class="menu-bar">
     <a href="/clerk?tab=grocery" class="menu-btn {% if curr_tab == 'grocery' %}active{% endif %}" style="background:#2563eb;">🛒 ५०० वस्तू किराणा यादी</a>
     <a href="/clerk?tab=admission" class="menu-btn {% if curr_tab == 'admission' %}active{% endif %}" style="background:#059669;">📝 नवीन प्रवेश व फी</a>
+    <a href="/clerk?tab=expenses" class="menu-btn {% if curr_tab == 'expenses' %}active{% endif %}" style="background:#dc2626;">💵 दैनिक खर्च नोंद</a>
     <a href="/inquiries" class="menu-btn" style="background:#d97706;">📞 चौकशी व कॉलिंग डेस्क</a>
     <a href="/library" target="_blank" class="menu-btn" style="background:#0284c7;">📚 लायब्ररी व स्टडी लॅब</a>
 </div>
@@ -934,7 +1046,6 @@ CLERK_LAYOUT = '''<!DOCTYPE html>
                 <button type="submit" class="btn">🖨️ पावती प्रिंट करा</button>
                 <button type="button" class="btn-alt" onclick="document.getElementById('selectAllBoxClerk').checked = true; toggleAll(document.getElementById('selectAllBoxClerk'));">✅ सर्व निवडा</button>
                 <button type="button" class="btn-alt" onclick="document.getElementById('selectAllBoxClerk').checked = false; toggleAll(document.getElementById('selectAllBoxClerk'));">❌ सर्व काढा</button>
-                <label style="font-size:12px; font-weight:bold; margin-left:10px;"><input type="checkbox" id="selectAllBoxClerk" onchange="toggleAll(this)"> सर्व ऑन/ऑफ करा</label>
             </div>
             <table>
                 <thead><tr><th style="width:40px; text-align:center;">निवड</th><th style="width:50px;">क्र.</th><th>साहित्याचे अचूक नाव (५०० मेनू)</th><th style="width:130px;">प्रमाण</th></tr></thead>
@@ -960,6 +1071,15 @@ CLERK_LAYOUT = '''<!DOCTYPE html>
             <input type="number" name="total_fees" placeholder="एकूण फी" required style="width:100%; padding:8px; margin-bottom:10px;"><br>
             <input type="number" name="paid_fees" placeholder="भरलेली फी" required style="width:100%; padding:8px; margin-bottom:15px;"><br>
             <button type="submit" class="btn">+ प्रवेश सेव्ह करा</button>
+        </form>
+        {% elif curr_tab == 'expenses' %}
+        <h3 style="color:#1e40af; margin-top:0;">💵 दैनिक खर्च नोंदणी</h3>
+        <form action="/add_expense" method="POST">
+            <input type="date" name="exp_date" value="{{ today_date }}" required style="width:100%; padding:8px; margin-bottom:10px;"><br>
+            <input type="text" name="category" placeholder="खर्चाचा प्रकार (उदा. भाजीपाला)" required style="width:100%; padding:8px; margin-bottom:10px;"><br>
+            <input type="text" name="description" placeholder="तपशील" style="width:100%; padding:8px; margin-bottom:10px;"><br>
+            <input type="number" name="amount" placeholder="रक्कम (₹)" required style="width:100%; padding:8px; margin-bottom:15px;"><br>
+            <button type="submit" class="btn">+ खर्च सेव्ह करा</button>
         </form>
         {% endif %}
     </div>
@@ -1238,7 +1358,7 @@ PUBLIC_INQUIRY_HTML = '''<!DOCTYPE html>
 <head><meta charset="UTF-8"><title>प्रवेश चौकशी</title></head>
 <body style="font-family:sans-serif; background:#f1f5f9; padding:20px; display:flex; justify-content:center; align-items:center; height:100vh;">
 <div style="background:white; padding:30px; border-radius:8px; width:100%; max-width:450px; box-shadow:0 4px 10px rgba(0,0,0,0.1);">
-    <h2 style="color:#0b2545; text-align:center;">⚔️ श्रीगुरु करिअर अकॅडमी</h2>
+    <h2 style="color:#0b2545; text-align:center;">⚔️️ श्रीगुरु करिअर अकॅडमी</h2>
     {% if msg %}<div style="background:#dcfce7; color:#166534; padding:10px; border-radius:6px; margin-bottom:15px; text-align:center; font-weight:bold;">{{ msg }}</div>{% endif %}
     <form method="POST" action="/inquiry">
         <label>नाव:</label><input type="text" name="student_name" required style="width:100%; padding:8px; margin-bottom:10px;">
@@ -1301,7 +1421,11 @@ def root():
 def manager_view():
     if session.get('user_role') != 'Manager': return redirect(url_for('login'))
     curr_tab = request.args.get('tab', 'grocery')
-    return render_template_string(MANAGER_LAYOUT, grocery_items=GROCERY_MASTER_500, curr_tab=curr_tab)
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM mess_diet")
+            diet_list = cur.fetchall()
+    return render_template_string(MANAGER_LAYOUT, grocery_items=GROCERY_MASTER_500, curr_tab=curr_tab, diet_list=diet_list)
 
 @app.route('/trainer')
 def trainer_view():
@@ -1341,6 +1465,28 @@ def add_student():
             conn.commit()
     return redirect('/admin?tab=students')
 
+@app.route('/add_expense', methods=['POST'])
+def add_expense():
+    if session.get('user_role') not in ['Admin', 'Clerk']: return "Unauthorized", 403
+    exp_date, category, desc, amount = request.form.get('exp_date'), request.form.get('category'), request.form.get('description', ''), safe_float(request.form.get('amount'))
+    role = session.get('user_role')
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("INSERT INTO expenses (exp_date, category, description, amount, logged_by) VALUES (%s, %s, %s, %s, %s)", (exp_date, category, desc, amount, role))
+            conn.commit()
+    return redirect('/admin?tab=exp' if role == 'Admin' else '/clerk')
+
+@app.route('/assign_task', methods=['POST'])
+def assign_task():
+    if session.get('user_role') != 'Admin': return "Unauthorized", 403
+    target_role, task_text = request.form.get('target_role'), request.form.get('task_text')
+    task_date = date.today().strftime("%Y-%m-%d")
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("INSERT INTO staff_tasks (target_role, task_text, task_date) VALUES (%s, %s, %s)", (target_role, task_text, task_date))
+            conn.commit()
+    return redirect('/admin?tab=tasks')
+
 @app.route('/admin')
 def admin_view():
     if session.get('user_role') != 'Admin': return redirect(url_for('login'))
@@ -1373,9 +1519,17 @@ def admin_view():
             diet_list = cur.fetchall()
             cur.execute("SELECT * FROM staff")
             staff_members = cur.fetchall()
+            cur.execute("SELECT * FROM staff_tasks ORDER BY id DESC")
+            staff_tasks = cur.fetchall()
             cur.execute("SELECT * FROM staff_requests ORDER BY id DESC")
             all_requests = cur.fetchall()
-            cur.execute("SELECT pt.*, s.name FROM physical_tests pt JOIN students s ON pt.student_id = s.id ORDER BY pt.id DESC")
+            cur.execute("SELECT * FROM staff_activity_log ORDER BY id DESC LIMIT 40")
+            all_staff_logs = cur.fetchall()
+            cur.execute("SELECT d.*, s.name FROM discipline_records d JOIN students s ON d.student_id = s.id ORDER BY d.id DESC")
+            discipline_logs = cur.fetchall()
+            cur.execute("SELECT h.*, s.name FROM hostel_mess_fees h JOIN students s ON h.student_id = s.id ORDER BY h.id DESC")
+            hostel_logs = cur.fetchall()
+            cur.execute("SELECT pt.*, s.name, s.course FROM physical_tests pt JOIN students s ON pt.student_id = s.id ORDER BY pt.id DESC")
             physical_records = cur.fetchall()
             cur.execute("SELECT wt.*, s.name FROM written_tests wt JOIN students s ON wt.student_id = s.id ORDER BY wt.id DESC")
             written_records = cur.fetchall()
@@ -1388,7 +1542,7 @@ def admin_view():
     current_test_title = next((tp['test_title'] for tp in all_test_papers if tp['id'] == current_test_id), "मुख्य टेस्ट")
     test_fee = next((tp['test_fee'] for tp in all_test_papers if tp['id'] == current_test_id), 0)
 
-    return render_template_string(ADMIN_DASHBOARD_LAYOUT, curr_tab=curr_tab, students=students, expenses_list=expenses_list, users_list=users_list, diet_list=diet_list, staff_members=staff_members, all_requests=all_requests, physical_records=physical_records, written_records=written_records, questions=questions, pending_payments=pending_payments, all_test_papers=all_test_papers, current_test_id=current_test_id, current_test_title=current_test_title, test_fee=test_fee, total_paid=total_paid, total_pending=total_pending, total_expenses=total_expenses, today_date=today_date, lang=lang, test_launched=test_launched, upi_id=upi_id, qr_image_url=qr_image_url)
+    return render_template_string(ADMIN_DASHBOARD_LAYOUT, curr_tab=curr_tab, students=students, expenses_list=expenses_list, users_list=users_list, diet_list=diet_list, staff_members=staff_members, staff_tasks=staff_tasks, all_requests=all_requests, all_staff_logs=all_staff_logs, discipline_logs=discipline_logs, hostel_logs=hostel_logs, physical_records=physical_records, written_records=written_records, questions=questions, pending_payments=pending_payments, all_test_papers=all_test_papers, current_test_id=current_test_id, current_test_title=current_test_title, test_fee=test_fee, total_paid=total_paid, total_pending=total_pending, total_expenses=total_expenses, today_date=today_date, lang=lang, test_launched=test_launched, upi_id=upi_id, qr_image_url=qr_image_url)
 
 @app.route('/toggle_test_launch', methods=['POST'])
 def toggle_test_launch():
