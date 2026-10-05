@@ -27,7 +27,6 @@ def init_master_db():
     try:
         with get_db() as conn:
             with conn.cursor() as cur:
-                # १. टेस्ट पेपर्स टेबल
                 cur.execute('''CREATE TABLE IF NOT EXISTS test_papers (
                     id SERIAL PRIMARY KEY,
                     test_title TEXT NOT NULL,
@@ -37,7 +36,6 @@ def init_master_db():
                     status TEXT DEFAULT 'Active'
                 )''')
 
-                # २. प्रश्न टेबल
                 cur.execute('''CREATE TABLE IF NOT EXISTS questions (
                     id SERIAL PRIMARY KEY,
                     test_id INTEGER DEFAULT 1,
@@ -50,7 +48,6 @@ def init_master_db():
                     explanation TEXT DEFAULT ''
                 )''')
 
-                # ३. विद्यार्थी लीड्स व निकाल टेबल
                 cur.execute('''CREATE TABLE IF NOT EXISTS mock_test_leads (
                     id SERIAL PRIMARY KEY,
                     test_id INTEGER DEFAULT 1,
@@ -74,7 +71,6 @@ def init_master_db():
                 cur.execute("ALTER TABLE mock_test_leads ADD COLUMN IF NOT EXISTS access_token TEXT DEFAULT ''")
                 cur.execute("ALTER TABLE mock_test_leads ADD COLUMN IF NOT EXISTS token_expires_at TEXT DEFAULT ''")
 
-                # ४. विद्यार्थी अभिप्राय (Feedback) टेबल
                 cur.execute('''CREATE TABLE IF NOT EXISTS student_feedbacks (
                     id SERIAL PRIMARY KEY,
                     lead_id INTEGER,
@@ -84,7 +80,6 @@ def init_master_db():
                     created_at TEXT NOT NULL
                 )''')
 
-                # ५. स्पेशल ॲक्सेस टेबल्स
                 cur.execute('''CREATE TABLE IF NOT EXISTS special_unlimited_attempts (
                     id SERIAL PRIMARY KEY,
                     phone TEXT UNIQUE NOT NULL,
@@ -101,7 +96,6 @@ def init_master_db():
                     added_on TEXT NOT NULL
                 )''')
 
-                # ६. ॲकॅडमी सेटिंग्स
                 cur.execute('''CREATE TABLE IF NOT EXISTS academy_settings (
                     id SERIAL PRIMARY KEY,
                     setting_key TEXT UNIQUE NOT NULL,
@@ -177,6 +171,7 @@ HOME_TEMPLATE = '''<!DOCTYPE html>
     </script>
 </head>
 <body onload="updateClock()">
+
 <div class="top-bar">
     <div class="clock">🕒 <span id="live-clock">लोडिंग...</span></div>
     {% if is_admin %}
@@ -228,30 +223,28 @@ TERMS_TEMPLATE = '''<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terms and Conditions - Online Mock Test Platform</title>
+    <title>Terms and Conditions</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; font-family: 'Poppins', sans-serif; }
         body { margin: 0; background: #f8fafc; color: #1e293b; padding: 25px 15px; line-height: 1.6; }
         .terms-container { max-width: 800px; margin: 0 auto; background: white; border-radius: 12px; padding: 35px; box-shadow: 0 10px 25px rgba(0,0,0,0.06); border-top: 5px solid #059669; }
         h1 { color: #065f46; font-size: 24px; margin-top: 0; }
-        h3 { color: #0b3c5d; font-size: 16px; margin-top: 20px; margin-bottom: 6px; }
         p { font-size: 13.5px; color: #475569; margin: 6px 0 12px; }
         .back-link { display: inline-block; margin-top: 20px; color: #0284c7; text-decoration: none; font-weight: 600; font-size: 13px; }
-        .back-link:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
 <div class="terms-container">
     <h1>Terms and Conditions</h1>
     <p>Last updated: October 2026</p>
-    <p>Welcome to our Online Mock Test Platform. The test material is intended solely for educational practice and evaluation purposes.</p>
+    <p>This platform provides practice examinations for preparation. Mock scores are self-assessment metrics.</p>
     <a href="/" class="back-link">⬅ Back to Home Platform</a>
 </div>
 </body>
 </html>'''
 
-# ----------------- 2A. FREE EXAM TEMPLATE (मोफत टेस्टसाठी: वर बॉक्स नाही, थेट प्रश्न, शेवटी ३ बॉक्स) -----------------
+# ----------------- 2A. FREE EXAM TEMPLATE (मोफत टेस्ट: सुरुवातीला बॉक्स नाही, थेट प्रश्न, शेवटी ३ बॉक्स) -----------------
 FREE_EXAM_TEMPLATE = '''<!DOCTYPE html>
 <html lang="mr">
 <head>
@@ -348,7 +341,7 @@ FREE_EXAM_TEMPLATE = '''<!DOCTYPE html>
 <body>
 <div class="exam-header">
     <div>
-        <h3 style="margin:0; font-size:18px;">⚔️ {{ test.test_title }}</h3>
+        <h3 style="margin:0; font-size:18px;">⚔️️ {{ test.test_title }}</h3>
         <small style="opacity:0.9;">राज्यस्तरीय पोलीस भरती मोफत सराव परीक्षा</small>
     </div>
     <div class="timer-box">
@@ -364,7 +357,7 @@ FREE_EXAM_TEMPLATE = '''<!DOCTYPE html>
     {% endif %}
 
     <form id="examForm" method="POST" action="/submit_test/{{ test.id }}">
-        <!-- १. सुरुवातीला कोणतीही माहिती न मागता थेट १ ते सर्व प्रश्न समोर -->
+        <!-- १. सुरुवातीला कोणतीही माहिती नाही - थेट सर्व प्रश्न सोडवण्यासाठी उघडे -->
         <div id="questionsArea">
             {% for q in questions %}
             <div class="q-item">
@@ -377,13 +370,13 @@ FREE_EXAM_TEMPLATE = '''<!DOCTYPE html>
             {% endfor %}
         </div>
 
-        <!-- २. प्रश्न सोडवून संपल्यानंतर खाली हायलाइट होणारी सूचना -->
+        <!-- २. प्रश्न संपल्यानंतर खाली हायलाइट सूचना -->
         <div class="submit-highlight-box">
             <h3>🔥 आपले गुण व राज्यस्तरीय रँक तपासण्यासाठी खालील माहिती भरून सबमिट करा!</h3>
-            <p>आपले नाव, जिल्हा व १० अंकी WhatsApp मोबाईल नंबर टाकताच सबमिट बटन ॲक्टिव्हेट होईल.</p>
+            <p>आपले नाव, जिल्हा व १० अंकी WhatsApp मोबाईल नंबर टाकताच खालील सबमिट बटन ॲक्टिव्हेट होईल.</p>
         </div>
 
-        <!-- ३. नाव, जिल्हा व मोबाईल नंबरसाठी खालील ३ बॉक्स -->
+        <!-- ३. नाव, जिल्हा व मोबाईल नंबरचे खालील ३ बॉक्स -->
         <div class="student-details">
             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">
                 <div>
@@ -597,7 +590,6 @@ RESULT_SUMMARY_TEMPLATE = '''<!DOCTYPE html>
     <h2 style="color:#065f46; margin:0 0 5px; text-align:center;">🎉 तुमची टेस्ट यशस्वीरीत्या पूर्ण झाली!</h2>
     <p style="font-size:14px; color:#64748b; margin-bottom:15px; text-align:center;">राज्यस्तरीय पोलीस भरती सराव प्रश्नपत्रिका</p>
 
-    <!-- गुण, रँक व विद्यार्थी माहिती -->
     <div class="score-card">
         <h3 style="margin:0; color:#0f172a;">👤 {{ lead.student_name }} ({{ lead.district }})</h3>
         <p style="margin:5px 0; color:#475569; font-size:13px;">मोबाईल: <b>{{ lead.phone }}</b> | टेस्ट: <b>{{ lead.test_name }}</b></p>
@@ -613,7 +605,6 @@ RESULT_SUMMARY_TEMPLATE = '''<!DOCTYPE html>
         </div>
     </div>
 
-    <!-- डिजिटल प्रशस्तीपत्र -->
     <div class="cert-box">
         <h3 style="color:#92400e; margin:0 0 5px;">📜 सहभाग व अभिनंदन डिजिटल प्रशस्तीपत्र</h3>
         <p style="font-size:12px; color:#78350f; margin-bottom:12px;">राज्यस्तरीय ऑनलाईन सराव कक्ष</p>
@@ -624,7 +615,6 @@ RESULT_SUMMARY_TEMPLATE = '''<!DOCTYPE html>
         </div>
     </div>
 
-    <!-- लगेच स्क्रीनवर बरोबर व चुकलेले प्रश्न स्पष्टीकरणासह -->
     <h3 style="color:#065f46; border-bottom:2px solid #86efac; padding-bottom:6px; margin-top:30px;">📋 तुमचे कोणते प्रश्न चुकले व कोणते बरोबर आले ते पहा:</h3>
 
     {% for item in evaluated_questions %}
@@ -632,17 +622,14 @@ RESULT_SUMMARY_TEMPLATE = '''<!DOCTYPE html>
         <div style="font-weight:bold; font-size:15px; margin-bottom:8px; color:#0f172a;">
             प्र. {{ loop.index }}. {{ item.q_text }}
         </div>
-        
         <div style="font-size:13px; margin-bottom:6px; padding-left:10px; color:#334155;">
             A) {{ item.opt_a }} &nbsp;|&nbsp; B) {{ item.opt_b }} &nbsp;|&nbsp; C) {{ item.opt_c }} &nbsp;|&nbsp; D) {{ item.opt_d }}
         </div>
-
         <div style="display:flex; gap:20px; font-size:14px; margin:8px 0; padding-left:10px;">
             <div>तुमचे उत्तर: <b style="color:{{ '#16a34a' if item.is_correct else '#dc2626' }};">{{ item.user_ans }}</b></div>
             <div>अचूक उत्तर: <b style="color:#16a34a;">{{ item.correct_ans }}</b></div>
             <div>स्थिती: <b style="color:{{ '#16a34a' if item.is_correct else '#dc2626' }};">{{ '✅ बरोबर' if item.is_correct else '❌ चूक' }}</b></div>
         </div>
-
         {% if item.explanation %}
         <div style="font-size:12.5px; color:#166534; background:#f0fdf4; padding:8px 12px; border-radius:6px; margin-top:8px; border:1px solid #bbf7d0;">
             💡 <b>स्पष्टीकरण:</b> {{ item.explanation }}
@@ -651,7 +638,6 @@ RESULT_SUMMARY_TEMPLATE = '''<!DOCTYPE html>
     </div>
     {% endfor %}
 
-    <!-- WhatsApp शेअर -->
     <div class="highlight-share">
         <h3 style="margin:0 0 6px; color:#854d0e; font-size:16px;">🔥 राज्यस्तरीय पोलीस भरती सराव प्रश्नपत्रिका 🔥</h3>
         <p style="font-size:13px; color:#713f12; margin:6px 0 12px; line-height:1.5;">
@@ -660,7 +646,6 @@ RESULT_SUMMARY_TEMPLATE = '''<!DOCTYPE html>
         <a href="https://wa.me/?text={{ share_whatsapp_encoded }}" target="_blank" style="background:#25D366; color:white; padding:10px 20px; border-radius:6px; text-decoration:none; font-weight:bold; font-size:13px; display:inline-block;">📲 मित्रांना WhatsApp वर शेअर करा</a>
     </div>
 
-    <!-- सोशल मीडिया -->
     <div class="promo-box">
         <h4 style="margin:0 0 8px; color:#065f46;">🌟 अधिकृत सोशल मीडिया व यशोगाथा लिंक्स:</h4>
         {% if insta_link %}<a href="{{ insta_link }}" target="_blank" class="btn-link" style="background:#E1306C;">📸 Instagram</a>{% endif %}
@@ -899,7 +884,7 @@ ADMIN_TEMPLATE = '''<!DOCTYPE html>
             <td>{{ l.test_name }}</td>
             <td><b>{{ l.score }} / {{ l.total_marks }}</b></td>
             <td>
-                <a href="/admin/delete_lead/{{ l.id }}" class="btn-sm" style="background:#dc2626; color:white;" onclick="return confirm('ही नोंद डिलीट करायची का?');">🗑️️ डिलीट</a>
+                <a href="/admin/delete_lead/{{ l.id }}" class="btn-sm" style="background:#dc2626; color:white;" onclick="return confirm('ही नोंद डिलीट करायची का?');">🗑 डिलीट</a>
             </td>
         </tr>
         {% endfor %}
@@ -1227,7 +1212,7 @@ def take_test(test_id):
 
     if not test or test['status'] != 'Active': return "Test not found or currently closed", 404
 
-    # १. फक्त मोफत (Free) टेस्टसाठी - थेट सर्व प्रश्न समोर (सुरुवातीला माहितीचा कोणताही बॉक्स नाही)
+    # १. मोफत (Free) टेस्ट - थेट प्रश्न सुरू (सुरुवातीला नाव/जिल्हा/नंबरचा कोणताही बॉक्स नाही)
     if test['test_type'] == 'Free':
         with get_db() as conn:
             with conn.cursor() as cur:
@@ -1235,7 +1220,7 @@ def take_test(test_id):
                 questions = cur.fetchall()
         return render_template_string(FREE_EXAM_TEMPLATE, test=test, questions=questions, error_msg=None)
 
-    # २. सशुल्क (Paid) टेस्टसाठी आधीचा नियम लागू राहील
+    # २. सशुल्क (Paid) टेस्ट - मूळ नियमानुसार उघडेल
     if token:
         with get_db() as conn:
             with conn.cursor() as cur:
@@ -1323,7 +1308,6 @@ def submit_test(test_id):
 
     if not test: return "Test not found", 404
 
-    # मोबाईल नंबर व्हॅलिडेशन
     if not re.match(r'^[6-9]\d{9}$', phone):
         err_msg = "⚠️ आपण चुकीचा मोबाईल नंबर टाकत आहात!"
         template_to_use = FREE_EXAM_TEMPLATE if test['test_type'] == 'Free' else PAID_EXAM_TEMPLATE
@@ -1380,7 +1364,6 @@ def submit_test(test_id):
     share_msg = f"राज्यस्तरीय पोलीस भरती सराव प्रश्नपत्रिका\n\nमी आत्ताच '{test['test_title']}' टेस्ट सोडवली आणि मला {score}/{total} गुण मिळाले (रँक #{state_rank}). आपणही ही मोफत टेस्ट सोडवून आपला अभ्यास तपासा:\n👉 {main_portal_url}"
     share_whatsapp_encoded = urllib.parse.quote(share_msg)
 
-    # टेस्ट सबमिट झाल्यावर थेट गुण, रँक, डिजिटल प्रशस्तीपत्र आणि बरोबर/चूक प्रश्न स्क्रीनवर दाखवणे
     return render_template_string(
         RESULT_SUMMARY_TEMPLATE,
         lead={'id': new_id, 'student_name': student_name, 'district': district, 'phone': phone, 'test_name': test['test_title'], 'score': score, 'total_marks': total},
