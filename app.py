@@ -251,7 +251,7 @@ TERMS_TEMPLATE = '''<!DOCTYPE html>
 </body>
 </html>'''
 
-# ----------------- 2A. FREE EXAM TEMPLATE (मोफत टेस्ट: सुरुवातीला बॉक्स नाही, थेट प्रश्न, शेवटी ३ बॉक्स) -----------------
+# ----------------- 2A. FREE EXAM TEMPLATE (मोफत टेस्टसाठी: वर बॉक्स नाही, थेट प्रश्न, शेवटी ३ बॉक्स) -----------------
 FREE_EXAM_TEMPLATE = '''<!DOCTYPE html>
 <html lang="mr">
 <head>
@@ -364,7 +364,7 @@ FREE_EXAM_TEMPLATE = '''<!DOCTYPE html>
     {% endif %}
 
     <form id="examForm" method="POST" action="/submit_test/{{ test.id }}">
-        <!-- १. सुरुवातीला कोणतीही माहिती नाही - थेट सर्व प्रश्न सोडवण्यासाठी उघडे -->
+        <!-- १. सुरुवातीला कोणतीही माहिती न मागता थेट १ ते सर्व प्रश्न समोर -->
         <div id="questionsArea">
             {% for q in questions %}
             <div class="q-item">
@@ -377,13 +377,13 @@ FREE_EXAM_TEMPLATE = '''<!DOCTYPE html>
             {% endfor %}
         </div>
 
-        <!-- २. प्रश्न सोडवून संपल्यानंतर खाली हायलाइट सूचना -->
+        <!-- २. प्रश्न सोडवून संपल्यानंतर खाली हायलाइट होणारी सूचना -->
         <div class="submit-highlight-box">
             <h3>🔥 आपले गुण व राज्यस्तरीय रँक तपासण्यासाठी खालील माहिती भरून सबमिट करा!</h3>
             <p>आपले नाव, जिल्हा व १० अंकी WhatsApp मोबाईल नंबर टाकताच सबमिट बटन ॲक्टिव्हेट होईल.</p>
         </div>
 
-        <!-- ३. नाव, जिल्हा व मोबाईल नंबरचे खालील ३ इनपुट बॉक्स -->
+        <!-- ३. नाव, जिल्हा व मोबाईल नंबरसाठी खालील ३ बॉक्स -->
         <div class="student-details">
             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">
                 <div>
@@ -402,6 +402,7 @@ FREE_EXAM_TEMPLATE = '''<!DOCTYPE html>
             </div>
         </div>
 
+        <!-- ४. माहिती भरल्यावर सुरू होणारे सबमिट बटन -->
         <button type="submit" id="submitBtn" class="btn-submit" disabled>🏆 टेस्ट सबमिट करा आणि गुण, रँक व प्रशस्तीपत्र पहा</button>
     </form>
 </div>
@@ -567,7 +568,7 @@ ACCESS_CHECK_TEMPLATE = '''<!DOCTYPE html>
 </body>
 </html>'''
 
-# ----------------- 3. RESULT SUBMISSION SUMMARY (स्क्रीनवर लगेच गुण + बरोबर/चूक प्रश्न) -----------------
+# ----------------- 3. RESULT SUBMISSION SUMMARY -----------------
 RESULT_SUMMARY_TEMPLATE = '''<!DOCTYPE html>
 <html lang="mr">
 <head>
@@ -898,7 +899,7 @@ ADMIN_TEMPLATE = '''<!DOCTYPE html>
             <td>{{ l.test_name }}</td>
             <td><b>{{ l.score }} / {{ l.total_marks }}</b></td>
             <td>
-                <a href="/admin/delete_lead/{{ l.id }}" class="btn-sm" style="background:#dc2626; color:white;" onclick="return confirm('ही नोंद डिलीट करायची का?');">🗑️ डिलीट</a>
+                <a href="/admin/delete_lead/{{ l.id }}" class="btn-sm" style="background:#dc2626; color:white;" onclick="return confirm('ही नोंद डिलीट करायची का?');">🗑️️ डिलीट</a>
             </td>
         </tr>
         {% endfor %}
@@ -1226,7 +1227,7 @@ def take_test(test_id):
 
     if not test or test['status'] != 'Active': return "Test not found or currently closed", 404
 
-    # १. मोफत (Free) टेस्ट - थेट प्रश्न सुरू (सुरुवातीला नाव/जिल्हा/नंबरचा कोणताही बॉक्स नाही)
+    # १. फक्त मोफत (Free) टेस्टसाठी - थेट सर्व प्रश्न समोर (सुरुवातीला माहितीचा कोणताही बॉक्स नाही)
     if test['test_type'] == 'Free':
         with get_db() as conn:
             with conn.cursor() as cur:
@@ -1234,7 +1235,7 @@ def take_test(test_id):
                 questions = cur.fetchall()
         return render_template_string(FREE_EXAM_TEMPLATE, test=test, questions=questions, error_msg=None)
 
-    # २. सशुल्क (Paid) टेस्ट - पडताळणीनुसार उघडेल
+    # २. सशुल्क (Paid) टेस्टसाठी आधीचा नियम लागू राहील
     if token:
         with get_db() as conn:
             with conn.cursor() as cur:
@@ -1347,7 +1348,6 @@ def submit_test(test_id):
             'opt_d': q['opt_d'],
             'user_ans': ans if ans else 'सोडवले नाही',
             'correct_ans': q['correct'],
-            'is_corr': is_corr,
             'is_correct': is_corr,
             'explanation': q['explanation']
         })
