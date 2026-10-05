@@ -269,7 +269,7 @@ TERMS_TEMPLATE = '''<!DOCTYPE html>
 </body>
 </html>'''
 
-# ----------------- 2. EXAM TEMPLATE (थेट सर्व प्रश्न + खाली ३ बॉक्स व ॲक्टिव्हेट होणारे सबमिट बटन) -----------------
+# ----------------- 2. EXAM TEMPLATE (मोफत टेस्ट: सुरुवातीला काहीही न विचारता थेट प्रश्न + शेवटी ३ बॉक्स) -----------------
 EXAM_TEMPLATE = '''<!DOCTYPE html>
 <html lang="mr">
 <head>
@@ -282,14 +282,16 @@ EXAM_TEMPLATE = '''<!DOCTYPE html>
         .exam-header { background: #065f46; color: white; padding: 12px 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; max-width: 800px; margin: 0 auto 15px; }
         .box { max-width: 800px; margin: 0 auto; background: white; border-radius: 12px; padding: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); border-top: 5px solid #059669; }
         .timer-box { background: #fee2e2; border: 2px solid #ef4444; color: #991b1b; padding: 8px 15px; border-radius: 6px; font-weight: bold; font-size: 15px; }
-        .student-details { background: #f0fdf4; border: 2px solid #86efac; border-radius: 8px; padding: 20px; margin-top: 30px; margin-bottom: 20px; }
-        .student-details input { width: 100%; padding: 11px; border: 1.5px solid #cbd5e1; border-radius: 6px; margin-top: 4px; font-size: 14px; margin-bottom: 6px; transition: border-color 0.2s; }
-        .phone-error-msg { display: none; color: #b91c1c; font-size: 12px; font-weight: bold; background: #fee2e2; border-left: 3px solid #dc2626; padding: 6px 10px; border-radius: 4px; margin-bottom: 10px; line-height: 1.4; }
         .q-item { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 15px; margin-bottom: 18px; }
         .q-text { font-weight: bold; margin-bottom: 10px; font-size: 15px; color: #0f172a; }
         .opt-label { display: block; margin-bottom: 8px; font-size: 14px; cursor: pointer; background: white; padding: 9px 12px; border-radius: 6px; border: 1px solid #e2e8f0; transition: background 0.2s; }
         .opt-label:hover { background: #ecfdf5; }
-        .submit-notice { background: #fef3c7; border: 1px solid #f59e0b; color: #92400e; padding: 10px 15px; border-radius: 6px; font-size: 13px; font-weight: bold; text-align: center; margin-bottom: 12px; }
+        .submit-highlight-box { background: #fefce8; border: 2px dashed #ca8a04; border-radius: 8px; padding: 16px; margin-top: 30px; margin-bottom: 15px; text-align: center; }
+        .submit-highlight-box h3 { margin: 0 0 6px; color: #854d0e; font-size: 17px; }
+        .submit-highlight-box p { margin: 0; font-size: 13.5px; color: #713f12; font-weight: 600; }
+        .student-details { background: #f0fdf4; border: 2px solid #86efac; border-radius: 8px; padding: 20px; margin-bottom: 15px; }
+        .student-details input { width: 100%; padding: 11px; border: 1.5px solid #cbd5e1; border-radius: 6px; margin-top: 4px; font-size: 14px; margin-bottom: 6px; transition: border-color 0.2s; }
+        .phone-error-msg { display: none; color: #b91c1c; font-size: 12px; font-weight: bold; background: #fee2e2; border-left: 3px solid #dc2626; padding: 6px 10px; border-radius: 4px; margin-bottom: 10px; line-height: 1.4; }
         .btn-submit { width: 100%; background: linear-gradient(135deg, #059669, #047857); color: white; padding: 14px; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(5,150,105,0.25); }
         .btn-submit:disabled { background: #94a3b8; cursor: not-allowed; box-shadow: none; opacity: 0.7; }
     </style>
@@ -318,7 +320,6 @@ EXAM_TEMPLATE = '''<!DOCTYPE html>
             const phoneInput = document.getElementById('s_phone');
             const phone = phoneInput.value.trim();
             const phoneErrDiv = document.getElementById('phoneErrorNotice');
-            const submitNotice = document.getElementById('submitNotice');
             const submitBtn = document.getElementById('submitBtn');
 
             const indianPhoneRegex = /^[6-9][0-9]{9}$/;
@@ -341,7 +342,7 @@ EXAM_TEMPLATE = '''<!DOCTYPE html>
                     isPhoneValid = false;
                     phoneInput.style.borderColor = "#dc2626";
                     phoneErrDiv.style.display = "block";
-                    phoneErrDiv.innerText = "⚠️ आपण चुकीचा मोबाईल नंबर टाकत आहात!";
+                    phoneErrDiv.innerText = "⚠️️ आपण चुकीचा मोबाईल नंबर टाकत आहात!";
                 }
             } else {
                 isPhoneValid = false;
@@ -351,23 +352,8 @@ EXAM_TEMPLATE = '''<!DOCTYPE html>
 
             if (name !== "" && dist !== "" && isPhoneValid) {
                 submitBtn.disabled = false;
-                submitNotice.innerHTML = "✅ सर्व माहिती भरली आहे. आता खालील बटणावर क्लिक करून टेस्ट सबमिट करा!";
-                submitNotice.style.background = "#dcfce7";
-                submitNotice.style.borderColor = "#86efac";
-                submitNotice.style.color = "#166534";
             } else {
                 submitBtn.disabled = true;
-                if (!phoneErrDiv.style.display || phoneErrDiv.style.display === "none") {
-                    submitNotice.innerHTML = "⚠️ टेस्ट सबमिट करण्यासाठी कृपया वरील तीन बॉक्समध्ये आपले नाव, जिल्हा व १० अंकी WhatsApp नंबर भरा.";
-                    submitNotice.style.background = "#fef3c7";
-                    submitNotice.style.borderColor = "#f59e0b";
-                    submitNotice.style.color = "#92400e";
-                } else {
-                    submitNotice.innerHTML = "⚠️ वैध मोबाईल नंबर टाकल्याशिवाय सबमिट बटन ॲक्टिव्हेट होणार नाही.";
-                    submitNotice.style.background = "#fee2e2";
-                    submitNotice.style.borderColor = "#ef4444";
-                    submitNotice.style.color = "#991b1b";
-                }
             }
         }
 
@@ -395,12 +381,8 @@ EXAM_TEMPLATE = '''<!DOCTYPE html>
     </div>
     {% endif %}
 
-    <div style="background:#ecfdf5; border-left:4px solid #059669; padding:10px 15px; border-radius:6px; font-size:14px; color:#065f46; font-weight:bold; margin-bottom:20px;">
-        📝 टेस्ट मोफत सुरू आहे! खालील सर्व प्रश्न थेट सोडवा. प्रश्न सोडून झाल्यानंतर शेवटी ३ बॉक्समध्ये आपले नाव, जिल्हा व मोबाईल नंबर भरा आणि सबमिट करा.
-    </div>
-
     <form id="examForm" method="POST" action="/submit_test/{{ test.id }}">
-        <!-- १. सर्व प्रश्न कोणत्याही बंधनाशिवाय थेट विद्यार्थ्यासमोर -->
+        <!-- १. सर्व प्रश्न थेट विद्यार्थ्यांसमोर (कोणताही सुरुवातीचा बॉक्स नाही) -->
         <div id="questionsArea">
             {% for q in questions %}
             <div class="q-item">
@@ -413,9 +395,14 @@ EXAM_TEMPLATE = '''<!DOCTYPE html>
             {% endfor %}
         </div>
 
-        <!-- २. प्रश्न सोडून झाल्यानंतर खाली येणारे ३ इनपुट बॉक्स -->
+        <!-- २. प्रश्नपत्रिका सोडवून झाल्यावर खाली हायलाइट होणारी सूचना -->
+        <div class="submit-highlight-box">
+            <h3>🔥 आपले गुण व राज्यस्तरीय रँक तपासण्यासाठी खालील माहिती भरून सबमिट करा!</h3>
+            <p>आपले नाव, जिल्हा व १० अंकी WhatsApp मोबाईल नंबर टाकताच सबमिट बटन ॲक्टिव्हेट होईल.</p>
+        </div>
+
+        <!-- ३. नाव, जिल्हा व मोबाईल नंबरसाठी खालील ३ बॉक्स -->
         <div class="student-details">
-            <h4 style="margin:0 0 10px; color:#065f46; font-size:16px;">👤 टेस्ट सबमिट करण्यासाठी आपले नाव, जिल्हा व मोबाईल नंबर भरा:</h4>
             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">
                 <div>
                     <label style="font-size:13px; font-weight:600;">१. आपले नाव *:</label>
@@ -426,18 +413,14 @@ EXAM_TEMPLATE = '''<!DOCTYPE html>
                     <input type="text" name="district" id="s_dist" placeholder="उदा. कोल्हापूर" onkeyup="validateStudentDetails()" required>
                 </div>
                 <div>
-                    <label style="font-size:13px; font-weight:600;">३. मोबाईल नंबर *:</label>
+                    <label style="font-size:13px; font-weight:600;">३. WhatsApp मोबाईल नंबर *:</label>
                     <input type="tel" name="phone" id="s_phone" placeholder="10 अंकी मोबाईल नंबर" pattern="[6-9][0-9]{9}" maxlength="10" onkeyup="validateStudentDetails()" required>
                     <div id="phoneErrorNotice" class="phone-error-msg"></div>
                 </div>
             </div>
         </div>
 
-        <div id="submitNotice" class="submit-notice">
-            ⚠️ टेस्ट सबमिट करण्यासाठी वरील ३ बॉक्समध्ये आपले नाव, जिल्हा व १० अंकी WhatsApp नंबर भरा.
-        </div>
-
-        <!-- ३. माहिती भरल्यावर ॲक्टिव्हेट होणारे सबमिट बटन -->
+        <!-- ४. माहिती भरल्यावर सुरू होणारे सबमिट बटन -->
         <button type="submit" id="submitBtn" class="btn-submit" disabled>🏆 टेस्ट सबमिट करा आणि गुण, रँक व प्रशस्तीपत्र पहा</button>
     </form>
 </div>
@@ -528,7 +511,7 @@ ACCESS_CHECK_TEMPLATE = '''<!DOCTYPE html>
 </body>
 </html>'''
 
-# ----------------- 3. RESULT SUBMISSION SUMMARY (स्क्रीनवर लगेच गुण, रँक व प्रशस्तीपत्र) -----------------
+# ----------------- 3. RESULT SUBMISSION SUMMARY (स्क्रीनवर लगेच गुण + बरोबर/चूक प्रश्न) -----------------
 RESULT_SUMMARY_TEMPLATE = '''<!DOCTYPE html>
 <html lang="mr">
 <head>
@@ -615,7 +598,7 @@ RESULT_SUMMARY_TEMPLATE = '''<!DOCTYPE html>
     <div class="highlight-share">
         <h3 style="margin:0 0 6px; color:#854d0e; font-size:16px;">🔥 राज्यस्तरीय पोलीस भरती सराव प्रश्नपत्रिका 🔥</h3>
         <p style="font-size:13px; color:#713f12; margin:6px 0 12px; line-height:1.5;">
-            ही मोफत सराव टेस्ट आपल्या भरती करणाऱ्या सर्व मित्रांना <b>WhatsApp वर नक्की शेअर करा!</b>
+            ही मोफत सराव टेस्ट आपल्या भरती करणाऱ्या सर्व मित्रांना <b>WhatsApp ग्रुप्सवर नक्की शेअर करा!</b>
         </p>
         <a href="https://wa.me/?text={{ share_whatsapp_encoded }}" target="_blank" style="background:#25D366; color:white; padding:10px 20px; border-radius:6px; text-decoration:none; font-weight:bold; font-size:13px; display:inline-block;">📲 मित्रांना WhatsApp वर शेअर करा</a>
     </div>
@@ -860,7 +843,6 @@ ADMIN_TEMPLATE = '''<!DOCTYPE html>
         <a href="/admin/logout" style="font-weight:bold; color:#dc2626; text-decoration:none;">🚪 लॉगआऊट</a>
     </div>
 
-    <!-- MASTER SUB-TABS -->
     <div class="nav-tabs">
         <a href="/admin/dashboard?tab=leads" class="{{ 'active' if active_tab == 'leads' else '' }}">📱 Leads (चौकशी व फिल्टर्स)</a>
         <a href="/admin/dashboard?tab=payments" class="{{ 'active' if active_tab == 'payments' else '' }}">💰 Payments & QR (पेमेंट्स व QR)</a>
@@ -1276,7 +1258,7 @@ def take_test(test_id):
 
     if not test or test['status'] != 'Active': return "Test not found or currently closed", 404
 
-    # मोफत (Free) टेस्ट थेट उघडेल - कोणतेही बंधन नाही, प्रश्न थेट उपलब्ध
+    # मोफत (Free) टेस्ट थेट उघडेल - कोणतेही बंधन नाही, प्रश्न थेट समोर येतील
     if test['test_type'] == 'Free':
         with get_db() as conn:
             with conn.cursor() as cur:
@@ -1284,7 +1266,7 @@ def take_test(test_id):
                 questions = cur.fetchall()
         return render_template_string(EXAM_TEMPLATE, test=test, questions=questions, error_msg=None)
 
-    # सशुल्क (Paid) टेस्टसाठी टोकन तपासणी
+    # सशुल्क (Paid) टेस्टसाठी टोकन पडताळणी
     if token:
         with get_db() as conn:
             with conn.cursor() as cur:
@@ -1428,7 +1410,7 @@ def submit_test(test_id):
     share_msg = f"राज्यस्तरीय पोलीस भरती सराव प्रश्नपत्रिका\n\nमी आत्ताच '{test['test_title']}' टेस्ट सोडवली आणि मला {score}/{total} गुण मिळाले (रँक #{state_rank}). आपणही ही मोफत टेस्ट सोडवून आपला अभ्यास तपासा:\n👉 {main_portal_url}"
     share_whatsapp_encoded = urllib.parse.quote(share_msg)
 
-    # टेस्ट सबमिट झाल्यावर थेट गुण, रँक, प्रशस्तीपत्र आणि बरोबर/चूक प्रश्न स्क्रीनवर दाखवणे
+    # टेस्ट सबमिट झाल्यावर थेट गुण, रँक, डिजिटल प्रशस्तीपत्र आणि बरोबर/चूक प्रश्न स्क्रीनवर दाखवणे
     return render_template_string(
         RESULT_SUMMARY_TEMPLATE,
         lead={'id': new_id, 'student_name': student_name, 'district': district, 'phone': phone, 'test_name': test['test_title'], 'score': score, 'total_marks': total},
