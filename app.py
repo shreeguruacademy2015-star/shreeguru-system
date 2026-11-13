@@ -1,16 +1,16 @@
 import os
-import sqlite3   
+import sqlite3
 import shutil
-from datetime import date, datetime 
-from flask import Flask, redirect, render_template, render_template_string, request, send_file, send_from_directory, url_for, session, Response
+from datetime import date, datetime
+from flask import Flask, redirect, render_template_string, request, send_file, send_from_directory, url_for, session, Response
 from werkzeug.utils import secure_filename
 import io
 import csv
 import urllib.parse
- 
+
 app = Flask(__name__)
-app.secret_key = "shreeguru_complete_bulletproof_v44_final"
-DB_NAME = "shreeguru_master_v44.db"
+app.secret_key = "shreeguru_complete_bulletproof_v43_5parts"
+DB_NAME = "shreeguru_master_v43.db"
 
 DESKTOP_PATH = os.path.join(os.path.expanduser("~"), "Desktop")
 UPLOAD_FOLDER = os.path.join(DESKTOP_PATH, "student_photos")
@@ -64,58 +64,6 @@ def init_db():
         conn.execute("INSERT OR IGNORE INTO users (role, password) VALUES ('Clerk', 'clerk123')")
         conn.execute("INSERT OR IGNORE INTO users (role, password) VALUES ('Trainer', 'trainer123')")
 
-        # Questions Table for Dynamic Mock Test (New Feature Integrated)
-        conn.execute('''CREATE TABLE IF NOT EXISTS questions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            question TEXT NOT NULL,
-            opt_a TEXT NOT NULL,
-            opt_b TEXT NOT NULL,
-            opt_c TEXT NOT NULL,
-            opt_d TEXT NOT NULL,
-            correct TEXT NOT NULL
-        )''')
-
-        # Add default questions if table is empty
-        cursor_chk = conn.execute('SELECT COUNT(*) FROM questions').fetchone()
-        if cursor_chk[0] == 0:
-            default_qs = [
-                ("महाराष्ट्राची राजधानी कोणती?", "पुणे", "मुंबई", "नागपूर", "नाशिक", "B"),
-                ("क्षेत्रफळाच्या दृष्टीने महाराष्ट्रातील सर्वात मोठा जिल्हा कोणता?", "अहमदनगर", "पुणे", "नाशिक", "सोलापूर", "A"),
-                ("स्वराज्य स्थापना कोणी केली?", "छत्रपती संभाजी महाराज", "छत्रपती शिवाजी महाराज", "महात्मा ज्योतिराव फुले", "संत ज्ञानेश्वर", "B"),
-                ("भारताचे राष्ट्रगीत 'जन गण मन' कोणी लिहिले?", "बंकिमचंद्र चटर्जी", "रविंद्रनाथ टागोर", "महात्मा गांधी", "लोकमान्य टिळक", "B"),
-                ("महाराष्ट्रात एकूण किती जिल्हे आहेत?", "३४", "३५", "३६", "३७", "C")
-            ]
-            conn.executemany('INSERT INTO questions (question, opt_a, opt_b, opt_c, opt_d, correct) VALUES (?, ?, ?, ?, ?, ?)', default_qs)
-            conn.commit()
-
-        conn.execute('''CREATE TABLE IF NOT EXISTS books (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            author TEXT,
-            category TEXT,
-            total_copies INTEGER DEFAULT 1,
-            available_copies INTEGER DEFAULT 1
-        )''')
-
-        conn.execute('''CREATE TABLE IF NOT EXISTS book_issues (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            book_id INTEGER,
-            student_id INTEGER,
-            student_name TEXT,
-            issue_date TEXT,
-            return_date TEXT,
-            status TEXT DEFAULT 'Issued'
-        )''')
-
-        conn.execute('''CREATE TABLE IF NOT EXISTS study_lab_seats (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            seat_number TEXT NOT NULL,
-            shift TEXT NOT NULL,
-            student_id INTEGER,
-            student_name TEXT,
-            status TEXT DEFAULT 'Available'
-        )''')
-
         conn.execute("""
             CREATE TABLE IF NOT EXISTS staff_activity_log (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -156,9 +104,7 @@ def init_db():
                 paid_fees REAL DEFAULT 0,
                 photo_filename TEXT,
                 admission_form_scan TEXT,
-                admission_date TEXT NOT NULL,
-                diet_plan TEXT,
-                admin_remark TEXT
+                admission_date TEXT NOT NULL
             )
         """)
 
@@ -169,8 +115,7 @@ def init_db():
                 person_id INTEGER NOT NULL,
                 att_type TEXT NOT NULL,
                 att_date TEXT NOT NULL,
-                status TEXT NOT NULL,
-                marked_by TEXT DEFAULT 'Staff'
+                status TEXT NOT NULL
             )
         """)
 
@@ -332,70 +277,6 @@ def init_db():
             )
         """)
 
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS staff_activities (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                student_id INTEGER,
-                staff_name TEXT,
-                activity_date TEXT,
-                action_text TEXT,
-                remark TEXT
-            )
-        """)
-
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS student_activities (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                student_id INTEGER,
-                activity_date TEXT,
-                diet_plan TEXT,
-                remark TEXT
-            )
-        """)
-
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS ground_records (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                student_id INTEGER NOT NULL,
-                test_date TEXT NOT NULL,
-                event_name TEXT NOT NULL,
-                raw_value REAL NOT NULL,
-                marks REAL NOT NULL,
-                trainer_name TEXT,
-                remark TEXT
-            )
-        """)
-
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS admission_inquiries (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                inquiry_date TEXT NOT NULL,
-                student_name TEXT NOT NULL,
-                district TEXT NOT NULL,
-                taluka TEXT,
-                phone TEXT NOT NULL,
-                course TEXT NOT NULL,
-                hostel_interest TEXT DEFAULT 'होय',
-                call_status TEXT DEFAULT 'नवीन चौकशी (New)',
-                staff_note TEXT DEFAULT ''
-            )
-        """)
-
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS mock_test_leads (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                test_date TEXT NOT NULL,
-                student_name TEXT NOT NULL,
-                district TEXT NOT NULL,
-                phone TEXT NOT NULL,
-                score INTEGER NOT NULL,
-                total_marks INTEGER NOT NULL,
-                test_name TEXT NOT NULL,
-                call_status TEXT DEFAULT 'नवीन टेस्ट निकाल',
-                staff_note TEXT DEFAULT ''
-            )
-        """)
-
         conn.commit()
 
         days = ['सोमवार', 'मंगळवार', 'बुधवार', 'गुरुवार', 'शुक्रवार', 'शनिवार', 'रविवार']
@@ -403,6 +284,9 @@ def init_db():
             conn.execute("INSERT OR IGNORE INTO mess_diet (day_name, breakfast, lunch, dinner, special_diet) VALUES (?, 'पोहे / उपमा', 'डाळ, भात, चपाती, उसळ', 'भाकरी, सुकी भाजी, आमटी', 'दूध, केळी, भिजवलेले हरभरे-गूळ')", (d,))
         conn.commit()
 
+init_db()
+
+# ----------------- POLICE & DEFENCE HD THEME LOGIN HTML -----------------
 LOGIN_HTML = '''<!DOCTYPE html>
 <html lang="{{ lang }}">
 <head>
@@ -412,7 +296,8 @@ LOGIN_HTML = '''<!DOCTYPE html>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
         body {
             margin: 0; padding: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
-            background: #0f172a;
+            background: linear-gradient(135deg, rgba(5, 20, 36, 0.88), rgba(15, 23, 42, 0.92)),
+                        url('https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=1920&q=80') center/cover no-repeat;
         }
         .login-box {
             background: rgba(255, 255, 255, 0.97); width: 380px; padding: 35px 30px; border-radius: 12px;
@@ -460,7 +345,7 @@ LOGIN_HTML = '''<!DOCTYPE html>
 </div>
 </body>
 </html>'''
-
+# ----------------- MANAGER PORTAL -----------------
 MANAGER_LAYOUT = '''<!DOCTYPE html>
 <html lang="{{ lang }}">
 <head>
@@ -496,9 +381,7 @@ MANAGER_LAYOUT = '''<!DOCTYPE html>
 </div>
 
 <div class="nav-bar">
-    <a href="/inquiries" class="mgr-btn" style="background:#b45309; color:white;">📞 चौकशी व टेस्ट डेस्क</a>
     <a href="/manager?tab=grocery" class="mgr-btn {% if curr_tab == 'grocery' %}active{% endif %}">🛒 {{ 'Grocery Slip' if lang == 'en' else '१-क्लिक किराणा स्लिप' }}</a>
-    <a href="/library" target="_blank" class="mgr-btn" style="background: linear-gradient(135deg, #0284c7, #06b6d4); color: white;">📚 स्टडी लॅब / लायब्ररी</a>
     <a href="/manager?tab=diet" class="mgr-btn {% if curr_tab == 'diet' %}active{% endif %}">🍱 {{ 'Food Menu' if lang == 'en' else 'शाकाहारी डाएट शेड्युल' }}</a>
     <a href="/manager?tab=cook" class="mgr-btn {% if curr_tab == 'cook' %}active{% endif %}">👩‍🍳 {{ 'Kitchen Attendance' if lang == 'en' else 'स्वयंपाकी महिला हजेरी' }}</a>
     <a href="/manager?tab=physical" class="mgr-btn {% if curr_tab == 'physical' %}active{% endif %}" style="background:#0284c7; color:white;">🏃‍♂️ {{ 'Physical Records' if lang == 'en' else 'फिजिकल रेकॉर्ड' }}</a>
@@ -514,7 +397,7 @@ MANAGER_LAYOUT = '''<!DOCTYPE html>
         <form method="POST" id="groceryForm">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                 <div>
-                    <h3 style="margin:0; color:#065f46;">🛒 {{ 'Canteen Complete Grocery & Veg Slip' if lang == 'en' else 'कॅन्टीन संपूर्ण किराणा, भाजीपाला व डाएट खरेदी स्लिप (परिपूर्ण यादी)' }}</h3>
+                    <h3 style="margin:0; color:#065f46;">🛒 {{ 'Canteen Complete Grocery & Veg Slip' if lang == 'en' else 'कॅन्टीन संपूर्ण किराणा, भाजीपाला व डाएट खरेदी स्लिप' }}</h3>
                 </div>
                 <div>
                     <button type="submit" formaction="/print_grocery_slip" formtarget="_blank" class="btn-act" style="background:#059669;">🖨️ {{ 'Print Slip' if lang == 'en' else 'खरेदी पावती प्रिंट' }}</button>
@@ -522,57 +405,66 @@ MANAGER_LAYOUT = '''<!DOCTYPE html>
                 </div>
             </div>
             <hr style="margin:12px 0;">
-            <h4 style="color:#b45309; margin:0 0 8px;">⭐ मेस व हॉस्टेलसाठी लागणारी परिपूर्ण खरेदी चेकलिस्ट:</h4>
-            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:12px; background:#fffbeb; padding:12px; border-radius:6px; margin-bottom:12px;">
+
+            <h4 style="color:#b45309; margin:0 0 8px;">⭐ १. रोज लागणारे महत्त्वाचे साहित्य (Top Priority)</h4>
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:10px; background:#fffbeb; padding:12px; border-radius:6px; margin-bottom:12px;">
                 <div>
-                    <b style="color:#b45309;">१. डाळी व कडधान्ये:</b><br><br>
-                    <label class="g-label"><input type="checkbox" name="items" value="तूर डाळ"> तूर डाळ: <input type="text" name="qty_तूर डाळ" placeholder="१० kg" style="width:75px;"></label>
-                    <label class="g-label"><input type="checkbox" name="items" value="मूग डाळ"> मूग डाळ: <input type="text" name="qty_मूग डाळ" placeholder="५ kg" style="width:75px;"></label>
-                    <label class="g-label"><input type="checkbox" name="items" value="मटकी / मसूर डाळ"> मटकी/मसूर डाळ: <input type="text" name="qty_मटकी / मसूर डाळ" placeholder="५ kg" style="width:75px;"></label>
-                    <label class="g-label"><input type="checkbox" name="items" value="हरभरा डाळ"> हरभरा डाळ: <input type="text" name="qty_हरभरा डाळ" placeholder="५ kg" style="width:75px;"></label>
-                    <label class="g-label"><input type="checkbox" name="items" value="काबुली चणे / छोले"> काबुली चणे: <input type="text" name="qty_काबुली चणे / छोले" placeholder="३ kg" style="width:75px;"></label>
-                    <label class="g-label"><input type="checkbox" name="items" value="मटकी व मूग कडधान्य"> मटकी व मूग: <input type="text" name="qty_मटकी व मूग कडधान्य" placeholder="५ kg" style="width:75px;"></label>
+                    <b style="color:#b45309;">ताजी भाजी व नाश्ता:</b><br><br>
+                    <label class="g-label"><input type="checkbox" name="items" value="कांदे"> कांदे: <input type="text" name="qty_कांदे" placeholder="१० kg" style="width:75px;"></label>
+                    <label class="g-label"><input type="checkbox" name="items" value="बटाटे"> बटाटे: <input type="text" name="qty_बटाटे" placeholder="१० kg" style="width:75px;"></label>
+                    <label class="g-label"><input type="checkbox" name="items" value="टोमॅटो"> टोमॅटो: <input type="text" name="qty_टोमॅटो" placeholder="५ kg" style="width:75px;"></label>
+                    <label class="g-label"><input type="checkbox" name="items" value="हिरवी मिरची"> हिरवी मिरची: <input type="text" name="qty_हिरवी मिरची" placeholder="१ kg" style="width:75px;"></label>
+                    <label class="g-label"><input type="checkbox" name="items" value="कोथिंबीर"> कोथिंबीर: <input type="text" name="qty_कोथिंबीर" placeholder="२ जुड्या" style="width:75px;"></label>
+                    <label class="g-label"><input type="checkbox" name="items" value="चालू भाजी"> चालू भाजी: <input type="text" name="qty_चालू भाजी" placeholder="५ kg" style="width:75px;"></label>
+                    <label class="g-label"><input type="checkbox" name="items" value="आले-लसूण"> आले-लसूण: <input type="text" name="qty_आले-लसूण" placeholder="२ kg" style="width:75px;"></label>
                 </div>
                 <div>
-                    <b style="color:#b45309;">२. अन्नधान्य व पिठ:</b><br><br>
-                    <label class="g-label"><input type="checkbox" name="items" value="तांदूळ (इंद्रायणी/कोलम)"> तांदूळ: <input type="text" name="qty_तांदूळ (इंद्रायणी/कोलम)" placeholder="५० kg" style="width:75px;"></label>
-                    <label class="g-label"><input type="checkbox" name="items" value="गहू पीठ (आटा)"> गहू पीठ: <input type="text" name="qty_गहू पीठ (आटा)" placeholder="५० kg" style="width:75px;"></label>
-                    <label class="g-label"><input type="checkbox" name="items" value="ज्वारी पीठ"> ज्वारी पीठ: <input type="text" name="qty_ज्वारी पीठ" placeholder="१० kg" style="width:75px;"></label>
-                    <label class="g-label"><input type="checkbox" name="items" value="बाजरी पीठ"> बाजरी पीठ: <input type="text" name="qty_बाजरी पीठ" placeholder="१० kg" style="width:75px;"></label>
+                    <b style="color:#b45309;">दूध, अंडी व डाएट:</b><br><br>
+                    <label class="g-label"><input type="checkbox" name="items" value="ताजे दूध (लिटर)"> ताजं दूध: <input type="text" name="qty_ताजे दूध (लिटर)" placeholder="१५ लिटर" style="width:75px;"></label>
+                    <label class="g-label"><input type="checkbox" name="items" value="केळी (डझन)"> केळी: <input type="text" name="qty_केळी (डझन)" placeholder="५ डझन" style="width:75px;"></label>
+                    <label class="g-label"><input type="checkbox" name="items" value="देशी चणे"> देशी चणे: <input type="text" name="qty_देशी चणे" placeholder="५ kg" style="width:75px;"></label>
+                    <label class="g-label"><input type="checkbox" name="items" value="गूळ"> सेंद्रिय गूळ: <input type="text" name="qty_गूळ" placeholder="५ kg" style="width:75px;"></label>
+                    <label class="g-label"><input type="checkbox" name="items" value="अंडी (ट्रे)"> अंडी (ट्रे): <input type="text" name="qty_अंडी (ट्रे)" placeholder="१ ट्रे" style="width:75px;"></label>
                     <label class="g-label"><input type="checkbox" name="items" value="जाड पोहे"> जाड पोहे: <input type="text" name="qty_जाड पोहे" placeholder="१० kg" style="width:75px;"></label>
                     <label class="g-label"><input type="checkbox" name="items" value="बारीक रवा"> बारीक रवा: <input type="text" name="qty_बारीक रवा" placeholder="५ kg" style="width:75px;"></label>
                 </div>
                 <div>
-                    <b style="color:#b45309;">३. तेल, तूप व साखर:</b><br><br>
-                    <label class="g-label"><input type="checkbox" name="items" value="कुकिंग ऑइल (तेल डबा)"> गोडेतेल (डबा): <input type="text" name="qty_कुकिंग ऑइल (तेल डबा)" placeholder="१ डबा" style="width:75px;"></label>
-                    <label class="g-label"><input type="checkbox" name="items" value="साजूक तूप"> साजूक तूप: <input type="text" name="qty_साजूक तूप" placeholder="२ kg" style="width:75px;"></label>
+                    <b style="color:#b45309;">अन्नधान्य व तेल:</b><br><br>
+                    <label class="g-label"><input type="checkbox" name="items" value="गहू पीठ (आटा)"> गहू पीठ: <input type="text" name="qty_गहू पीठ (आटा)" placeholder="५० kg" style="width:75px;"></label>
+                    <label class="g-label"><input type="checkbox" name="items" value="तांदूळ"> तांदूळ: <input type="text" name="qty_तांदूळ" placeholder="५० kg" style="width:75px;"></label>
+                    <label class="g-label"><input type="checkbox" name="items" value="गोडेतेल (डबा)"> गोडेतेल: <input type="text" name="qty_गोडेतेल (डबा)" placeholder="१ डबा" style="width:75px;"></label>
+                    <label class="g-label"><input type="checkbox" name="items" value="तूर डाळ"> तूर डाळ: <input type="text" name="qty_तूर डाळ" placeholder="१० kg" style="width:75px;"></label>
+                    <label class="g-label"><input type="checkbox" name="items" value="ज्वारी पीठ"> ज्वारी पीठ: <input type="text" name="qty_ज्वारी पीठ" placeholder="१० kg" style="width:75px;"></label>
+                    <label class="g-label"><input type="checkbox" name="items" value="बाजरी पीठ"> बाजरी पीठ: <input type="text" name="qty_बाजरी पीठ" placeholder="१० kg" style="width:75px;"></label>
+                    <label class="g-label"><input type="checkbox" name="items" value="मीठ पुडे"> मीठ: <input type="text" name="qty_मीठ पुडे" placeholder="२ पुडे" style="width:75px;"></label>
+                </div>
+            </div>
+
+            <h4 style="color:#0284c7; margin:0 0 8px;">📦 २. इतर सर्व कडधान्ये, मसाले, गोडधोड, ड्रायफ्रूट्स व कॅन्टीन युटिलिटी</h4>
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:10px; background:#f0f9ff; padding:12px; border-radius:6px;">
+                <div>
+                    <b style="color:#0284c7;">कडधान्ये व डाळी:</b><br><br>
+                    <label class="g-label"><input type="checkbox" name="items" value="मूग डाळ"> मूग डाळ: <input type="text" name="qty_मूग डाळ" placeholder="५ kg" style="width:75px;"></label>
+                    <label class="g-label"><input type="checkbox" name="items" value="हरभरा डाळ"> हरभरा डाळ: <input type="text" name="qty_हरभरा डाळ" placeholder="५ kg" style="width:75px;"></label>
+                    <label class="g-label"><input type="checkbox" name="items" value="अख्खी मटकी"> मटकी: <input type="text" name="qty_अख्खी मटकी" placeholder="५ kg" style="width:75px;"></label>
+                    <label class="g-label"><input type="checkbox" name="items" value="अख्खा मूग"> अख्खा मूग: <input type="text" name="qty_अख्खा मूग" placeholder="५ kg" style="width:75px;"></label>
+                    <label class="g-label"><input type="checkbox" name="items" value="सोयाबीन वडी"> सोयाबीन वडी: <input type="text" name="qty_सोयाबीन वडी" placeholder="२ kg" style="width:75px;"></label>
+                </div>
+                <div>
+                    <b style="color:#0284c7;">मसाले व फोडणी:</b><br><br>
+                    <label class="g-label"><input type="checkbox" name="items" value="हळद"> हळद पावडर: <input type="text" name="qty_हळद" placeholder="१/२ kg" style="width:75px;"></label>
+                    <label class="g-label"><input type="checkbox" name="items" value="जिरे-मोहरी"> जिरे व मोहरी: <input type="text" name="qty_जिरे-मोहरी" placeholder="१/२ kg" style="width:75px;"></label>
+                    <label class="g-label"><input type="checkbox" name="items" value="कांदा लसूण मसाला"> मसाला: <input type="text" name="qty_कांदा लसूण मसाला" placeholder="२ kg" style="width:75px;"></label>
+                    <label class="g-label"><input type="checkbox" name="items" value="लाल तिखट"> लाल तिखट: <input type="text" name="qty_लाल तिखट" placeholder="१ kg" style="width:75px;"></label>
+                    <label class="g-label"><input type="checkbox" name="items" value="गरम मसाला"> गरम मसाला: <input type="text" name="qty_गरम मसाला" placeholder="१/२ kg" style="width:75px;"></label>
+                </div>
+                <div>
+                    <b style="color:#0284c7;">गोडधोड व युटिलिटी:</b><br><br>
                     <label class="g-label"><input type="checkbox" name="items" value="साखर"> साखर: <input type="text" name="qty_साखर" placeholder="१० kg" style="width:75px;"></label>
-                    <label class="g-label"><input type="checkbox" name="items" value="सेंद्रिय गूळ"> सेंद्रिय गूळ: <input type="text" name="qty_सेंद्रिय गूळ" placeholder="५ kg" style="width:75px;"></label>
-                    <label class="g-label"><input type="checkbox" name="items" value="चहा पावडर"> चहा पावडर: <input type="text" name="qty_चहा पावडर" placeholder="१ kg" style="width:75px;"></label>
-                </div>
-                <div>
-                    <b style="color:#b45309;">४. मसाले व खडेमसाले:</b><br><br>
-                    <label class="g-label"><input type="checkbox" name="items" value="हळद पावडर"> हळद पावडर: <input type="text" name="qty_हळद पावडर" placeholder="१ kg" style="width:75px;"></label>
-                    <label class="g-label"><input type="checkbox" name="items" value="लाल मिरची पावडर / तिखट"> लाल तिखट: <input type="text" name="qty_लाल मिरची पावडर / तिखट" placeholder="३ kg" style="width:75px;"></label>
-                    <label class="g-label"><input type="checkbox" name="items" value="कांदा-लसूण / गोडा मसाला"> गोडा मसाला: <input type="text" name="qty_कांदा-लसूण / गोडा मसाला" placeholder="१ kg" style="width:75px;"></label>
-                    <label class="g-label"><input type="checkbox" name="items" value="धने-जिरे पावडर"> धने-जिरे पावडर: <input type="text" name="qty_धने-जिरे पावडर" placeholder="१ kg" style="width:75px;"></label>
-                    <label class="g-label"><input type="checkbox" name="items" value="पांढरे मीठ पुडे"> मीठ पुडे: <input type="text" name="qty_पांढरे मीठ पुडे" placeholder="५ पुडे" style="width:75px;"></label>
-                </div>
-                <div>
-                    <b style="color:#b45309;">५. भाजीपाला व फळे:</b><br><br>
-                    <label class="g-label"><input type="checkbox" name="items" value="कांदे"> कांदे: <input type="text" name="qty_कांदे" placeholder="१५ kg" style="width:75px;"></label>
-                    <label class="g-label"><input type="checkbox" name="items" value="बटाटे"> बटाटे: <input type="text" name="qty_बटाटे" placeholder="१५ kg" style="width:75px;"></label>
-                    <label class="g-label"><input type="checkbox" name="items" value="टोमॅटो"> टोमॅटो: <input type="text" name="qty_टोमॅटो" placeholder="५ kg" style="width:75px;"></label>
-                    <label class="g-label"><input type="checkbox" name="items" value="हिरवी मिरची व आलं-लसूण"> मिरची, आले-लसूण: <input type="text" name="qty_हिरवी मिरची व आलं-लसूण" placeholder="३ kg" style="width:75px;"></label>
-                    <label class="g-label"><input type="checkbox" name="items" value="कोथिंबीर व कढीपत्ता"> कोथिंबीर: <input type="text" name="qty_कोथिंबीर व कढीपत्ता" placeholder="५ जुड्या" style="width:75px;"></label>
-                    <label class="g-label"><input type="checkbox" name="items" value="ताजी भाजी (पाले/फळ भाजी)"> पाले/फळ भाजी: <input type="text" name="qty_ताजी भाजी (पाले/फळ भाजी)" placeholder="१० kg" style="width:75px;"></label>
-                </div>
-                <div>
-                    <b style="color:#b45309;">६. दैनिक लागणारे साहित्य:</b><br><br>
-                    <label class="g-label"><input type="checkbox" name="items" value="ताजे दूध (लिटर)"> ताजे दूध: <input type="text" name="qty_ताजे दूध (लिटर)" placeholder="१५ लिटर" style="width:75px;"></label>
-                    <label class="g-label"><input type="checkbox" name="items" value="केळी (डझन)"> केळी (डझन): <input type="text" name="qty_केळी (डझन)" placeholder="५ डझन" style="width:75px;"></label>
-                    <label class="g-label"><input type="checkbox" name="items" value="शेंगदाणे व सुके खोबरे"> शेंगदाणे/खोबरे: <input type="text" name="qty_शेंगदाणे व सुके खोबरे" placeholder="५ kg" style="width:75px;"></label>
-                    <label class="g-label"><input type="checkbox" name="items" value="डिश धुण्याचे लिक्विड व साबण"> भांडी लिक्विड: <input type="text" name="qty_डिश धुण्याचे लिक्विड व साबण" placeholder="२ नग" style="width:75px;"></label>
+                    <label class="g-label"><input type="checkbox" name="items" value="चहा पावडर"> चहा पावडर: <input type="text" name="qty_चहा पावडर" placeholder="२ kg" style="width:75px;"></label>
+                    <label class="g-label"><input type="checkbox" name="items" value="शेंगदाणे"> शेंगदाणे: <input type="text" name="qty_शेंगदाणे" placeholder="५ kg" style="width:75px;"></label>
+                    <label class="g-label"><input type="checkbox" name="items" value="गॅस सिलिंडर"> LPG सिलिंडर: <input type="text" name="qty_गॅस सिलिंडर" placeholder="१ नग" style="width:75px;"></label>
+                    <label class="g-label"><input type="checkbox" name="items" value="भांडी साबण"> भांडी साबण बार: <input type="text" name="qty_भांडी साबण" placeholder="४ बार" style="width:75px;"></label>
                 </div>
             </div>
         </form>
@@ -642,7 +534,7 @@ MANAGER_LAYOUT = '''<!DOCTYPE html>
 
     {% if curr_tab == 'physical' %}
     <div class="card">
-        <h3 style="color:#0284c7; margin-top:0;">🏃‍♂ {{ 'Physical Test Records' if lang == 'en' else 'सर्व विद्यार्थ्यांचे फिजिकल टेस्ट रेकॉर्ड' }}</h3>
+        <h3 style="color:#0284c7; margin-top:0;">🏃‍♂️ {{ 'Physical Test Records' if lang == 'en' else 'सर्व विद्यार्थ्यांचे फिजिकल टेस्ट रेकॉर्ड' }}</h3>
         <table>
             <thead><tr><th>तारीख</th><th>नाव</th><th>कोर्स</th><th>1600/800m</th><th>100m</th><th>गोळाफेक</th><th>पुल-अप्स</th><th>एकूण गुण</th></tr></thead>
             <tbody>
@@ -726,8 +618,8 @@ MANAGER_LAYOUT = '''<!DOCTYPE html>
 </div>
 </body>
 </html>'''
-
-TRAINER_LAYOUT = """<!DOCTYPE html>
+# ----------------- PHYSICAL TRAINER / COACH PORTAL -----------------
+TRAINER_LAYOUT = '''<!DOCTYPE html>
 <html lang="{{ lang }}">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -757,7 +649,6 @@ TRAINER_LAYOUT = """<!DOCTYPE html>
     </div>
 </div>
 <div class="nav-bar">
-    <a href="/inquiries" class="nav-btn" style="background:#b45309; color:white;">📞 चौकशी व टेस्ट डेस्क</a>
     <a href="/trainer?tab=practice" class="nav-btn {% if curr_tab == 'practice' %}active{% endif %}">🏃‍♂️ {{ 'Practice' if lang == 'en' else 'आजचा सराव' }}</a>
     <a href="/trainer?tab=stopwatch" class="nav-btn {% if curr_tab == 'stopwatch' %}active{% endif %}" style="background:#f59e0b; color:#111;">⏱️ {{ 'Stopwatch' if lang == 'en' else 'स्टॉपवॉच' }}</a>
     <a href="/trainer?tab=physical" class="nav-btn {% if curr_tab == 'physical' %}active{% endif %}">🏃‍♂️ {{ 'Physical Test' if lang == 'en' else 'फिजिकल रेकॉर्ड नोंद' }}</a>
@@ -769,6 +660,8 @@ TRAINER_LAYOUT = """<!DOCTYPE html>
     <a href="/trainer?tab=tasks" class="nav-btn {% if curr_tab == 'tasks' %}active{% endif %}">📢 {{ 'Tasks' if lang == 'en' else 'ॲडमिन सूचना' }}</a>
 </div>
 <div class="container">
+
+    <!-- 1. PRACTICE WITH ALL DETAILED OPTIONS -->
     {% if curr_tab == 'practice' %}
     <div class="card">
         <h3 style="color:#0284c7; margin-top:0;">🏃‍♂️ {{ 'Daily Practice Entry' if lang == 'en' else 'आजचा प्रत्यक्ष मैदानी सराव नोंदवा' }}</h3>
@@ -788,7 +681,7 @@ TRAINER_LAYOUT = """<!DOCTYPE html>
                         <option value="पावसामुळे ग्राउंड ओले / चिखल">🌧️ पावसामुळे ग्राउंड ओले / चिखल</option>
                         <option value="ट्रॅक दुरुस्ती सुरू">🛠️ ट्रॅक दुरुस्ती काम सुरू</option>
                         <option value="खराब हवामान / मुसळधार पाऊस">⛈️ खराब हवामान / मुसळधार पाऊस</option>
-                        <option value="इतर तांत्रिक अडचण">⚠ इतर अडचणीमुळे ग्राउंड होऊ शकले नाही</option>
+                        <option value="इतर तांत्रिक अडचण">⚠️ इतर अडचणीमुळे ग्राउंड होऊ शकले नाही</option>
                     </select>
                 </div>
             </div>
@@ -799,6 +692,7 @@ TRAINER_LAYOUT = """<!DOCTYPE html>
     </div>
     {% endif %}
 
+    <!-- 2. ADVANCED STOPWATCH WITH LAPS -->
     {% if curr_tab == 'stopwatch' %}
     <div class="card" style="text-align:center;">
         <h3 style="color:#0284c7; margin-top:0;">⏱️ डिजिटल मैदानी स्टॉपवॉच (लॅप फिचरसह)</h3>
@@ -833,6 +727,7 @@ TRAINER_LAYOUT = """<!DOCTYPE html>
     </script>
     {% endif %}
 
+    <!-- 3. PHYSICAL RECORD ENTRY -->
     {% if curr_tab == 'physical' %}
     <div class="card">
         <h3 style="color:#0284c7; margin-top:0;">🏃‍♂️ फिजिकल चाचणी गुण भरणे व तक्ता</h3>
@@ -859,6 +754,7 @@ TRAINER_LAYOUT = """<!DOCTYPE html>
     </div>
     {% endif %}
 
+    <!-- 4. DIET RECOMMENDATION WITH SAVED HISTORY -->
     {% if curr_tab == 'student_diet' %}
     <div class="card">
         <h3 style="color:#10b981; margin-top:0;">🥗 विद्यार्थीनिहाय विशेष डाएट शिफारस</h3>
@@ -879,6 +775,7 @@ TRAINER_LAYOUT = """<!DOCTYPE html>
     </div>
     {% endif %}
 
+    <!-- 5. INJURIES WITH SAVED HISTORY -->
     {% if curr_tab == 'inj' %}
     <div class="card">
         <h3 style="color:#ef4444; margin-top:0;">🩹 विद्यार्थी इजा व सुट्टी नोंद</h3>
@@ -979,8 +876,8 @@ TRAINER_LAYOUT = """<!DOCTYPE html>
     {% endif %}
 </div>
 </body>
-</html>"""
-
+</html>'''
+# ----------------- CLERK PORTAL -----------------
 CLERK_LAYOUT = '''<!DOCTYPE html>
 <html lang="{{ lang }}">
 <head>
@@ -1009,16 +906,12 @@ CLERK_LAYOUT = '''<!DOCTYPE html>
         <a href="/logout" style="background:#ef4444; color:white; padding:4px 10px; border-radius:4px; text-decoration:none; font-size:12px; font-weight:bold;">बाहेर पडा</a>
     </div>
 </div>
-<div class="nav-bar"> 
-    <a href="/inquiries" class="clk-btn" style="background:#b45309;">📞 चौकशी व टेस्ट डेस्क</a>
+<div class="nav-bar">
     <a href="/clerk?tab=stud" class="clk-btn {% if curr_tab == 'stud' %}active{% endif %}">👥 {{ 'Students List' if lang == 'en' else 'विद्यार्थी यादी' }}</a>
     <a href="/clerk?tab=adm" class="clk-btn {% if curr_tab == 'adm' %}active{% endif %}">📝 {{ 'New Admission' if lang == 'en' else 'नवीन प्रवेश' }}</a>
     <a href="/clerk?tab=fee" class="clk-btn {% if curr_tab == 'fee' %}active{% endif %}">💰 {{ 'Collect Fee' if lang == 'en' else 'फी जमा' }}</a>
-    <a href="/attendance" target="_blank" class="clk-btn" style="background: linear-gradient(135deg, #6366f1, #a855f7); color: white; font-weight: bold; border-radius: 4px; padding: 6px 12px; text-decoration: none; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">📋 हजेरी</a>
-    <a href="/library" target="_blank" class="clk-btn" style="background: linear-gradient(135deg, #0284c7, #06b6d4); color: white; font-weight: bold; border-radius: 4px; padding: 6px 12px; text-decoration: none; box-shadow: 0 2px 5px rgba(0,0,0,0.2); margin-left: 6px;">📚 स्टडी लॅब / लायब्ररी</a>
-    <a href="/clerk?tab=questions" class="clk-btn {% if curr_tab == 'questions' %}active{% endif %}" style="background:#059669;">📝 प्रश्न व्यवस्थापन (Manage Questions)</a>
     <a href="/clerk?tab=hostel" class="clk-btn {% if curr_tab == 'hostel' %}active{% endif %}" style="background:#8e2de2;">🏠 {{ 'Hostel/Mess Fee' if lang == 'en' else 'हॉस्टेल/मेस फी' }}</a>
-    <a href="/clerk?tab=physical" class="clk-btn {% if curr_tab == 'physical' %}active{% endif %}" style="background:#0284c7;">🏃‍♂ {{ 'Physical Test' if lang == 'en' else 'फिजिकल टेस्ट नोंद' }}</a>
+    <a href="/clerk?tab=physical" class="clk-btn {% if curr_tab == 'physical' %}active{% endif %}" style="background:#0284c7;">🏃‍♂️ {{ 'Physical Test' if lang == 'en' else 'फिजिकल टेस्ट नोंद' }}</a>
     <a href="/clerk?tab=written" class="clk-btn {% if curr_tab == 'written' %}active{% endif %}" style="background:#10b981;">📝 {{ 'Written Exam' if lang == 'en' else 'रिटर्न टेस्ट नोंद' }}</a>
     <a href="/clerk?tab=exp" class="clk-btn {% if curr_tab == 'exp' %}active{% endif %}">💵 {{ 'Expense Entry' if lang == 'en' else 'खर्च नोंद' }}</a>
     <a href="/clerk?tab=kit" class="clk-btn {% if curr_tab == 'kit' %}active{% endif %}">📦 {{ 'Kit Distribution' if lang == 'en' else 'किट वाटप' }}</a>
@@ -1037,7 +930,7 @@ CLERK_LAYOUT = '''<!DOCTYPE html>
                     <td>{% if s.photo_filename %}<img src="/uploads/{{ s.photo_filename }}" width="35" height="40">{% else %}-{% endif %}</td>
                     <td>REG-{{ s.id }}</td><td><b>{{ s.name }}</b></td><td>{{ s.course }}</td><td>{{ s.phone }}</td>
                     <td style="color:red; font-weight:bold;">₹{{ (s.total_fees or 0) - (s.paid_fees or 0) }}</td>
-                    <td><a href="/receipt/{{ s.id }}" target="_blank" class="btn-act" style="background:#10b981;">🧾 पावती प्रिंट</a><a href="/student_report/{{ s.id }}" target="_blank" class="btn-act" style="background:#6366f1; color:white; text-decoration:none; padding:4px 8px; border-radius:4px; font-weight:bold; margin-left:5px;">📋 स्टुडन्ट रिपोर्ट</a></td>
+                    <td><a href="/receipt/{{ s.id }}" target="_blank" class="btn-act" style="background:#10b981;">🧾 पावती प्रिंट</a></td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -1045,43 +938,7 @@ CLERK_LAYOUT = '''<!DOCTYPE html>
     </div>
     {% endif %}
 
-    {% if curr_tab == 'questions' %}
-    <div class="card">
-        <h3 style="color:#059669; margin-top:0;">📝 टेस्ट प्रश्न व्यवस्थापन (Clerk Question Panel)</h3>
-        <div style="background:#f0fdf4; padding:12px; border-radius:6px; margin-bottom:15px; border:1px solid #bbf7d0;">
-            <h4 style="margin:0 0 8px; color:#065f46;">➕ नवीन प्रश्न जोडा</h4>
-            <form action="/add_question" method="POST">
-                प्रश्न: <input type="text" name="question" required style="width:100%; margin-bottom:8px;"><br>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
-                    <div>पर्याय A: <input type="text" name="opt_a" required style="width:100%;"></div>
-                    <div>पर्याय B: <input type="text" name="opt_b" required style="width:100%;"></div>
-                    <div>पर्याय C: <input type="text" name="opt_c" required style="width:100%;"></div>
-                    <div>पर्याय D: <input type="text" name="opt_d" required style="width:100%;"></div>
-                </div>
-                अचूक उत्तर (A, B, C किंवा D): <select name="correct" style="width:150px; margin-right:10px;"><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select>
-                <button type="submit" class="btn-act" style="background:#059669; padding:8px 15px;">प्रश्न सेव्ह करा</button>
-            </form>
-        </div>
-        <h4>📋 सध्या उपलब्ध प्रश्न यादी:</h4>
-        <table>
-            <thead><tr><th>ID</th><th>प्रश्न</th><th>पर्याय A, B, C, D</th><th>अचूक उत्तर</th><th>कृती</th></tr></thead>
-            <tbody>
-                {% for q in questions %}
-                <tr>
-                    <td>{{ q.id }}</td>
-                    <td><b>{{ q.question }}</b></td>
-                    <td>A) {{ q.opt_a }}<br>B) {{ q.opt_b }}<br>C) {{ q.opt_c }}<br>D) {{ q.opt_d }}</td>
-                    <td><b style="color:green;">{{ q.correct }}</b></td>
-                    <td><a href="/delete_question/{{ q.id }}" onclick="return confirm('हा प्रश्न हटवायचा का?')" style="color:red; font-weight:bold;">🗑️ हटवा</a></td>
-                </tr>
-                {% else %}
-                <tr><td colspan="5" style="text-align:center;">कोणतेही प्रश्न नाहीत.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% endif %}
-
+    <!-- HOSTEL FEE WITH HISTORY IN CLERK -->
     {% if curr_tab == 'hostel' %}
     <div class="card">
         <h3 style="color:#8e2de2; margin-top:0;">🏠 हॉस्टेल व मेस फी जमा (क्लार्क डेस्क)</h3>
@@ -1259,7 +1116,7 @@ CLERK_LAYOUT = '''<!DOCTYPE html>
 </div>
 </body>
 </html>'''
-
+# ----------------- ADMIN DASHBOARD -----------------
 ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
 <html lang="{{ lang }}">
 <head>
@@ -1297,19 +1154,16 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
 </div>
 
 <div class="menu-bar">
-    <a href="/inquiries" class="menu-btn" style="background:#b45309; border:2px solid #fde047;">📞 चौकशी व टेस्ट डेस्क</a>
     <a href="/admin?tab=students" class="menu-btn {% if curr_tab == 'students' %}active{% endif %}" style="background:#2563eb;">👥 {{ 'All Students' if lang == 'en' else 'सर्व विद्यार्थी' }}</a>
     <a href="/admin?tab=admission" class="menu-btn {% if curr_tab == 'admission' %}active{% endif %}" style="background:#2563eb;">📝 {{ 'New Admission' if lang == 'en' else 'नवीन प्रवेश' }}</a>
-    <a href="/admin?tab=questions" class="menu-btn {% if curr_tab == 'questions' %}active{% endif %}" style="background:#059669; border:2px solid #ffdd59;">📝 प्रश्न व्यवस्थापन</a>
     <a href="/admin?tab=physical" class="menu-btn {% if curr_tab == 'physical' %}active{% endif %}" style="background:#0284c7;">🏃‍♂️ {{ 'Physical Test' if lang == 'en' else 'फिजिकल रेकॉर्ड' }}</a>
     <a href="/admin?tab=written" class="menu-btn {% if curr_tab == 'written' %}active{% endif %}" style="background:#10b981;">📝 {{ 'Written Exam' if lang == 'en' else 'रिटर्न टेस्ट' }}</a>
     <a href="/admin?tab=requests" class="menu-btn {% if curr_tab == 'requests' %}active{% endif %}" style="background:#e11d48; border:2px solid #ffdd59;">📩 {{ 'Staff Requests' if lang == 'en' else 'स्टाफ विनंत्या' }}</a>
     <a href="/admin?tab=fee" class="menu-btn {% if curr_tab == 'fee' %}active{% endif %}" style="background:#f59e0b;">💰 {{ 'Fee Collection' if lang == 'en' else 'फी जमा' }}</a>
     <a href="/admin?tab=hostel" class="menu-btn {% if curr_tab == 'hostel' %}active{% endif %}" style="background:#8e2de2;">🏠 {{ 'Hostel / Mess' if lang == 'en' else 'हॉस्टेल/मेस' }}</a>
     <a href="/admin?tab=att" class="menu-btn {% if curr_tab == 'att' %}active{% endif %}" style="background:#e11d48;">📋 {{ 'Attendance' if lang == 'en' else 'सर्व हजेरी' }}</a>
-    <a href="/library" target="_blank" class="menu-btn" style="background: linear-gradient(135deg, #0284c7, #06b6d4); color: white;">📚 स्टडी लॅब / लायब्ररी</a>
     <a href="/admin?tab=diet" class="menu-btn {% if curr_tab == 'diet' %}active{% endif %}" style="background:#6366f1;">🥗 {{ 'Mess Diet' if lang == 'en' else 'मेस डाएट' }}</a>
-    <a href="/admin?tab=disc" class="menu-btn {% if curr_tab == 'disc' %}active{% endif %}" style="background:#6b21a8;">⚠ {{ 'Discipline & Gatepass' if lang == 'en' else 'गेटपास/शिस्त' }}</a>
+    <a href="/admin?tab=disc" class="menu-btn {% if curr_tab == 'disc' %}active{% endif %}" style="background:#6b21a8;">⚠️ {{ 'Discipline & Gatepass' if lang == 'en' else 'गेटपास/शिस्त' }}</a>
     <a href="/admin?tab=exp" class="menu-btn {% if curr_tab == 'exp' %}active{% endif %}" style="background:#ff416c;">💵 {{ 'Expenses' if lang == 'en' else 'खर्च वही' }}</a>
     <a href="/admin?tab=wa" class="menu-btn {% if curr_tab == 'wa' %}active{% endif %}" style="background:#10b981;">📲 WhatsApp</a>
     <a href="/admin?tab=staff" class="menu-btn {% if curr_tab == 'staff' %}active{% endif %}" style="background:#4f46e5;">👔 {{ 'Staff Salary' if lang == 'en' else 'स्टाफ पगार' }}</a>
@@ -1327,6 +1181,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
         <div class="kpi" style="border-color:#ff416c;"><b>{{ 'Total Expenses:' if lang == 'en' else 'एकूण खर्च:' }}</b> ₹{{ total_expenses }}</div>
     </div>
 
+    <!-- 1. STUDENTS -->
     {% if curr_tab == 'students' %}
     <div class="admin-tab">
         <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -1342,7 +1197,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
                     <td>REG-{{ s.id }}</td><td><b>{{ s.name }}</b></td><td>{{ s.course }}</td><td>{{ s.phone }}</td>
                     <td style="color:red; font-weight:bold;">₹{{ (s.total_fees or 0) - (s.paid_fees or 0) }}</td>
                     <td>
-                        <a href="/receipt/{{ s.id }}" target="_blank" class="btn-act" style="background:#10b981;">🧾 पावती प्रिंट</a> <a href="/student_report/{{ s.id }}" target="_blank" class="btn-act" style="background:#6366f1; color:white; text-decoration:none; padding:4px 8px; border-radius:4px; font-weight:bold; margin-left:5px;">📋 स्टुडन्ट रिपोर्ट</a> 
+                        <a href="/receipt/{{ s.id }}" target="_blank" class="btn-act" style="background:#10b981;">🧾 पावती प्रिंट</a>
                         <a href="/delete_student/{{ s.id }}" onclick="return confirm('हटवायचे?')" class="btn-act" style="background:red;">हटवा</a>
                     </td>
                 </tr>
@@ -1352,62 +1207,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
     </div>
     {% endif %}
 
-    {% if curr_tab == 'questions' %}
-    <div class="admin-tab">
-        <h3 style="color:#059669; margin-top:0;">📝 टेस्ट प्रश्न व्यवस्थापन (Admin Question Panel & Quick Link)</h3>
-        
-        <!-- Test Link Copy Section (New Feature) -->
-        <div style="background:#fefce8; border:1px solid #fde047; padding:15px; border-radius:6px; margin-bottom:20px;">
-            <h4 style="margin:0 0 8px; color:#854d0e;">🔗 सोशल मीडियावर शेअर करण्यासाठी टेस्टची थेट लिंक:</h4>
-            <div style="display:flex; gap:10px;">
-                <input type="text" id="testLinkBox" value="{{ test_link }}" readonly style="flex:1; background:white; font-weight:bold; color:#0b3c5d;">
-                <button onclick="copyTestLink()" class="btn-act" style="background:#d97706; padding:8px 15px; font-size:13px;">📋 लिंक कॉपी करा</button>
-            </div>
-        </div>
-
-        <div style="background:#f0fdf4; padding:15px; border-radius:6px; margin-bottom:20px; border:1px solid #bbf7d0;">
-            <h4 style="margin:0 0 10px; color:#065f46;">➕ नवीन प्रश्न जोडा</h4>
-            <form action="/add_question" method="POST">
-                प्रश्न: <input type="text" name="question" required style="width:100%; margin-bottom:8px;"><br>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
-                    <div>पर्याय A: <input type="text" name="opt_a" required style="width:100%;"></div>
-                    <div>पर्याय B: <input type="text" name="opt_b" required style="width:100%;"></div>
-                    <div>पर्याय C: <input type="text" name="opt_c" required style="width:100%;"></div>
-                    <div>पर्याय D: <input type="text" name="opt_d" required style="width:100%;"></div>
-                </div>
-                अचूक उत्तर (A, B, C किंवा D): <select name="correct" style="width:150px; margin-right:10px;"><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select>
-                <button type="submit" class="btn-act" style="background:#059669; padding:8px 15px;">प्रश्न सेव्ह करा</button>
-            </form>
-        </div>
-
-        <h4>📋 सध्या डेटाबेसमध्ये असलेले प्रश्न:</h4>
-        <table>
-            <thead><tr><th>ID</th><th>प्रश्न</th><th>पर्याय (A, B, C, D)</th><th>अचूक उत्तर</th><th>कृती</th></tr></thead>
-            <tbody>
-                {% for q in questions %}
-                <tr>
-                    <td>{{ q.id }}</td>
-                    <td><b>{{ q.question }}</b></td>
-                    <td>A) {{ q.opt_a }}<br>B) {{ q.opt_b }}<br>C) {{ q.opt_c }}<br>D) {{ q.opt_d }}</td>
-                    <td><b style="color:green;">{{ q.correct }}</b></td>
-                    <td><a href="/delete_question/{{ q.id }}" onclick="return confirm('हा प्रश्न हटवायचा का?')" style="color:red; font-weight:bold;">🗑️ हटवा</a></td>
-                </tr>
-                {% else %}
-                <tr><td colspan="5" style="text-align:center;">कोणतेही प्रश्न नाहीत.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    <script>
-    function copyTestLink() {
-        var copyText = document.getElementById("testLinkBox");
-        copyText.select();
-        navigator.clipboard.writeText(copyText.value);
-        alert("टेस्ट लिंक यशस्वीरीत्या कॉपी झाली! आता तुम्ही ती WhatsApp वर पेस्ट करू शकता.");
-    }
-    </script>
-    {% endif %}
-
+    <!-- 2. ADMISSION -->
     {% if curr_tab == 'admission' %}
     <div class="admin-tab">
         <h3>📝 नवीन विद्यार्थी प्रवेश नोंदणी</h3>
@@ -1427,9 +1227,10 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
     </div>
     {% endif %}
 
+    <!-- 3. PHYSICAL -->
     {% if curr_tab == 'physical' %}
     <div class="admin-tab">
-        <h3 style="color:#0284c7; margin-top:0;">🏃‍♂ विद्यार्थ्यांचे फिजिकल टेस्ट रेकॉर्ड</h3>
+        <h3 style="color:#0284c7; margin-top:0;">🏃‍♂️ विद्यार्थ्यांचे फिजिकल टेस्ट रेकॉर्ड</h3>
         <form action="/add_physical_record" method="POST" style="background:#f0f9ff; padding:12px; border-radius:6px; margin-bottom:15px;">
             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:8px;">
                 <div>विद्यार्थी: <select name="student_id" required style="width:100%;"><option value="">-- निवडा --</option>{% for s in students %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}</select></div>
@@ -1453,6 +1254,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
     </div>
     {% endif %}
 
+    <!-- 4. WRITTEN -->
     {% if curr_tab == 'written' %}
     <div class="admin-tab">
         <h3 style="color:#10b981; margin-top:0;">📝 विद्यार्थ्यांचे रिटर्न टेस्ट रेकॉर्ड</h3>
@@ -1470,13 +1272,14 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
             <thead><tr><th>तारीख</th><th>नाव</th><th>परीक्षा</th><th>एकूण</th><th>मिळालेले गुण</th><th>हटवा</th></tr></thead>
             <tbody>
                 {% for wt in written_records %}
-                <tr><td>{{ wt.test_date }}</td><td><b>{{ wt.name }}</b></td><td>{{ wt.test_name }}</td><td>{{ wt.total_marks }}</td><td><b style="color:green;">{{ wt.obtained_marks }}</b></td><td><a href="/delete_written_record/{{ wt.id }}" onclick="return confirm('हटवायचे?')" style="color:red;">🗑️️</a></td></tr>
+                <tr><td>{{ wt.test_date }}</td><td><b>{{ wt.name }}</b></td><td>{{ wt.test_name }}</td><td>{{ wt.total_marks }}</td><td><b style="color:green;">{{ wt.obtained_marks }}</b></td><td><a href="/delete_written_record/{{ wt.id }}" onclick="return confirm('हटवायचे?')" style="color:red;">🗑️</a></td></tr>
                 {% else %}<tr><td colspan="6">नोंद नाही.</td></tr>{% endfor %}
             </tbody>
         </table>
     </div>
     {% endif %}
 
+    <!-- 5. REQUESTS -->
     {% if curr_tab == 'requests' %}
     <div class="admin-tab">
         <h3 style="color:#e11d48; margin-top:0;">📩 स्टाफने पाठवलेल्या विनंत्या (Requests Desk)</h3>
@@ -1497,6 +1300,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
     </div>
     {% endif %}
 
+    <!-- 6. FEE -->
     {% if curr_tab == 'fee' %}
     <div class="admin-tab">
         <h3>💰 फी हप्ता जमा</h3>
@@ -1508,6 +1312,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
     </div>
     {% endif %}
 
+    <!-- 7. HOSTEL WITH HISTORY IN ADMIN -->
     {% if curr_tab == 'hostel' %}
     <div class="admin-tab">
         <h3>🏠 हॉस्टेल व मेस फी नोंद व इतिहास</h3>
@@ -1528,6 +1333,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
     </div>
     {% endif %}
 
+    <!-- 8. ATTENDANCE -->
     {% if curr_tab == 'att' %}
     <div class="admin-tab">
         <h3>📋 दैनिक हजेरी नोंद</h3>
@@ -1542,6 +1348,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
     </div>
     {% endif %}
 
+    <!-- 9. DIET WITH EDIT OPTION IN ADMIN -->
     {% if curr_tab == 'diet' %}
     <div class="admin-tab">
         <h3 style="color:#6366f1;">🥗 मेस डाएट वेळापत्रक (संपादन / एडिट पर्यायासह)</h3>
@@ -1565,9 +1372,10 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
     </div>
     {% endif %}
 
+    <!-- 10. DISCIPLINE (EDIT & DELETE) -->
     {% if curr_tab == 'disc' %}
     <div class="admin-tab">
-        <h3 style="color:#6b21a8; margin-top:0;">⚠ सुट्टी गेटपास व शिस्तभंग नोंद (एडिट व रद्द पर्यायासह)</h3>
+        <h3 style="color:#6b21a8; margin-top:0;">⚠️ सुट्टी गेटपास व शिस्तभंग नोंद (एडिट व रद्द पर्यायासह)</h3>
         <form action="/add_discipline" method="POST" style="background:#f5f3ff; padding:12px; border-radius:6px; margin-bottom:15px;">
             विद्यार्थी: <select name="student_id" required><option value="">-- निवडा --</option>{% for s in students %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}</select>
             प्रकार: <select name="record_type"><option value="सुट्टी गेटपास">सुट्टी गेटपास</option><option value="शिस्तभंग ताकीद">शिस्तभंग ताकीद</option></select>
@@ -1601,6 +1409,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
     </div>
     {% endif %}
 
+    <!-- 11. EXPENSES -->
     {% if curr_tab == 'exp' %}
     <div class="admin-tab">
         <h3>💵 दैनिक खर्च वही</h3>
@@ -1615,6 +1424,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
     </div>
     {% endif %}
 
+    <!-- 12. WHATSAPP -->
     {% if curr_tab == 'wa' %}
     <div class="admin-tab">
         <h3>📲 १-क्लिक व्हॉट्सॲप मेसेज</h3>
@@ -1626,6 +1436,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
     </div>
     {% endif %}
 
+    <!-- 13. STAFF -->
     {% if curr_tab == 'staff' %}
     <div class="admin-tab">
         <h3 style="color:#4f46e5; margin-top:0;">👔 स्टाफ पगार, उचल व रजा व्यवस्थापन</h3>
@@ -1637,12 +1448,9 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
             <thead><tr><th>नाव</th><th>पद</th><th>फोन</th><th>पगार</th><th>उचल</th><th>रजा</th><th>पगार देणे बाकी</th><th>कृती</th></tr></thead>
             <tbody>
                 {% for st in staff_members %}
-                {% set per_day = (st.salary or 0) / 30 if (st.salary or 0) > 0 else 0 %}
-                {% set leave_cut = per_day * (st.total_leaves or 0) %}
-                {% set net_pay = (st.salary or 0) - ((st.advance_paid or 0) + leave_cut) %}
-                {% if net_pay < 0 %}{% set net_pay = 0 %}{% endif %}
+                {% set net_pay = (st.salary or 0) - (st.advance_paid or 0) %}
                 <tr>
-                    <td><b>{{ st.name }}</b></td><td>{{ st.role }}</td><td>{{ st.phone }}</td><td>₹{{ st.salary }}</td><td style="color:red;">₹{{ st.advance_paid or 0 }}</td><td>{{ st.total_leaves or 0 }} दिवस</td><td style="color:green; font-weight:bold;">₹{{ net_pay|round|int }}</td>
+                    <td><b>{{ st.name }}</b></td><td>{{ st.role }}</td><td>{{ st.phone }}</td><td>₹{{ st.salary }}</td><td style="color:red;">₹{{ st.advance_paid or 0 }}</td><td>{{ st.total_leaves or 0 }} दिवस</td><td style="color:green; font-weight:bold;">₹{{ net_pay }}</td>
                     <td>
                         <form action="/update_staff_advance/{{ st.id }}" method="POST" style="display:inline-flex; gap:3px;">
                             <input type="number" name="advance_amount" placeholder="+ उचल" style="width:65px;">
@@ -1651,14 +1459,6 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
                         <form action="/add_staff_leave/{{ st.id }}" method="POST" style="display:inline-flex; gap:3px; margin-left:3px;">
                             <input type="number" name="leave_days" value="1" style="width:40px;">
                             <button type="submit" class="btn-act" style="background:#6366f1;">+ रजा</button>
-                        </form>
-                        <form action="/pay_staff_salary/{{ st.id }}" method="POST" style="display:inline-block; margin-left:5px; background:#f1f5f9; padding:5px; border-radius:4px; border:1px solid #cbd5e1;">
-                            <span style="font-size:11px; font-weight:bold; color:#0b3c5d;">कालावधी:</span>
-                            <input type="date" name="from_date" required style="padding:2px; font-size:12px;">
-                            <span style="font-size:11px;">ते</span>
-                            <input type="date" name="to_date" required style="padding:2px; font-size:12px;">
-                            <input type="number" name="amount" value="{{ net_pay|round|int }}" style="width:75px; font-weight:bold; color:green; padding:2px;">
-                            <button type="submit" class="btn-act" style="background:#0b3c5d; color:white; padding:3px 8px;" onclick="return confirm('पगार वाटप नोंद करायची का?')">पगार द्या</button>
                         </form>
                         <a href="/delete_staff/{{ st.id }}" onclick="return confirm('हटवायचा?')" style="color:red; margin-left:5px;">🗑️</a>
                     </td>
@@ -1669,6 +1469,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
     </div>
     {% endif %}
 
+    <!-- 14. TASKS -->
     {% if curr_tab == 'tasks' %}
     <div class="admin-tab">
         <h3 style="color:#d97706; margin-top:0;">📌 स्टाफला काम सांगा (एडिट व डिलीट पर्यायासह)</h3>
@@ -1706,6 +1507,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
     </div>
     {% endif %}
 
+    <!-- 15. STAFF TRACKING -->
     {% if curr_tab == 'staff_tracking' %}
     <div class="admin-tab">
         <h3 style="color:#059669; margin-top:0;">👁️ तिन्ही स्टाफच्या दैनंदिन हालचाली (Admin Reply सह)</h3>
@@ -1726,6 +1528,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
     </div>
     {% endif %}
 
+    <!-- 16. PASSWORDS & ADD USER -->
     {% if curr_tab == 'passwords' %}
     <div class="admin-tab">
         <h3 style="color:#dc2626; margin-top:0;">🔐 युजर पासवर्ड व नवीन युजर तयार करा</h3>
@@ -1755,6 +1558,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
     </div>
     {% endif %}
 
+    <!-- 17. BACKUP -->
     {% if curr_tab == 'bak' %}
     <div class="admin-tab">
         <h3 style="color:#0b3c5d;">💾 डेटाबेस बॅकअप व रिस्टोअर व्यवस्थापन</h3>
@@ -1786,7 +1590,7 @@ setInterval(updateClock, 1000); updateClock();
 </script>
 </body>
 </html>'''
-
+# ----------------- FLASK MAIN CONTROLLER ROUTING -----------------
 @app.route('/toggle_lang')
 def toggle_lang():
     cur = session.get('site_lang', 'mr')
@@ -1806,7 +1610,6 @@ def login():
             user = conn.execute("SELECT * FROM users WHERE role=? AND password=?", (role, pwd)).fetchone()
         if user:
             session['user_role'] = role
-            session['role'] = role
             if role == 'Manager': return redirect('/manager')
             elif role == 'Trainer': return redirect('/trainer')
             elif role == 'Clerk': return redirect('/clerk')
@@ -1869,7 +1672,6 @@ def clerk_view():
     lang = session.get('site_lang', 'mr')
     with get_db() as conn:
         students = conn.execute("SELECT * FROM students").fetchall()
-        questions = conn.execute("SELECT * FROM questions ORDER BY id DESC").fetchall()
         staff_tasks = conn.execute("SELECT * FROM staff_tasks ORDER BY id DESC").fetchall()
         expenses_list = conn.execute("SELECT * FROM expenses ORDER BY id DESC").fetchall()
         kit_logs = conn.execute("SELECT k.*, s.name FROM kit_distribution k JOIN students s ON k.student_id = s.id ORDER BY k.id DESC").fetchall()
@@ -1877,7 +1679,7 @@ def clerk_view():
         hostel_logs = conn.execute("SELECT h.*, s.name FROM hostel_mess_fees h JOIN students s ON h.student_id = s.id ORDER BY h.id DESC").fetchall()
         physical_records = conn.execute("SELECT pt.*, s.name, s.course FROM physical_tests pt JOIN students s ON pt.student_id = s.id ORDER BY pt.id DESC").fetchall()
         written_records = conn.execute("SELECT wt.*, s.name FROM written_tests wt JOIN students s ON wt.student_id = s.id ORDER BY wt.id DESC").fetchall()
-    return render_template_string(CLERK_LAYOUT, curr_tab=curr_tab, students=students, questions=questions, staff_tasks=staff_tasks, expenses_list=expenses_list, kit_logs=kit_logs, my_requests=my_requests, hostel_logs=hostel_logs, physical_records=physical_records, written_records=written_records, today_date=today_date, lang=lang)
+    return render_template_string(CLERK_LAYOUT, curr_tab=curr_tab, students=students, staff_tasks=staff_tasks, expenses_list=expenses_list, kit_logs=kit_logs, my_requests=my_requests, hostel_logs=hostel_logs, physical_records=physical_records, written_records=written_records, today_date=today_date, lang=lang)
 
 @app.route('/admin')
 def admin_view():
@@ -1887,7 +1689,6 @@ def admin_view():
     lang = session.get('site_lang', 'mr')
     with get_db() as conn:
         students = conn.execute("SELECT * FROM students").fetchall()
-        questions = conn.execute("SELECT * FROM questions ORDER BY id DESC").fetchall()
         expenses_list = conn.execute("SELECT * FROM expenses ORDER BY id DESC").fetchall()
         users_list = conn.execute("SELECT * FROM users").fetchall()
         diet_list = conn.execute("SELECT * FROM mess_diet").fetchall()
@@ -1903,42 +1704,10 @@ def admin_view():
     total_paid = sum(safe_float(s['paid_fees']) for s in students)
     total_pending = sum(safe_float(s['total_fees']) - safe_float(s['paid_fees']) for s in students)
     total_expenses = sum(safe_float(ex['amount']) for ex in expenses_list)
-    test_link = request.host_url + 'test'
 
-    return render_template_string(ADMIN_DASHBOARD_LAYOUT, curr_tab=curr_tab, students=students, questions=questions, expenses_list=expenses_list, users_list=users_list, diet_list=diet_list, staff_members=staff_members, staff_tasks=staff_tasks, all_requests=all_requests, all_staff_logs=all_staff_logs, discipline_logs=discipline_logs, hostel_logs=hostel_logs, physical_records=physical_records, written_records=written_records, total_paid=total_paid, total_pending=total_pending, total_expenses=total_expenses, test_link=test_link, today_date=today_date, lang=lang)
+    return render_template_string(ADMIN_DASHBOARD_LAYOUT, curr_tab=curr_tab, students=students, expenses_list=expenses_list, users_list=users_list, diet_list=diet_list, staff_members=staff_members, staff_tasks=staff_tasks, all_requests=all_requests, all_staff_logs=all_staff_logs, discipline_logs=discipline_logs, hostel_logs=hostel_logs, physical_records=physical_records, written_records=written_records, total_paid=total_paid, total_pending=total_pending, total_expenses=total_expenses, today_date=today_date, lang=lang)
 
-# Question Management Routes (New Feature)
-@app.route('/add_question', methods=['POST'])
-def add_question():
-    if session.get('user_role') not in ['Admin', 'Clerk']: return "Unauthorized", 403
-    q = request.form.get('question')
-    a = request.form.get('opt_a')
-    b = request.form.get('opt_b')
-    c = request.form.get('opt_c')
-    d = request.form.get('opt_d')
-    corr = request.form.get('correct')
-    with get_db() as conn:
-        conn.execute("INSERT INTO questions (question, opt_a, opt_b, opt_c, opt_d, correct) VALUES (?, ?, ?, ?, ?, ?)", (q, a, b, c, d, corr))
-        conn.commit()
-    log_staff_activity(session.get('user_role'), f"नवीन टेस्ट प्रश्न जोडला: {q}")
-    return redirect(request.referrer or '/')
-
-@app.route('/delete_question/<int:id>')
-def delete_question(id):
-    if session.get('user_role') not in ['Admin', 'Clerk']: return "Unauthorized", 403
-    with get_db() as conn:
-        conn.execute("DELETE FROM questions WHERE id=?", (id,))
-        conn.commit()
-    log_staff_activity(session.get('user_role'), f"टेस्ट प्रश्न हटवला (ID: {id})")
-    return redirect(request.referrer or '/')
-
-@app.route('/download_backup')
-def download_backup():
-    if session.get('user_role') != 'Admin': return "Unauthorized", 403
-    if os.path.exists(DB_NAME):
-        return send_file(DB_NAME, as_attachment=True)
-    return "Database file not found!", 404
-
+# ----------------- SYSTEM FUNCTIONAL HANDLERS -----------------
 @app.route('/upload_restore_backup', methods=['POST'])
 def upload_restore_backup():
     if session.get('user_role') != 'Admin': return "Unauthorized", 403
@@ -2200,28 +1969,6 @@ def save_attendance():
         conn.commit()
     return redirect('/admin?tab=att')
 
-@app.route('/attendance')
-def clerk_attendance_portal():
-    if session.get('user_role') not in ['Clerk', 'Admin', 'Manager']:
-        return redirect(url_for('login'))
-    with get_db() as conn:
-        students = conn.execute("SELECT * FROM students ORDER BY name ASC").fetchall()
-    return render_template_string('''<!DOCTYPE html>
-    <html lang="mr">
-    <head><meta charset="UTF-8"><title>हजेरी पोर्टल</title>
-    <style>body{font-family:sans-serif;background:#f8fafc;padding:20px;}</style>
-    </head><body>
-    <h2>📋 विद्यार्थी दैनिक हजेरी</h2>
-    <form action="/save_attendance" method="POST">
-        <input type="hidden" name="att_type" value="ऑफिस हजेरी">
-        <table border="1" cellpadding="8" style="border-collapse:collapse; background:white; width:100%; max-width:600px;">
-        <tr style="background:#0b3c5d; color:white;"><th>विद्यार्थी</th><th>हजेरी</th></tr>
-        {% for s in students %}
-        <tr><td><b>{{ s.name }}</b></td><td><label><input type="radio" name="status_{{ s.id }}" value="हजर" checked> P</label> <label style="color:red; margin-left:10px;"><input type="radio" name="status_{{ s.id }}" value="गैरहजर"> A</label></td></tr>
-        {% endfor %}
-        </table><br><button type="submit" style="background:green; color:white; padding:8px 15px; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">💾 हजेरी सेव्ह करा</button>
-    </form></body></html>''', students=students)
-
 @app.route('/add_staff', methods=['POST'])
 def add_staff():
     with get_db() as conn:
@@ -2250,21 +1997,6 @@ def delete_staff(id):
     with get_db() as conn:
         conn.execute("DELETE FROM staff WHERE id=?", (id,))
         conn.commit()
-    return redirect('/admin?tab=staff')
-
-@app.route('/pay_staff_salary/<int:id>', methods=['POST'])
-def pay_staff_salary(id):
-    from_date = request.form.get('from_date', '')
-    to_date = request.form.get('to_date', '')
-    amount = safe_float(request.form.get('amount'))
-    with get_db() as conn:
-        staff = conn.execute("SELECT name FROM staff WHERE id=?", (id,)).fetchone()
-        staff_name = staff['name'] if staff else f"ID {id}"
-        desc = f"स्टाफ पगार: {staff_name} (कालावधी: {from_date} ते {to_date})"
-        conn.execute("INSERT INTO expenses (exp_date, category, description, amount, logged_by) VALUES (date('now'), 'Staff Salary', ?, ?, 'Admin')", (desc, amount))
-        conn.execute("UPDATE staff SET advance_paid = 0 WHERE id=?", (id,))
-        conn.commit()
-    log_staff_activity("Admin", f"पगार वाटप: {staff_name} - ₹{amount} ({from_date} ते {to_date})")
     return redirect('/admin?tab=staff')
 
 @app.route('/assign_task', methods=['POST'])
@@ -2310,6 +2042,7 @@ def delete_student(id):
         conn.commit()
     return redirect('/admin?tab=students')
 
+# ----------------- ATTRACTIVE OFFICIAL RECEIPTS & SLIPS -----------------
 @app.route('/print_grocery_slip', methods=['POST'])
 def print_grocery_slip():
     items = request.form.getlist('items')
@@ -2320,7 +2053,7 @@ def print_grocery_slip():
             <div style="text-align:center; border-bottom:2px solid #065f46; padding-bottom:12px;">
                 <h2 style="margin:0; color:#065f46; font-size:24px;">श्रीगुरु करिअर अकॅडमी (कॅन्टीन विभाग)</h2>
                 <p style="margin:4px 0 0; font-size:12px;">आडूर, ता. करवीर, जि. कोल्हापूर | संपर्क: ९९२११११९६०</p>
-                <b style="display:inline-block; margin-top:8px; background:#065f46; color:white; padding:3px 12px; border-radius:4px; font-size:13px;">किराणा व भाजीपाला खरेदी मागणी पत्र (परिपूर्ण यादी)</b>
+                <b style="display:inline-block; margin-top:8px; background:#065f46; color:white; padding:3px 12px; border-radius:4px; font-size:13px;">किराणा व भाजीपाला खरेदी मागणी पत्र</b>
             </div>
             <div style="display:flex; justify-content:space-between; margin:15px 0 10px; font-size:13px;">
                 <div><b>दिनांक:</b> {date.today().strftime('%d/%m/%Y')}</div>
@@ -2388,412 +2121,36 @@ def print_receipt(id):
     </body></html>'''
     return render_template_string(html)
 
-@app.route('/student_report/<int:student_id>', methods=['GET', 'POST'])
-def student_report(student_id):
-    if 'user_role' not in session and 'role' not in session:
-        return redirect(url_for('login'))
-
+@app.route('/update_diet/<int:id>', methods=['POST'])
+def update_diet(id):
     with get_db() as conn:
-        student = conn.execute("SELECT * FROM students WHERE id = ?", (student_id,)).fetchone()
-        if not student:
-            return "विद्यार्थी सापडला नाही!", 404
-
-        if request.method == 'POST':
-            diet_plan = request.form.get('diet_plan')
-            admin_remark = request.form.get('admin_remark')
-            conn.execute("UPDATE students SET diet_plan = ?, admin_remark = ? WHERE id = ?", (diet_plan, admin_remark, student_id))
-            conn.commit()
-            return redirect(url_for('student_report', student_id=student_id))
-
-        try:
-            attendance_records = conn.execute("""
-                SELECT att_date as date, status, att_type as marked_by 
-                FROM attendance 
-                WHERE person_id = ? 
-                ORDER BY att_date DESC LIMIT 30
-            """, (student_id,)).fetchall()
-        except Exception:
-            attendance_records = []
-
-        try:
-            physical_records = conn.execute("""
-                SELECT * FROM physical_tests 
-                WHERE student_id = ? 
-                ORDER BY test_date DESC
-            """, (student_id,)).fetchall()
-        except Exception:
-            physical_records = []
-
-        try:
-            written_records = conn.execute("""
-                SELECT * FROM written_tests 
-                WHERE student_id = ? 
-                ORDER BY test_date DESC
-            """, (student_id,)).fetchall()
-        except Exception:
-            written_records = []
-
-        try:
-            care_logs = conn.execute("""
-                SELECT * FROM student_care_log 
-                WHERE student_id = ? 
-                ORDER BY care_date DESC
-            """, (student_id,)).fetchall()
-        except Exception:
-            care_logs = []
-
-        try:
-            discipline_logs = conn.execute("""
-                SELECT * FROM discipline_records 
-                WHERE student_id = ? 
-                ORDER BY record_date DESC
-            """, (student_id,)).fetchall()
-        except Exception:
-            discipline_logs = []
-
-        try:
-            kit_logs = conn.execute("""
-                SELECT * FROM kit_distribution 
-                WHERE student_id = ? 
-                ORDER BY issue_date DESC
-            """, (student_id,)).fetchall()
-        except Exception:
-            kit_logs = []
-
-    return render_template('student_report.html', 
-                           student=student, 
-                           attendance=attendance_records, 
-                           physical_records=physical_records,
-                           written_records=written_records,
-                           care_logs=care_logs,
-                           discipline_logs=discipline_logs,
-                           kit_logs=kit_logs)
-
-@app.route('/library')
-def library_dashboard():
-    with get_db() as conn:
-        books = conn.execute("SELECT * FROM books ORDER BY id DESC").fetchall()
-        issues = conn.execute("SELECT * FROM book_issues WHERE status = 'Issued' ORDER BY id DESC").fetchall()
-        seats = conn.execute("SELECT * FROM study_lab_seats ORDER BY seat_number ASC").fetchall()
-    return render_template('library.html', books=books, issues=issues, seats=seats)
-
-@app.route('/add_book', methods=['POST'])
-def add_book():
-    copies = int(request.form.get('copies', 1))
-    with get_db() as conn:
-        conn.execute("INSERT INTO books (title, author, category, total_copies, available_copies) VALUES (?, ?, ?, ?, ?)",
-                     (request.form.get('title'), request.form.get('author'), request.form.get('category'), copies, copies))
+        conn.execute("UPDATE mess_diet SET breakfast=?, lunch=?, dinner=?, special_diet=? WHERE id=?", (request.form.get('breakfast'), request.form.get('lunch'), request.form.get('dinner'), request.form.get('special_diet'), id))
         conn.commit()
-    return redirect('/library')
+    return redirect(request.referrer or '/')
 
-@app.route('/issue_book', methods=['POST'])
-def issue_book():
-    bid = request.form.get('book_id')
+@app.route('/add_care_log', methods=['POST'])
+def add_care_log():
     with get_db() as conn:
-        conn.execute("INSERT INTO book_issues (book_id, student_name, issue_date, status) VALUES (?, ?, ?, 'Issued')",
-                     (bid, request.form.get('student_name'), request.form.get('issue_date')))
-        conn.execute("UPDATE books SET available_copies = available_copies - 1 WHERE id = ? AND available_copies > 0", (bid,))
+        conn.execute("INSERT INTO student_care_log (student_id, care_date, issue_details, special_diet_note) VALUES (?, ?, ?, ?)", (safe_int(request.form.get('student_id')), date.today().strftime("%Y-%m-%d"), request.form.get('issue_details'), request.form.get('special_diet_note')))
         conn.commit()
-    return redirect('/library')
+    return redirect('/manager?tab=care')
 
-@app.route('/return_book/<int:issue_id>/<int:book_id>')
-def return_book(issue_id, book_id):
-    today = date.today().strftime('%Y-%m-%d')
+@app.route('/download_backup')
+def download_backup(): return send_file(DB_NAME, as_attachment=True)
+
+@app.route('/uploads/<filename>')
+def uploaded_file(filename): return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+@app.route('/export_students_csv')
+def export_students_csv():
     with get_db() as conn:
-        conn.execute("UPDATE book_issues SET return_date = ?, status = 'Returned' WHERE id = ?", (today, issue_id))
-        conn.execute("UPDATE books SET available_copies = available_copies + 1 WHERE id = ?", (book_id,))
-        conn.commit()
-    return redirect('/library')
-
-PUBLIC_INQUIRY_HTML = '''<!DOCTYPE html>
-<html lang="mr">
-<head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>प्रवेश चौकशी - श्रीगुरु करिअर अकॅडमी</title>
-    <style>
-        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
-        body { margin: 0; background: linear-gradient(135deg, #0b2545, #134e4a); color: #1e293b; min-height: 100vh; padding: 20px 10px; display: flex; align-items: center; justify-content: center; }
-        .card { background: white; max-width: 520px; width: 100%; border-radius: 12px; padding: 25px; box-shadow: 0 15px 30px rgba(0,0,0,0.3); border-top: 5px solid #d97706; }
-        h2 { margin: 0 0 5px; color: #0b2545; font-size: 22px; text-align: center; }
-        p.sub { margin: 0 0 20px; text-align: center; font-size: 13px; color: #64748b; line-height: 1.5; }
-        label { font-size: 13px; font-weight: bold; margin-bottom: 4px; display: block; color: #334155; }
-        input, select { width: 100%; padding: 10px; border: 1.5px solid #cbd5e1; border-radius: 6px; margin-bottom: 14px; font-size: 14px; }
-        .btn-submit { width: 100%; background: linear-gradient(135deg, #059669, #10b981); color: white; padding: 12px; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; }
-        .banner { background: #eff6ff; border: 1px dashed #3b82f6; padding: 10px; border-radius: 6px; font-size: 12px; text-align: center; margin-bottom: 15px; color: #1e40af; }
-    </style>
-</head>
-<body>
-<div class="card">
-    <h2>⚔️ श्रीगुरु करिअर अकॅडमी, आडूर</h2>
-    <p class="sub">पोलीस व सैन्य भरती पूर्व प्रशिक्षण केंद्र (जि. कोल्हापूर)<br><b>मोफत प्रवेश व हॉस्टेल माहिती अर्ज</b></p>
-    <div class="banner">✨ फिजिकल ग्राउंड + डिजिटल पॅनेल क्लास + हॉस्टेल व मेस सोय</div>
-    {% if msg %}<div style="background:#dcfce7; color:#166534; padding:10px; border-radius:6px; margin-bottom:15px; text-align:center; font-weight:bold;">{{ msg }}</div>{% endif %}
-    <form method="POST" action="/inquiry">
-        <label>विद्यार्थ्याचे पूर्ण नाव *:</label>
-        <input type="text" name="student_name" placeholder="उदा. सचिन दत्तात्रय चौगले" required>
-        
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-            <div>
-                <label>जिल्हा *:</label>
-                <input type="text" name="district" placeholder="उदा. कोल्हापूर / सातारा" required>
-            </div>
-            <div>
-                <label>तालुका:</label>
-                <input type="text" name="taluka" placeholder="उदा. करवीर">
-            </div>
-        </div>
-
-        <label>व्हॉट्सॲप / संपर्क मोबाईल *:</label>
-        <input type="tel" name="phone" placeholder="१० अंकी मोबाईल नंबर" pattern="[0-9]{10}" required>
-
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-            <div>
-                <label>कोणत्या भरतीसाठी? *:</label>
-                <select name="course">
-                    <option value="महाराष्ट्र पोलीस भरती">महाराष्ट्र पोलीस भरती</option>
-                    <option value="आर्मी भरती (अग्निवीर)">आर्मी भरती (अग्निवीर)</option>
-                    <option value="SSC GD भरती">SSC GD भरती</option>
-                    <option value="वनरक्षक / इतर भरती">वनरक्षक / इतर भरती</option>
-                </select>
-            </div>
-            <div>
-                <label>हॉस्टेल/मेस हवी का?:</label>
-                <select name="hostel_interest">
-                    <option value="होय (हॉस्टेल आवश्यक)">होय (हॉस्टेल आवश्यक)</option>
-                    <option value="नाही (फक्त ग्राउंड व क्लास)">नाही (फक्त ग्राउंड व क्लास)</option>
-                </select>
-            </div>
-        </div>
-
-        <button type="submit" class="btn-submit">📲 मोफत माहिती मिळवा / नोंदणी करा</button>
-    </form>
-    <div style="text-align:center; margin-top:15px; font-size:12px; color:#64748b;">
-        संपर्क: ९९२११११९६० | आडूर, ता. करवीर, जि. कोल्हापूर
-    </div>
-</div>
-</body>
-</html>'''
-
-@app.route('/inquiry', methods=['GET', 'POST'])
-def public_inquiry():
-    msg = None
-    if request.method == 'POST':
-        s_name = request.form.get('student_name')
-        dist = request.form.get('district')
-        tal = request.form.get('taluka', '')
-        phone = request.form.get('phone')
-        course = request.form.get('course')
-        hostel = request.form.get('hostel_interest', 'होय')
-        t_date = date.today().strftime("%Y-%m-%d")
-
-        with get_db() as conn:
-            conn.execute("""
-                INSERT INTO admission_inquiries (inquiry_date, student_name, district, taluka, phone, course, hostel_interest)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (t_date, s_name, dist, tal, phone, course, hostel))
-            conn.commit()
-        log_staff_activity("Website", f"नवीन चौकशी अर्ज: {s_name} ({dist} - {course})")
-        msg = "तुमची नोंदणी यशस्वी झाली आहे! श्रीगुरु अकॅडमीकडून तुम्हाला लवकरच सविस्तर माहितीचा कॉल येईल."
-    return render_template_string(PUBLIC_INQUIRY_HTML, msg=msg)
-
-MOCK_TEST_HTML = '''<!DOCTYPE html>
-<html lang="mr">
-<head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>महाराष्ट्र पोलीस भरती - मोफत ऑनलाइन सराव टेस्ट</title>
-    <style>
-        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
-        body { margin: 0; background: #f1f5f9; color: #1e293b; padding: 15px; }
-        .box { max-width: 650px; margin: 0 auto; background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-top: 5px solid #0284c7; }
-        h2 { margin: 0 0 5px; color: #0b2545; text-align: center; }
-        .q-item { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e2e8f0; }
-        .q-text { font-weight: bold; margin-bottom: 8px; font-size: 15px; color: #0f172a; }
-        .opt-label { display: block; margin-bottom: 6px; font-size: 14px; cursor: pointer; }
-        input[type="text"], input[type="tel"] { width: 100%; padding: 9px; border: 1.5px solid #cbd5e1; border-radius: 6px; margin-bottom: 10px; }
-        .btn-submit { width: 100%; background: #059669; color: white; padding: 12px; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; }
-    </style>
-</head>
-<body>
-<div class="box">
-    <h2>🎯 श्रीगुरु राज्यस्तरीय महासराव टेस्ट</h2>
-    <p style="text-align:center; color:#64748b; font-size:13px; margin-bottom:20px;">पोलीस व सैन्य भरती विशेष सराव परीक्षा</p>
-
-    {% if score is not none %}
-    <div style="background:#f0fdf4; border:2px solid #86efac; border-radius:8px; padding:20px; text-align:center; margin-bottom:20px;">
-        <h3 style="margin:0 0 10px; color:#166534;">अभिनंदन, {{ name }}! 🎉</h3>
-        <p style="font-size:18px; margin:5px 0;">तुमचा स्कोअर: <b style="color:#059669; font-size:24px;">{{ score }} / {{ total }}</b></p>
-        <p style="color:#475569; font-size:14px; margin-top:10px;">
-            लेखी परीक्षेत आउट ऑफ गुण मिळवण्यासाठी आणि प्रत्यक्ष फिजिकल सरावासाठी<br>
-            <b>श्रीगुरु करिअर अकॅडमी, आडूर (जि. कोल्हापूर)</b> मध्ये आजच संपर्क साधा!
-        </p>
-        <a href="https://wa.me/919921111960?text=नमस्कार%20सर,%20मी%20ऑनलाइन%20टेस्ट%20दिली.%20माझा%20स्कोअर%20{{ score }}/{{ total }}%20आहे.%20मला%20ॲडमिशनची%20माहिती%20हवी%20आहे." 
-           style="display:inline-block; background:#25D366; color:white; padding:10px 20px; border-radius:6px; text-decoration:none; font-weight:bold; margin-top:10px;">
-           📲 ॲडमिशन माहितीसाठी WhatsApp करा
-        </a>
-    </div>
-    {% endif %}
-
-    <form method="POST" action="/test">
-        <div style="background:#f8fafc; padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid #cbd5e1;">
-            <label style="font-weight:bold; font-size:13px;">विद्यार्थ्याचे नाव *:</label>
-            <input type="text" name="student_name" placeholder="उदा. गणेश पाटील" required>
-            
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                <div>
-                    <label style="font-weight:bold; font-size:13px;">जिल्हा *:</label>
-                    <input type="text" name="district" placeholder="उदा. सातारा / सांगली" required>
-                </div>
-                <div>
-                    <label style="font-weight:bold; font-size:13px;">मोबाईल नंबर *:</label>
-                    <input type="tel" name="phone" placeholder="१० अंकी नंबर" pattern="[0-9]{10}" required>
-                </div>
-            </div>
-        </div>
-
-        {% for q in questions %}
-        <div class="q-item">
-            <div class="q-text">प्र. {{ loop.index }}. {{ q.question }}</div>
-            <label class="opt-label"><input type="radio" name="q_{{ q.id }}" value="A" required> A) {{ q.opt_a }}</label>
-            <label class="opt-label"><input type="radio" name="q_{{ q.id }}" value="B"> B) {{ q.opt_b }}</label>
-            <label class="opt-label"><input type="radio" name="q_{{ q.id }}" value="C"> C) {{ q.opt_c }}</label>
-            <label class="opt-label"><input type="radio" name="q_{{ q.id }}" value="D"> D) {{ q.opt_d }}</label>
-        </div>
-        {% endfor %}
-
-        <button type="submit" class="btn-submit">✅ टेस्ट सबमिट करा व निकाल पहा</button>
-    </form>
-</div>
-</body>
-</html>'''
-
-@app.route('/test', methods=['GET', 'POST'])
-def mock_test():
-    score = None
-    name = ""
-    with get_db() as conn:
-        questions = conn.execute("SELECT * FROM questions").fetchall()
-    total = len(questions)
-
-    if request.method == 'POST':
-        name = request.form.get('student_name')
-        dist = request.form.get('district')
-        phone = request.form.get('phone')
-        
-        current_score = 0
-        for q in questions:
-            user_ans = request.form.get(f"q_{q['id']}")
-            if user_ans and user_ans.strip().upper() == q['correct'].strip().upper():
-                current_score += 1
-
-        t_date = date.today().strftime("%Y-%m-%d")
-        with get_db() as conn:
-            conn.execute("""
-                INSERT INTO mock_test_leads (test_date, student_name, district, phone, score, total_marks, test_name)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (t_date, name, dist, phone, current_score, total, "महाराष्ट्र पोलीस सराव टेस्ट"))
-            conn.commit()
-        score = current_score
-
-    return render_template_string(MOCK_TEST_HTML, questions=questions, score=score, total=total, name=name)
-
-@app.route('/inquiries')
-def inquiry_desk():
-    if session.get('user_role') not in ['Admin', 'Clerk', 'Manager']:
-        return redirect(url_for('login'))
-    
-    with get_db() as conn:
-        inquiries = conn.execute("SELECT * FROM admission_inquiries ORDER BY id DESC").fetchall()
-        test_leads = conn.execute("SELECT * FROM mock_test_leads ORDER BY id DESC LIMIT 50").fetchall()
-    
-    html = '''<!DOCTYPE html>
-    <html lang="mr"><head><meta charset="UTF-8"><title>प्रवेश चौकशी व कॉलिंग डेस्क</title>
-    <style>
-        body { font-family:'Segoe UI',sans-serif; background:#f8fafc; padding:15px; color:#1e293b; margin:0; }
-        .header { background:#0b3c5d; color:white; padding:12px 20px; display:flex; justify-content:space-between; align-items:center; border-radius:8px; margin-bottom:20px; }
-        table { width:100%; border-collapse:collapse; background:white; font-size:13px; margin-top:10px; border-radius:6px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.1); }
-        th, td { border:1px solid #cbd5e1; padding:8px 10px; text-align:left; }
-        th { background:#1e293b; color:white; font-weight:600; }
-        .btn-wa { background:#25D366; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-weight:bold; font-size:12px; }
-        .btn-call { background:#0284c7; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-weight:bold; font-size:12px; margin-right:4px; }
-    </style></head><body>
-
-    <div class="header">
-        <h3 style="margin:0;">📞 श्रीगुरु ॲडमिशन कॉलिंग डेस्क (एकूण अर्ज: {{ inquiries|length }})</h3>
-        <div>
-            <a href="/" style="color:white; text-decoration:none; font-weight:bold; margin-right:15px;">🏠 मुख्य डॅशबोर्ड</a>
-            <a href="/inquiry" target="_blank" style="color:#fde047; text-decoration:none; font-weight:bold; margin-right:15px;">🌐 प्रवेश अर्ज उघडा</a>
-            <a href="/test" target="_blank" style="color:#67e8f9; text-decoration:none; font-weight:bold;">📝 मोफत टेस्ट उघडा</a>
-        </div>
-    </div>
-
-    <h4 style="color:#0b3c5d; margin:15px 0 5px;">📋 थेट प्रवेश चौकशी अर्ज (Admission Inquiries):</h4>
-    <table>
-        <thead><tr><th>तारीख</th><th>नाव</th><th>जिल्हा (तालुका)</th><th>कोर्स</th><th>हॉस्टेल</th><th>१-क्लिक संपर्क</th><th>स्थिती / शेरा</th><th>बदल</th></tr></thead>
-        <tbody>
-            {% for inq in inquiries %}
-            <form action="/update_inquiry/{{ inq.id }}" method="POST">
-            <tr>
-                <td>{{ inq.inquiry_date }}</td>
-                <td><b>{{ inq.student_name }}</b></td>
-                <td>{{ inq.district }} ({{ inq.taluka or '-' }})</td>
-                <td><span style="background:#e0f2fe; padding:2px 6px; border-radius:4px;">{{ inq.course }}</span></td>
-                <td>{{ inq.hostel_interest }}</td>
-                <td>
-                    <a href="tel:{{ inq.phone }}" class="btn-call">📞 कॉल</a>
-                    <a href="https://wa.me/91{{ inq.phone }}?text=नमस्कार%20{{ inq.student_name }},%20श्रीगुरु%20करिअर%20अकॅडमी%20आडूर%20मध्ये%20आपली%20चौकशी%20प्राप्त%20झाली.%20नवीन%20बॅचची%20माहिती%20खालीलप्रमाणे:" target="_blank" class="btn-wa">📲 WA</a>
-                </td>
-                <td>
-                    <select name="call_status" style="padding:3px; border-radius:4px; font-size:12px;">
-                        <option value="नवीन चौकशी (New)" {% if inq.call_status=='नवीन चौकशी (New)' %}selected{% endif %}>नवीन चौकशी</option>
-                        <option value="कॉल झाला - विचारून सांगणार" {% if inq.call_status=='कॉल झाला - विचारून सांगणार' %}selected{% endif %}>विचारून सांगणार</option>
-                        <option value="भेट देणार (Visiting)" {% if inq.call_status=='भेट देणार (Visiting)' %}selected{% endif %}>भेट देणार</option>
-                        <option value="प्रवेश निश्चित (Admitted)" {% if inq.call_status=='प्रवेश निश्चित (Admitted)' %}selected{% endif %}>प्रवेश निश्चित</option>
-                    </select><br>
-                    <input type="text" name="staff_note" value="{{ inq.staff_note or '' }}" placeholder="कॉल शेरा..." style="width:90%; margin-top:4px; padding:3px; font-size:12px;">
-                </td>
-                <td><button type="submit" style="background:#059669; color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer;">💾</button></td>
-            </tr>
-            </form>
-            {% else %}
-            <tr><td colspan="8" style="text-align:center; color:#64748b;">अद्याप कोणतीही चौकशी आलेली नाही.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <h4 style="color:#0b3c5d; margin:25px 0 5px;">📝 मोफत ऑनलाइन टेस्ट लीड्स व निकाल (Mock Test Leads):</h4>
-    <table>
-        <thead><tr><th>तारीख</th><th>नाव</th><th>जिल्हा</th><th>मोबाईल</th><th>मिळालेले गुण</th><th>१-क्लिक संपर्क</th></tr></thead>
-        <tbody>
-            {% for t in test_leads %}
-            <tr>
-                <td>{{ t.test_date }}</td>
-                <td><b>{{ t.student_name }}</b></td>
-                <td>{{ t.district }}</td>
-                <td>{{ t.phone }}</td>
-                <td><b style="color:#059669;">{{ t.score }} / {{ t.total_marks }}</b></td>
-                <td>
-                    <a href="tel:{{ t.phone }}" class="btn-call">📞 कॉल</a>
-                    <a href="https://wa.me/91{{ t.phone }}?text=नमस्कार%20{{ t.student_name }},%20श्रीगुरु%20अकॅडमीच्या%20टेस्टमध्ये%20तुम्हाला%20{{ t.score }}/{{ t.total_marks }}%20गुण%20मिळाले!%20प्रवेशासाठी%20आमच्याशी%20जोडले%20रहा." target="_blank" class="btn-wa">📲 WA निकाल</a>
-                </td>
-            </tr>
-            {% else %}
-            <tr><td colspan="6" style="text-align:center; color:#64748b;">अद्याप कोणीही ऑनलाइन टेस्ट सोडवलेली नाही.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    </body></html>'''
-    return render_template_string(html, inquiries=inquiries, test_leads=test_leads)
-
-@app.route('/update_inquiry/<int:id>', methods=['POST'])
-def update_inquiry(id):
-    c_status = request.form.get('call_status')
-    note = request.form.get('staff_note')
-    with get_db() as conn:
-        conn.execute("UPDATE admission_inquiries SET call_status=?, staff_note=? WHERE id=?", (c_status, note, id))
-        conn.commit()
-    return redirect('/inquiries')
-
-init_db()
+        students = conn.execute("SELECT * FROM students").fetchall()
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['Reg No', 'नाव', 'कोर्स', 'मोबाईल', 'एकूण फी', 'जमा फी'])
+    for s in students:
+        writer.writerow([f"REG-{s['id']}", s['name'], s['course'], s['phone'], s['total_fees'], s['paid_fees']])
+    return Response(output.getvalue().encode('utf-8-sig'), mimetype="text/csv", headers={"Content-disposition": "attachment; filename=Shreeguru_Students.csv"})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
