@@ -1,13 +1,13 @@
 import os
-import sqlite3
+import sqlite3   
 import shutil
-from datetime import date, datetime
-from flask import Flask, redirect, render_template_string, request, send_file, send_from_directory, url_for, session, Response
+from datetime import date, datetime 
+from flask import Flask, redirect, render_template, render_template_string, request, send_file, send_from_directory, url_for, session, Response
 from werkzeug.utils import secure_filename
 import io
 import csv
 import urllib.parse
-
+ 
 app = Flask(__name__)
 app.secret_key = "shreeguru_complete_bulletproof_v43_5parts"
 DB_NAME = "shreeguru_master_v43.db"
@@ -465,6 +465,67 @@ MANAGER_LAYOUT = '''<!DOCTYPE html>
                     <label class="g-label"><input type="checkbox" name="items" value="शेंगदाणे"> शेंगदाणे: <input type="text" name="qty_शेंगदाणे" placeholder="५ kg" style="width:75px;"></label>
                     <label class="g-label"><input type="checkbox" name="items" value="गॅस सिलिंडर"> LPG सिलिंडर: <input type="text" name="qty_गॅस सिलिंडर" placeholder="१ नग" style="width:75px;"></label>
                     <label class="g-label"><input type="checkbox" name="items" value="भांडी साबण"> भांडी साबण बार: <input type="text" name="qty_भांडी साबण" placeholder="४ बार" style="width:75px;"></label>
+                    <br><br><b style="color:#0284c7;">भाजीपाला व ताजी फळे:</b><br><br>
+<label class="g-label"><input type="checkbox" name="items" value="आले"> आले: <input type="text" name="qty_आले" value="200 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="कोथिंबीर"> कोथिंबीर: <input type="text" name="qty_कोथिंबीर" value="५ पेंढ्या"></label>
+<label class="g-label"><input type="checkbox" name="items" value="पुदीना"> पुदीना: <input type="text" name="qty_पुदीना" value="३ पेंढ्या"></label>
+<label class="g-label"><input type="checkbox" name="items" value="कडीपत्ता"> कडीपत्ता: <input type="text" name="qty_कडीपत्ता" value="५ पेंढ्या"></label>
+<label class="g-label"><input type="checkbox" name="items" value="शेवगा शेंग"> शेवगा शेंग: <input type="text" name="qty_शेवगा शेंग" value="1 kg"></label>
+<label class="g-label"><input type="checkbox" name="items" value="टोमॅटो"> टोमॅटो: <input type="text" name="qty_टोमॅटो" value="2 kg"></label>
+<label class="g-label"><input type="checkbox" name="items" value="मोठा कांदा"> मोठा कांदा: <input type="text" name="qty_मोठा कांदा" value="6 kg"></label>
+<label class="g-label"><input type="checkbox" name="items" value="हिरवी मिरची"> हिरवी मिरची: <input type="text" name="qty_हिरवी मिरची" value="250 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="बटाटा"> बटाटा: <input type="text" name="qty_बटाटा" value="5 kg"></label>
+<label class="g-label"><input type="checkbox" name="items" value="फ्लॉवर"> फ्लॉवर: <input type="text" name="qty_फ्लॉवर" value="2 नग"></label>
+<label class="g-label"><input type="checkbox" name="items" value="शिमला मिरची"> शिमला मिरची: <input type="text" name="qty_शिमला मिरची" value="1 kg"></label>
+<label class="g-label"><input type="checkbox" name="items" value="गाजर"> गाजर: <input type="text" name="qty_गाजर" value="1 kg"></label>
+<label class="g-label"><input type="checkbox" name="items" value="लिंबू"> लिंबू: <input type="text" name="qty_लिंबू" value="10 नग"></label>
+<label class="g-label"><input type="checkbox" name="items" value="पालक"> पालक: <input type="text" name="qty_पालक" value="2 पेंढ्या"></label>
+<label class="g-label"><input type="checkbox" name="items" value="काकडी"> काकडी: <input type="text" name="qty_काकडी" value="2 kg"></label>
+<label class="g-label"><input type="checkbox" name="items" value="कोबी"> कोबी: <input type="text" name="qty_कोबी" value="1 kg"></label>
+<label class="g-label"><input type="checkbox" name="items" value="बीट"> बीट: <input type="text" name="qty_बीट" value="1 kg"></label>
+<label class="g-label"><input type="checkbox" name="items" value="दुधी भोपळा"> दुधी भोपळा: <input type="text" name="qty_दुधी भोपळा" value="1 नग"></label>
+<label class="g-label"><input type="checkbox" name="items" value="सफरचंद"> सफरचंद: <input type="text" name="qty_सफरचंद" value="1 kg"></label>
+
+<br><br><b style="color:#0284c7;">बेकरी व दुग्धजन्य:</b><br><br>
+<label class="g-label"><input type="checkbox" name="items" value="खवा"> खवा: <input type="text" name="qty_खवा" value="100 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="तूप"> तूप: <input type="text" name="qty_तूप" value="500 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="पनीर"> पनीर: <input type="text" name="qty_पनीर" value="1 kg"></label>
+<label class="g-label"><input type="checkbox" name="items" value="बटर"> बटर: <input type="text" name="qty_बटर" value="100 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="मलाई दही"> मलाई दही: <input type="text" name="qty_मलाई दही" value="10 kg"></label>
+<label class="g-label"><input type="checkbox" name="items" value="फ्रेश क्रीम"> फ्रेश क्रीम: <input type="text" name="qty_फ्रेश क्रीम" value="1 पॅकेट"></label>
+
+<br><br><b style="color:#0284c7;">खडे मसाले, डाळी व किराणा:</b><br><br>
+<label class="g-label"><input type="checkbox" name="items" value="काजू पाकळी"> काजू पाकळी: <input type="text" name="qty_काजू पाकळी" value="500 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="लसूण पाकळी"> लसूण पाकळी: <input type="text" name="qty_लसूण पाकळी" value="250 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="खोबरे कीस"> खोबरे कीस: <input type="text" name="qty_खोबरे कीस" value="500 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="हिंग डबी"> हिंग डबी: <input type="text" name="qty_हिंग डबी" value="1 डबी"></label>
+<label class="g-label"><input type="checkbox" name="items" value="लवंग"> लवंग: <input type="text" name="qty_लवंग" value="25 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="दालचिनी"> दालचिनी: <input type="text" name="qty_दालचिनी" value="25 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="हिरवे वेलदोडे"> हिरवे वेलदोडे: <input type="text" name="qty_हिरवे वेलदोडे" value="25 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="तमालपत्री"> तमालपत्री: <input type="text" name="qty_तमालपत्री" value="10 ड"></label>
+<label class="g-label"><input type="checkbox" name="items" value="शहाजिरे"> शहाजिरे: <input type="text" name="qty_शहाजिरे" value="50 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="दगड फूल"> दगड फूल: <input type="text" name="qty_दगड फूल" value="10 ड"></label>
+<label class="g-label"><input type="checkbox" name="items" value="काळी मिरी"> काळी मिरी: <input type="text" name="qty_काळी मिरी" value="10 ड"></label>
+<label class="g-label"><input type="checkbox" name="items" value="बडीशेप"> बडीशेप: <input type="text" name="qty_बडीशेप" value="10 ड"></label>
+<label class="g-label"><input type="checkbox" name="items" value="कस्तुरी मेथी"> कस्तुरी मेथी: <input type="text" name="qty_कस्तुरी मेथी" value="50 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="बिर्याणी मसाला"> बिर्याणी मसाला: <input type="text" name="qty_बिर्याणी मसाला" value="50 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="मूगडाळ"> मूगडाळ: <input type="text" name="qty_मूगडाळ" value="1 kg"></label>
+<label class="g-label"><input type="checkbox" name="items" value="धने पावडर"> धने पावडर: <input type="text" name="qty_धने पावडर" value="100 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="जिरे पावडर"> जिरे पावडर: <input type="text" name="qty_जिरे पावडर" value="100 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="शेवया भाजक्या"> शेवया भाजक्या: <input type="text" name="qty_शेवया भाजक्या" value="500 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="चना डाळीचे पीठ"> चना डाळीचे पीठ: <input type="text" name="qty_चना डाळीचे पीठ" value="2 kg"></label>
+<label class="g-label"><input type="checkbox" name="items" value="मैदा"> मैदा: <input type="text" name="qty_मैदा" value="1 kg"></label>
+<label class="g-label"><input type="checkbox" name="items" value="बेदाणे"> बेदाणे: <input type="text" name="qty_बेदाणे" value="200 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="बदाम"> बदाम: <input type="text" name="qty_बदाम" value="200 gm"></label>
+<label class="g-label"><input type="checkbox" name="items" value="पिस्ता"> पिस्ता: <input type="text" name="qty_पिस्ता" value="50 gm"></label>
+
+<br><br><b style="color:#0284c7;">युटिलिटी व भांडी:</b><br><br>
+<label class="g-label"><input type="checkbox" name="items" value="पत्रावळी"> पत्रावळी: <input type="text" name="qty_पत्रावळी" value="100 नग"></label>
+<label class="g-label"><input type="checkbox" name="items" value="द्रोण"> द्रोण: <input type="text" name="qty_द्रोण" value="100 नग"></label>
+<label class="g-label"><input type="checkbox" name="items" value="ग्लास"> ग्लास: <input type="text" name="qty_ग्लास" value="100 नग"></label>
+<label class="g-label"><input type="checkbox" name="items" value="चमचे"> चमचे: <input type="text" name="qty_चमचे" value="100 नग"></label>
+<label class="g-label"><input type="checkbox" name="items" value="पेपर रोल"> पेपर रोल: <input type="text" name="qty_पेपर रोल" value="1 नग"></label>
+<label class="g-label"><input type="checkbox" name="items" value="कापड / टॉवेल"> कापड / टॉवेल: <input type="text" name="qty_कापड / टॉवेल" value="2 नग"></label>
                 </div>
             </div>
         </form>
@@ -930,7 +991,7 @@ CLERK_LAYOUT = '''<!DOCTYPE html>
                     <td>{% if s.photo_filename %}<img src="/uploads/{{ s.photo_filename }}" width="35" height="40">{% else %}-{% endif %}</td>
                     <td>REG-{{ s.id }}</td><td><b>{{ s.name }}</b></td><td>{{ s.course }}</td><td>{{ s.phone }}</td>
                     <td style="color:red; font-weight:bold;">₹{{ (s.total_fees or 0) - (s.paid_fees or 0) }}</td>
-                    <td><a href="/receipt/{{ s.id }}" target="_blank" class="btn-act" style="background:#10b981;">🧾 पावती प्रिंट</a></td>
+                    <td><a href="/receipt/{{ s.id }}" target="_blank" class="btn-act" style="background:#10b981;">🧾 पावती प्रिंट</a><a href="/student_report/{{ s.id }}" target="_blank" class="btn-act" style="background:#6366f1; color:white; text-decoration:none; padding:4px 8px; border-radius:4px; font-weight:bold; margin-left:5px;">📋 स्टुडन्ट रिपोर्ट</a></td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -1197,7 +1258,7 @@ ADMIN_DASHBOARD_LAYOUT = '''<!DOCTYPE html>
                     <td>REG-{{ s.id }}</td><td><b>{{ s.name }}</b></td><td>{{ s.course }}</td><td>{{ s.phone }}</td>
                     <td style="color:red; font-weight:bold;">₹{{ (s.total_fees or 0) - (s.paid_fees or 0) }}</td>
                     <td>
-                        <a href="/receipt/{{ s.id }}" target="_blank" class="btn-act" style="background:#10b981;">🧾 पावती प्रिंट</a>
+                        <a href="/receipt/{{ s.id }}" target="_blank" class="btn-act" style="background:#10b981;">🧾 पावती प्रिंट</a> <a href="/student_report/{{ s.id }}" target="_blank" class="btn-act" style="background:#6366f1; color:white; text-decoration:none; padding:4px 8px; border-radius:4px; font-weight:bold; margin-left:5px;">📋 स्टुडन्ट रिपोर्ट</a> 
                         <a href="/delete_student/{{ s.id }}" onclick="return confirm('हटवायचे?')" class="btn-act" style="background:red;">हटवा</a>
                     </td>
                 </tr>
@@ -2120,37 +2181,459 @@ def print_receipt(id):
         <script>window.print();</script>
     </body></html>'''
     return render_template_string(html)
+ # ----- STUDENT FULL REPORT ROUTE -----
+@app.route('/student_report/<int:student_id>', methods=['GET', 'POST'])
+def student_report(student_id):
+    if 'role' not in session and 'user_role' not in session and 'username' not in session:
+        return redirect(url_for('login'))
 
-@app.route('/update_diet/<int:id>', methods=['POST'])
-def update_diet(id):
     with get_db() as conn:
-        conn.execute("UPDATE mess_diet SET breakfast=?, lunch=?, dinner=?, special_diet=? WHERE id=?", (request.form.get('breakfast'), request.form.get('lunch'), request.form.get('dinner'), request.form.get('special_diet'), id))
+        try:
+            conn.execute("ALTER TABLE students ADD COLUMN diet_plan TEXT")
+        except:
+            pass
+        try:
+            conn.execute("ALTER TABLE students ADD COLUMN admin_remark TEXT")
+        except:
+            pass
+
+        student = conn.execute("SELECT * FROM students WHERE id = ?", (student_id,)).fetchone()
+        if not student:
+            return "विद्यार्थी सापडला नाही!", 404
+
+        if request.method == 'POST':
+            diet_plan = request.form.get('diet_plan')
+            admin_remark = request.form.get('admin_remark')
+            conn.execute("UPDATE students SET diet_plan = ?, admin_remark = ? WHERE id = ?", (diet_plan, admin_remark, student_id))
+            conn.commit()
+            return redirect(url_for('student_report', student_id=student_id))
+
+           try:
+            staff_logs = conn.execute("""
+                SELECT * FROM staff_activities 
+                WHERE student_id = ? 
+                ORDER BY id DESC
+            """, (student_id,)).fetchall()
+        except Exception:
+            staff_logs = []
+        try:
+            attendance_records = conn.execute("""
+                SELECT date, status, marked_by 
+                FROM attendance 
+                WHERE student_id = ? 
+                ORDER BY date DESC
+            """, (student_id,)).fetchall()
+        except:
+            attendance_records = []
+
+        try:
+            ground_records = conn.execute("""
+                SELECT * FROM ground_records 
+                WHERE student_id = ? 
+                ORDER BY test_date DESC
+            """, (student_id,)).fetchall()
+        except:
+            ground_records = []
+
+    return render_template('student_report.html', 
+                           student=student, 
+                           logs=staff_logs, 
+                           attendance=attendance_records, 
+                           ground_records=ground_records)
+# ================= PHYSICAL / GROUND FITNESS TRACKER =================
+from datetime import datetime
+
+def calculate_ground_marks(gender, event_name, val):
+    try:
+        val = float(val)
+    except Exception:
+        return 0
+
+    gender = str(gender or 'पुरुष')
+
+    # --- पुरुष (BOYS) SCORING ---
+    if any(k in gender for k in ['पुरुष', 'Boy', 'Male', 'boy', 'male']):
+        if event_name == '1600m':
+            if val <= 310: return 20
+            elif val <= 330: return 18
+            elif val <= 350: return 15
+            elif val <= 370: return 12
+            elif val <= 390: return 9
+            elif val <= 410: return 5
+            else: return 0
+        elif event_name == '100m':
+            if val <= 11.50: return 15
+            elif val <= 12.50: return 12
+            elif val <= 13.50: return 9
+            elif val <= 14.50: return 6
+            elif val <= 15.50: return 3
+            else: return 0
+        elif event_name == 'shot_put':
+            if val >= 8.50: return 15
+            elif val >= 7.90: return 12
+            elif val >= 7.30: return 9
+            elif val >= 6.70: return 6
+            elif val >= 6.10: return 3
+            else: return 0
+    # --- महिला (GIRLS) SCORING ---
+    else:
+        if event_name == '800m':
+            if val <= 170: return 20
+            elif val <= 190: return 18
+            elif val <= 210: return 15
+            elif val <= 230: return 12
+            elif val <= 250: return 9
+            elif val <= 270: return 5
+            else: return 0
+        elif event_name == '100m':
+            if val <= 14.00: return 15
+            elif val <= 15.00: return 12
+            elif val <= 16.00: return 9
+            elif val <= 17.00: return 6
+            elif val <= 18.00: return 3
+            else: return 0
+        elif event_name == 'shot_put':
+            if val >= 6.00: return 15
+            elif val >= 5.50: return 12
+            elif val >= 5.00: return 9
+            elif val >= 4.50: return 6
+            elif val >= 4.00: return 3
+            else: return 0
+    return 0
+
+@app.route('/ground_tracker', methods=['GET', 'POST'])
+def ground_tracker():
+    user_role = session.get('role', '')
+    if not user_role:
+        return redirect(url_for('login'))
+
+    user_name = session.get('name', user_role)
+    today_str = datetime.now().strftime('%Y-%m-%d')
+    msg = None
+
+    try:
+        with get_db() as conn:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS ground_records (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    student_id INTEGER NOT NULL,
+                    test_date TEXT NOT NULL,
+                    event_name TEXT NOT NULL,
+                    raw_value REAL NOT NULL,
+                    marks INTEGER NOT NULL,
+                    trainer_name TEXT,
+                    remark TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            conn.commit()
+
+            if request.method == 'POST':
+                student_id = request.form.get('student_id')
+                test_date = request.form.get('test_date', today_str)
+                event_name = request.form.get('event_name')
+                raw_value = request.form.get('raw_value', 0)
+                remark = request.form.get('remark', '')
+
+                student = conn.execute("SELECT * FROM students WHERE id = ?", (student_id,)).fetchone()
+                gender = 'पुरुष'
+                if student:
+                    try:
+                        gender = student['gender'] if 'gender' in student.keys() else 'पुरुष'
+                    except Exception:
+                        gender = 'पुरुष'
+
+                marks = calculate_ground_marks(gender, event_name, raw_value)
+                conn.execute("""
+                    INSERT INTO ground_records (student_id, test_date, event_name, raw_value, marks, trainer_name, remark)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (student_id, test_date, event_name, raw_value, marks, user_name, remark))
+                conn.commit()
+                msg = f"चाचणी यशस्वीरित्या नोंदवली गेली! मिळालेले गुण: {marks}"
+
+            # सुरक्षितपणे विद्यार्थी आणणे
+            students = conn.execute("SELECT id, name FROM students ORDER BY name ASC").fetchall()
+            
+            # सुरक्षितपणे रेकॉर्ड आणणे
+            recent_records = conn.execute("""
+                SELECT g.id, g.student_id, g.test_date, g.event_name, g.raw_value, g.marks, g.trainer_name, g.remark, s.name as student_name
+                FROM ground_records g
+                LEFT JOIN students s ON g.student_id = s.id
+                ORDER BY g.id DESC LIMIT 25
+            """).fetchall()
+
+    except Exception as e:
+        return f"<h3>एरर आला आहे: {str(e)}</h3>"
+
+    student_options = "".join([f"<option value='{s['id']}'>{s['name']} (हजेरी क्र./ID: {s['id']})</option>" for s in students])
+    
+    table_rows = ""
+    for r in recent_records:
+        s_name = r['student_name'] if r['student_name'] else f"ID: {r['student_id']}"
+        t_name = r['trainer_name'] if r['trainer_name'] else '-'
+        rem = r['remark'] if r['remark'] else ''
+        table_rows += f"""<tr>
+            <td>{r['test_date']}</td>
+            <td><b>{s_name}</b></td>
+            <td>{r['event_name']}</td>
+            <td>{r['raw_value']}</td>
+            <td><b style='color:#065f46; font-size:16px;'>{r['marks']}</b></td>
+            <td>{t_name}<br><small style='color:#64748b;'>{rem}</small></td>
+        </tr>"""
+
+    if not table_rows:
+        table_rows = "<tr><td colspan='6' style='text-align:center; padding:15px; color:#64748b;'>अजून कोणतीही मैदानी चाचणी नोंदवलेली नाही.</td></tr>"
+
+    alert_box = f"<div style='background:#dcfce7; border:1px solid #86efac; color:#166534; padding:12px; border-radius:6px; margin-bottom:15px; font-weight:bold;'>✅ {msg}</div>" if msg else ""
+
+    html = f"""<!DOCTYPE html>
+<html lang="mr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>मैदानी चाचणी ट्रॅकर</title>
+<style>
+  body {{ font-family: 'Segoe UI', Tahoma, sans-serif; background: #f1f5f9; margin: 0; padding: 15px; color: #1e293b; }}
+  .container {{ max-width: 900px; margin: auto; background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); padding: 20px; }}
+  .header {{ display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #065f46; padding-bottom: 12px; margin-bottom: 20px; }}
+  .card {{ background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px; margin-bottom: 25px; }}
+  .form-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }}
+  label {{ font-size: 13px; font-weight: bold; margin-bottom: 5px; display: block; }}
+  input, select {{ width: 100%; padding: 9px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 14px; }}
+  .btn {{ background: #065f46; color: white; border: none; padding: 10px 22px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; }}
+  table {{ width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }}
+  th, td {{ border: 1px solid #e2e8f0; padding: 10px; text-align: left; }}
+  th {{ background: #f8fafc; color: #334155; }}
+  .badge {{ background: #e2e8f0; padding: 4px 10px; border-radius: 4px; font-size: 12px; }}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div>
+      <h2 style="margin:0; color:#065f46;">🏃 मैदानी चाचणी ट्रॅकर (Ground Tracker)</h2>
+      <small style="color:#64748b;">पोलीस भरती ५० गुण मैदानी रेकॉर्ड</small>
+    </div>
+    <div>
+      <span class="badge">युजर: {user_name}</span>
+      <a href="/" style="margin-left: 12px; color: #065f46; text-decoration: none; font-weight: bold;">मुख्य डॅशबोर्ड</a>
+    </div>
+  </div>
+
+  {alert_box}
+
+  <div class="card">
+    <h3 style="margin-top:0; color:#065f46; font-size:16px;">➕ नवीन चाचणी नोंदवा</h3>
+    <form method="POST">
+      <div class="form-grid">
+        <div>
+          <label>विद्यार्थी निवडा:</label>
+          <select name="student_id" required>
+            <option value="">-- निवडा --</option>
+            {student_options}
+          </select>
+        </div>
+        <div>
+          <label>तारीख:</label>
+          <input type="date" name="test_date" required value="{today_str}">
+        </div>
+        <div>
+          <label>इव्हेंट:</label>
+          <select name="event_name" required>
+            <option value="1600m">१६०० मी. धावणे (मुले)</option>
+            <option value="800m">८०० मी. धावणे (मुली)</option>
+            <option value="100m">१०० मी. स्प्रिंट</option>
+            <option value="shot_put">गोळाफेक (मीटर)</option>
+          </select>
+        </div>
+        <div>
+          <label>कामगिरी (वेळ किंवा अंतर):</label>
+          <input type="number" step="0.01" name="raw_value" placeholder="उदा. धावणे: सेकंद, गोळा: मीटर" required>
+          <small style="color:#64748b; font-size:11px;">धावण्यासाठी एकूण सेकंद (उदा. 5 मि. 10 से. = 310) व गोळ्यासाठी मीटर टाका.</small>
+        </div>
+      </div>
+      <div style="margin-top: 15px;">
+        <label>शेरा (पर्यायी):</label>
+        <input type="text" name="remark" placeholder="उदा. स्टॅमिना चांगला, सुधारणा आवश्यक">
+      </div>
+      <div style="margin-top: 18px;">
+        <button type="submit" class="btn">💾 चाचणी व गुण सेव्ह करा</button>
+      </div>
+    </form>
+  </div>
+
+  <h3 style="margin-bottom:8px; color:#334155;">📋 मैदानी चाचणी नोंदवही (Recent Records)</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>तारीख</th>
+        <th>विद्यार्थी</th>
+        <th>इव्हेंट</th>
+        <th>नोंदवलेली वेळ/अंतर</th>
+        <th>मिळालेले गुण</th>
+        <th>ट्रेनर / शेरा</th>
+      </tr>
+    </thead>
+    <tbody>
+      {table_rows}
+    </tbody>
+  </table>
+</div>
+</body>
+</html>"""
+    return render_template_string(html)  
+
+    # ================= ADMIN: STAFF ACTIVITIES & STUDENT REMARKS (EDIT & DELETE) =================
+
+# ----------------- १. स्टाफ हालचाली (STAFF ACTIVITIES) -----------------
+@app.route('/delete_staff_activity/<int:act_id>', methods=['POST', 'GET'])
+def delete_staff_activity(act_id):
+    if session.get('role') != 'admin':
+        return "अनधिकृत प्रवेश! फक्त ॲडमिन ही नोंद डिलीट करू शकतात.", 403
+
+    with get_db() as conn:
+        conn.execute("DELETE FROM staff_activities WHERE id = ?", (act_id,))
         conn.commit()
-    return redirect(request.referrer or '/')
 
-@app.route('/add_care_log', methods=['POST'])
-def add_care_log():
+    return redirect(request.referrer or url_for('admin_dashboard'))
+
+
+@app.route('/edit_staff_activity/<int:act_id>', methods=['GET', 'POST'])
+def edit_staff_activity(act_id):
+    if session.get('role') != 'admin':
+        return "अनधिकृत प्रवेश! फक्त ॲडमिन ही नोंद एडिट करू शकतात.", 403
+
     with get_db() as conn:
-        conn.execute("INSERT INTO student_care_log (student_id, care_date, issue_details, special_diet_note) VALUES (?, ?, ?, ?)", (safe_int(request.form.get('student_id')), date.today().strftime("%Y-%m-%d"), request.form.get('issue_details'), request.form.get('special_diet_note')))
+        if request.method == 'POST':
+            new_date = request.form.get('activity_date')
+            new_action = request.form.get('action_text')
+            new_remark = request.form.get('remark', '')
+
+            conn.execute("""
+                UPDATE staff_activities 
+                SET activity_date = ?, action_text = ?, remark = ?
+                WHERE id = ?
+            """, (new_date, new_action, new_remark, act_id))
+            conn.commit()
+            return redirect(url_for('admin_dashboard'))
+
+        record = conn.execute("SELECT * FROM staff_activities WHERE id = ?", (act_id,)).fetchone()
+
+    if not record:
+        return "नोंद सापडली नाही!", 404
+
+    form_html = f"""<!DOCTYPE html>
+    <html lang="mr">
+    <head>
+    <meta charset="UTF-8"><title>स्टाफ नोंद दुरुस्त करा</title>
+    <style>
+      body {{ font-family: sans-serif; background: #f1f5f9; padding: 20px; }}
+      .box {{ max-width: 500px; margin: auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }}
+      input, textarea {{ width: 100%; padding: 10px; margin: 8px 0 16px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }}
+      .btn {{ background: #065f46; color: white; border: none; padding: 10px 18px; border-radius: 5px; cursor: pointer; font-weight: bold; }}
+      .cancel {{ color: #dc2626; text-decoration: none; margin-left: 15px; }}
+    </style>
+    </head>
+    <body>
+    <div class="box">
+      <h3 style="color:#065f46; margin-top:0;">✏️ स्टाफ नोंद दुरुस्त करा</h3>
+      <p><b>कर्मचारी:</b> {record['staff_name']}</p>
+      <form method="POST">
+        <label>तारीख:</label>
+        <input type="text" name="activity_date" value="{record['activity_date']}" required>
+        
+        <label>काम / कृती:</label>
+        <textarea name="action_text" rows="3" required>{record['action_text']}</textarea>
+        
+        <label>शेरा / तपशील:</label>
+        <input type="text" name="remark" value="{record['remark'] if record['remark'] else ''}">
+        
+        <button type="submit" class="btn">बदल सेव्ह करा</button>
+        <a href="javascript:history.back()" class="cancel">रद्द करा</a>
+      </form>
+    </div>
+    </body>
+    </html>"""
+    return render_template_string(form_html)
+
+
+# ----------------- २. विद्यार्थी अहवाल (STUDENT REPORT REMARKS) -----------------
+@app.route('/delete_student_remark/<int:record_id>', methods=['POST', 'GET'])
+def delete_student_remark(record_id):
+    if session.get('role') != 'admin':
+        return "फक्त ॲडमिनला ही नोंद हटवण्याची परवानगी आहे.", 403
+
+    with get_db() as conn:
+        rec = conn.execute("SELECT student_id FROM student_activities WHERE id = ?", (record_id,)).fetchone()
+        student_id = rec['student_id'] if rec else None
+        
+        conn.execute("DELETE FROM student_activities WHERE id = ?", (record_id,))
         conn.commit()
-    return redirect('/manager?tab=care')
 
-@app.route('/download_backup')
-def download_backup(): return send_file(DB_NAME, as_attachment=True)
+    if student_id:
+        return redirect(f"/student_report/{student_id}")
+    return redirect(request.referrer or url_for('admin_dashboard'))
 
-@app.route('/uploads/<filename>')
-def uploaded_file(filename): return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
-@app.route('/export_students_csv')
-def export_students_csv():
+@app.route('/edit_student_remark/<int:record_id>', methods=['GET', 'POST'])
+def edit_student_remark(record_id):
+    if session.get('role') != 'admin':
+        return "फक्त ॲडमिनला ही नोंद दुरुस्त करण्याची परवानगी आहे.", 403
+
     with get_db() as conn:
-        students = conn.execute("SELECT * FROM students").fetchall()
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(['Reg No', 'नाव', 'कोर्स', 'मोबाईल', 'एकूण फी', 'जमा फी'])
-    for s in students:
-        writer.writerow([f"REG-{s['id']}", s['name'], s['course'], s['phone'], s['total_fees'], s['paid_fees']])
-    return Response(output.getvalue().encode('utf-8-sig'), mimetype="text/csv", headers={"Content-disposition": "attachment; filename=Shreeguru_Students.csv"})
+        if request.method == 'POST':
+            new_date = request.form.get('activity_date')
+            new_remark = request.form.get('remark')
+            new_diet = request.form.get('diet_plan', '')
+            student_id = request.form.get('student_id')
 
+            conn.execute("""
+                UPDATE student_activities 
+                SET activity_date = ?, remark = ?, diet_plan = ?
+                WHERE id = ?
+            """, (new_date, new_remark, new_diet, record_id))
+            conn.commit()
+            return redirect(f"/student_report/{student_id}")
+
+        record = conn.execute("SELECT * FROM student_activities WHERE id = ?", (record_id,)).fetchone()
+
+    if not record:
+        return "नोंद सापडली नाही!", 404
+
+    form_html = f"""<!DOCTYPE html>
+    <html lang="mr">
+    <head>
+    <meta charset="UTF-8"><title>विद्यार्थी अहवाल नोंद दुरुस्त करा</title>
+    <style>
+      body {{ font-family: sans-serif; background: #f1f5f9; padding: 20px; }}
+      .box {{ max-width: 500px; margin: auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }}
+      label {{ font-size: 13px; font-weight: bold; margin-bottom: 5px; display: block; }}
+      input, textarea {{ width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }}
+      .btn {{ background: #065f46; color: white; border: none; padding: 10px 18px; border-radius: 5px; cursor: pointer; font-weight: bold; }}
+      .cancel {{ color: #dc2626; text-decoration: none; margin-left: 15px; }}
+    </style>
+    </head>
+    <body>
+    <div class="box">
+      <h3 style="color:#065f46; margin-top:0;">✏️ अहवाल नोंद दुरुस्त करा (Admin)</h3>
+      <form method="POST">
+        <input type="hidden" name="student_id" value="{record['student_id']}">
+        
+        <label>तारीख:</label>
+        <input type="date" name="activity_date" value="{record['activity_date']}" required>
+        
+        <label>डाएट प्लॅन व विशेष सूचना:</label>
+        <textarea name="diet_plan" rows="3">{record['diet_plan'] if 'diet_plan' in record.keys() and record['diet_plan'] else ''}</textarea>
+        
+        <label>ट्रेनरचा / विशेष शेरा:</label>
+        <textarea name="remark" rows="3" required>{record['remark'] if record['remark'] else ''}</textarea>
+        
+        <button type="submit" class="btn">💾 बदल सेव्ह करा</button>
+        <a href="javascript:history.back()" class="cancel">रद्द करा</a>
+      </form>
+    </div>
+    </body>
+    </html>"""
+    return render_template_string(form_html)
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
